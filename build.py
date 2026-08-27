@@ -30,25 +30,24 @@ DESCRIPTION = (
 ROSE = (0xE1, 0x0F, 0xA6)          # rose peps du logotype
 
 # Géométrie dessinée dans un carré de 32 unités, réutilisée par le SVG et le
-# rastériseur : la maison au centre, la courbe qui passe derrière elle.
+# rastériseur.
 #
-# Maison sans débord de toit : un pentagone franc, qui dégage assez d'espace
-# pour que la courbe ressorte de part et d'autre sans frôler le liseré.
-# Boîte de 8,5 à 23,5 en x et de 8,5 à 23,5 en y — centrée sur 16.
-MAISON = [(16.0, 8.5), (23.5, 15.5), (23.5, 23.5), (8.5, 23.5), (8.5, 15.5)]
+# MAISON est le pentagone *intérieur* : la silhouette visible est ce polygone
+# dilaté de RAYON_MAISON, ce qui arrondit tous les angles d'un coup — le faîte
+# comme les quatre coins du corps. En SVG c'est un contour de même couleur que
+# le remplissage, avec des jonctions rondes ; au rastériseur, une distance au
+# contour. Les deux produisent exactement la même forme.
+MAISON = [(16.0, 9.8), (22.4, 15.2), (22.4, 23.8), (9.6, 23.8), (9.6, 15.2)]
+RAYON_MAISON = 2.3
 
-# Les deux tronçons visibles doivent avoir des pentes nettement différentes :
-# doux à gauche, raide à droite. C'est ce contraste qui fait lire une courbe
-# qui s'envole, là où deux moignons parallèles ne liraient qu'une barre.
-COURBE = [(1.9, 26.1), (9.0, 22.0), (17.0, 18.0), (24.8, 12.0), (29.4, 6.0)]
-TRAIT = 2.7
-POINT_FINAL = 1.9
-ECART = 1.5          # liseré de fond qui sépare la courbe du contour de la maison
-
-# Deux fenêtres évidées dans le corps de la maison, en x0, y0, x1, y1.
-# Elles laissent voir le fond, pas la courbe : sinon le trait blanc réapparaîtrait
-# par la fenêtre et brouillerait la lecture.
-FENETRES = [(11.3, 17.6, 14.7, 21.0), (17.3, 17.6, 20.7, 21.0)]
+# Quatre ouvertures en carré, séparées par deux unités.
+# Coordonnées entières à dessein : le carré de référence fait 32 unités et
+# l'ICO 32 pixels, donc une unité vaut un pixel. Des bords entiers tombent pile
+# sur la grille de pixels et restent nets ; des bords décimaux se moyennent en
+# une bouillie grise à cette taille.
+TROUS = [(12.0, 16.0, 15.0, 19.0), (17.0, 16.0, 20.0, 19.0),
+         (12.0, 21.0, 15.0, 24.0), (17.0, 21.0, 20.0, 24.0)]
+RAYON_TROU = 0.6
 
 
 def _sdf_carre_arrondi(x, y, cote=32.0, r=7.0):
@@ -81,16 +80,21 @@ def _distance_polyligne(x, y, sommets, ferme=False):
     return best
 
 
-def dessiner_icone(taille, fenetres=True):
+def _dans_rect_arrondi(x, y, x0, y0, x1, y1, r):
+    dx = max(x0 + r - x, 0.0, x - (x1 - r))
+    dy = max(y0 + r - y, 0.0, y - (y1 - r))
+    return x0 <= x <= x1 and y0 <= y <= y1 and math.hypot(dx, dy) <= r
+
+
+def dessiner_icone(taille, trous=True):
     """Rendu suréchantillonné puis moyenné : des bords lisses même à 32 px.
 
-    `fenetres` est désactivé aux très petites tailles, où des ouvertures de moins
+    `trous` est désactivé aux très petites tailles, où des ouvertures de moins
     de deux pixels saliraient la maison au lieu de la détailler.
     """
     s = 4 if taille <= 64 else 2
     n = taille * s
     echelle = 32.0 / n
-    fin = COURBE[-1]
 
     haute = bytearray(n * n * 4)
     for py in range(n):
@@ -100,15 +104,10 @@ def dessiner_icone(taille, fenetres=True):
             i = (py * n + px) * 4
             if _sdf_carre_arrondi(x, y) > 0:
                 continue                                   # hors du carré : transparent
-            # Ordre de superposition : fond, courbe, liseré de fond, maison, fenêtres.
-            if _dans_polygone(x, y, MAISON):
-                blanc = not (fenetres and any(
-                    x0 <= x <= x1 and y0 <= y <= y1 for x0, y0, x1, y1 in FENETRES))
-            elif _distance_polyligne(x, y, MAISON, ferme=True) <= ECART:
-                blanc = False                              # le liseré efface la courbe
-            else:
-                blanc = (_distance_polyligne(x, y, COURBE) <= TRAIT / 2
-                         or math.hypot(x - fin[0], y - fin[1]) <= POINT_FINAL)
+            dans_maison = (_dans_polygone(x, y, MAISON)
+                           or _distance_polyligne(x, y, MAISON, ferme=True) <= RAYON_MAISON)
+            blanc = dans_maison and not (trous and any(
+                _dans_rect_arrondi(x, y, *t, RAYON_TROU) for t in TROUS))
             haute[i:i + 4] = bytes((255, 255, 255, 255)) if blanc else bytes((*ROSE, 255))
 
     # moyenne de chaque bloc s×s
@@ -127,7 +126,7 @@ def dessiner_icone(taille, fenetres=True):
 
 def _image_ico(taille):
     """Un DIB 32 bits : en-tête, pixels BGRA de bas en haut, masque AND vide."""
-    rgba = dessiner_icone(taille, fenetres=taille >= 32)
+    rgba = dessiner_icone(taille, trous=taille >= 32)
     lignes = []
     for y in range(taille - 1, -1, -1):            # le BMP se lit du bas vers le haut
         ligne = bytearray()
@@ -172,18 +171,14 @@ def ecrire_png(chemin, taille):
     chemin.write_bytes(png)
 
 
-# Le contour de la maison est d'abord tracé en couleur de fond, deux fois plus
-# large que l'écart voulu : la moitié extérieure creuse le liseré, la moitié
-# intérieure est recouverte par le remplissage blanc qui suit.
+# Le contour de même couleur que le remplissage, avec des jonctions rondes,
+# arrondit tous les angles du pentagone : c'est l'équivalent SVG de la dilatation
+# faite au rastériseur.
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="7" fill="#{rose}"/>
-  <path d="{courbe}" fill="none" stroke="#fff" stroke-width="{trait}"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="{fx}" cy="{fy}" r="{pt}" fill="#fff"/>
-  <path d="{maison}Z" fill="none" stroke="#{rose}" stroke-width="{liseré}"
+  <path d="{maison}Z" fill="#fff" stroke="#fff" stroke-width="{contour}"
         stroke-linejoin="round"/>
-  <path d="{maison}Z" fill="#fff"/>
-{fenetres}
+{trous}
 </svg>
 """
 
@@ -202,16 +197,15 @@ def main():
 
     (SITE / "css" / "style.css").write_text(style + "\n", encoding="utf-8")
     (SITE / "js" / "app.js").write_text(script + "\n", encoding="utf-8")
+    rose_hex = "%02X%02X%02X" % ROSE
     svg = FAVICON_SVG.format(
-        rose="%02X%02X%02X" % ROSE,
+        rose=rose_hex,
         maison="M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " ",
-        courbe="M " + " L ".join(f"{x} {y}" for x, y in COURBE),
-        trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL,
-        **{"liseré": ECART * 2},
-        fenetres="\n".join(
+        contour=RAYON_MAISON * 2,
+        trous="\n".join(
             f'  <rect x="{x0}" y="{y0}" width="{round(x1 - x0, 2)}" '
-            f'height="{round(y1 - y0, 2)}" fill="#%02X%02X%02X"/>' % ROSE
-            for x0, y0, x1, y1 in FENETRES))
+            f'height="{round(y1 - y0, 2)}" rx="{RAYON_TROU}" fill="#{rose_hex}"/>'
+            for x0, y0, x1, y1 in TROUS))
     (SITE / "assets" / "favicon.svg").write_text(svg, encoding="utf-8")
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
