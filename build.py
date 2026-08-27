@@ -9,6 +9,7 @@ sitemap, et les en-têtes Cloudflare Pages.
     python3 build.py        ->  site/
 """
 
+import json
 import math
 import pathlib
 import re
@@ -22,10 +23,10 @@ SITE = RACINE / "site"
 
 DOMAINE = "https://monrendementlocatif.fr"
 TITRE = "Rentabilité locative : votre rendement réel, année par année"
+# Sous 160 caracteres : au-dela, Google tronque l'extrait dans ses resultats.
 DESCRIPTION = (
-    "Calculez le rendement annualisé de votre investissement locatif, en euros "
-    "courants et en pouvoir d'achat. Point mort, meilleure année de revente, et "
-    "comparaison avec le Livret A, un fonds euros et la bourse."
+    "Calculez le rendement réel de votre investissement locatif année par "
+    "année : point mort, meilleur moment pour revendre, comparaison bourse."
 )
 ROSE = (0xE1, 0x0F, 0xA6)          # rose peps du logotype
 
@@ -198,6 +199,30 @@ FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
 """
 
 
+# Décrit l'outil pour les moteurs. Pas de FAQPage ici : Google exige que les
+# questions-réponses balisées soient visibles sur la page, ce qui n'est pas
+# encore le cas — le baliser sans le contenu serait une pénalité assurée.
+JSONLD = json.dumps({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Mon rendement locatif",
+    "url": DOMAINE + "/",
+    "description": DESCRIPTION,
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Tout navigateur web",
+    "inLanguage": "fr-FR",
+    "isAccessibleForFree": True,
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+    "featureList": [
+        "Taux de rendement interne année par année",
+        "Rendement réel net d'inflation",
+        "Point mort et meilleure année de revente",
+        "Quatre régimes fiscaux : micro-foncier, réel, micro-BIC, LMNP au réel",
+        "Comparaison avec le Livret A, un fonds euros et la bourse",
+    ],
+}, ensure_ascii=False, separators=(",", ":"))
+
+
 # ---------------------------------------------------------------- assemblage
 def main():
     src = SOURCE.read_text(encoding="utf-8")
@@ -227,6 +252,9 @@ def main():
         trait=TRAIT,
         pointe="M " + " L ".join(f"{x} {y}" for x, y in POINTE) + " Z")
     (SITE / "assets" / "favicon.svg").write_text(svg, encoding="utf-8")
+    # Image de partage : produite une fois par outils/og.sh, versionnée à la
+    # racine puis recopiée. Sans cette copie, un `rm -rf site` la perdrait.
+    (SITE / "assets" / "og-image.png").write_bytes((RACINE / "og-image.png").read_bytes())
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
 
@@ -249,7 +277,12 @@ def main():
 <meta property="og:title" content="{TITRE}">
 <meta property="og:description" content="{DESCRIPTION}">
 <meta property="og:locale" content="fr_FR">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="{DOMAINE}/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Mon rendement locatif">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{JSONLD}</script>
 {polices}
 <link rel="stylesheet" href="/css/style.css">
 </head>
