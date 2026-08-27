@@ -1,0 +1,12 @@
+{
+  // Site 100 % statique : aucun script d'entrée, Cloudflare sert directement
+  // le contenu de site/. Le dossier est produit par `python3 build.py`.
+  "name": "monrendementlocatif",
+  "compatibility_date": "2026-08-27",
+  "assets": {
+    "directory": "./site/",
+    // Une seule page : toute URL inconnue renvoie le 404 par défaut plutôt que
+    // de rejouer index.html, ce qui éviterait de faire indexer des URL fantômes.
+    "not_found_handling": "none"
+  }
+}
