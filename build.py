@@ -30,34 +30,29 @@ DESCRIPTION = (
 ROSE = (0xE1, 0x0F, 0xA6)          # rose peps du logotype
 
 # Géométrie dessinée dans un carré de 32 unités, réutilisée par le SVG et le
-# rastériseur.
+# rastériseur : maison à gauche, deux barres montantes, et une flèche qui monte,
+# fléchit, puis repart vers le haut. Fond transparent, formes roses.
 #
-# MAISON est le pentagone *intérieur* : la silhouette visible est ce polygone
-# dilaté de RAYON_MAISON, ce qui arrondit tous les angles d'un coup — le faîte
-# comme les quatre coins du corps. En SVG c'est un contour de même couleur que
-# le remplissage, avec des jonctions rondes ; au rastériseur, une distance au
-# contour. Les deux produisent exactement la même forme.
-# Maison décalée à gauche et posée bas, pour dégager le ciel où passe la courbe.
-MAISON = [(13.8, 12.0), (19.4, 16.6), (19.4, 25.1), (8.2, 25.1), (8.2, 16.6)]
-RAYON_MAISON = 2.1
+# Toutes les formes reposent sur la même ligne de sol, et les intervalles entre
+# elles font 1,2 unité : de quoi rester lisibles sans se souder à petite taille.
+SOL = 26.6
 
-# Quatre ouvertures en carré, séparées par deux unités.
-# Coordonnées entières à dessein : le carré de référence fait 32 unités et
+MAISON = [(8.6, 13.0), (14.4, 18.8), (13.0, 18.8), (13.0, SOL),
+          (4.2, SOL), (4.2, 18.8), (2.8, 18.8)]
+
+# Ouvertures sur coordonnées entières : le carré de référence fait 32 unités et
 # l'ICO 32 pixels, donc une unité vaut un pixel. Des bords entiers tombent pile
-# sur la grille de pixels et restent nets ; des bords décimaux se moyennent en
-# une bouillie grise à cette taille.
-TROUS = [(10.0, 18.0, 13.0, 21.0), (15.0, 18.0, 18.0, 21.0),
-         (10.0, 23.0, 13.0, 26.0), (15.0, 23.0, 18.0, 26.0)]
-RAYON_TROU = 0.6
+# sur la grille et restent nets ; des bords décimaux se moyennent en gris.
+TROUS = [(6.0, 20.0, 8.0, 22.0), (9.0, 20.0, 11.0, 22.0),
+         (6.0, 23.0, 8.0, 25.0), (9.0, 23.0, 11.0, 25.0)]
 
-# La courbe démarre dans le prolongement exact de la pente du toit — même
-# inclinaison, décalée perpendiculairement de RAYON_MAISON plus un intervalle —
-# puis dépasse le faîte avant de redescendre un peu et de repartir vers le haut.
-# Le premier segment doit franchir l'aplomb du faîte avant que la courbe ne
-# fléchisse : sinon le creux vient mordre la pointe du toit.
-COURBE = [(4.8, 12.8), (12.4, 6.6), (18.2, 9.0), (27.2, 3.0)]
+BARRES = [(15.6, 19.4, 19.0, SOL), (20.2, 13.6, 23.6, SOL)]
+
+# La flèche part au ras du sol à gauche, dépasse l'aplomb du faîte avant de
+# fléchir — sinon le creux mordrait la pointe du toit — puis file vers le haut.
+FLECHE = [(1.6, 16.4), (8.6, 9.2), (15.0, 15.8), (23.6, 6.4)]
 TRAIT = 2.4
-POINT_FINAL = 1.5
+POINTE = [(27.11, 2.56), (26.04, 8.63), (21.16, 4.17)]
 
 
 def _sdf_carre_arrondi(x, y, cote=32.0, r=7.0):
@@ -90,17 +85,15 @@ def _distance_polyligne(x, y, sommets, ferme=False):
     return best
 
 
-def _dans_rect_arrondi(x, y, x0, y0, x1, y1, r):
-    dx = max(x0 + r - x, 0.0, x - (x1 - r))
-    dy = max(y0 + r - y, 0.0, y - (y1 - r))
-    return x0 <= x <= x1 and y0 <= y <= y1 and math.hypot(dx, dy) <= r
+def _dans_rect(x, y, x0, y0, x1, y1):
+    return x0 <= x <= x1 and y0 <= y <= y1
 
 
 def dessiner_icone(taille, trous=True):
     """Rendu suréchantillonné puis moyenné : des bords lisses même à 32 px.
 
-    `trous` est désactivé aux très petites tailles, où des ouvertures de moins
-    de deux pixels saliraient la maison au lieu de la détailler.
+    `trous` est désactivé aux très petites tailles, où des ouvertures de deux
+    pixels saliraient la maison au lieu de la détailler.
     """
     s = 4 if taille <= 64 else 2
     n = taille * s
@@ -111,19 +104,16 @@ def dessiner_icone(taille, trous=True):
         y = (py + 0.5) * echelle
         for px in range(n):
             x = (px + 0.5) * echelle
-            i = (py * n + px) * 4
-            if _sdf_carre_arrondi(x, y) > 0:
-                continue                                   # hors du carré : transparent
-            dans_maison = (_dans_polygone(x, y, MAISON)
-                           or _distance_polyligne(x, y, MAISON, ferme=True) <= RAYON_MAISON)
-            if dans_maison:
-                blanc = not (trous and any(
-                    _dans_rect_arrondi(x, y, *t, RAYON_TROU) for t in TROUS))
-            else:
-                fin = COURBE[-1]
-                blanc = (_distance_polyligne(x, y, COURBE) <= TRAIT / 2
-                         or math.hypot(x - fin[0], y - fin[1]) <= POINT_FINAL)
-            haute[i:i + 4] = bytes((255, 255, 255, 255)) if blanc else bytes((*ROSE, 255))
+            rose = False
+            if _dans_polygone(x, y, MAISON):
+                rose = not (trous and any(_dans_rect(x, y, *t) for t in TROUS))
+            elif any(_dans_rect(x, y, *b) for b in BARRES):
+                rose = True
+            elif (_distance_polyligne(x, y, FLECHE) <= TRAIT / 2
+                  or _dans_polygone(x, y, POINTE)):
+                rose = True
+            if rose:
+                haute[(py * n + px) * 4:(py * n + px) * 4 + 4] = bytes((*ROSE, 255))
 
     # moyenne de chaque bloc s×s
     sortie = bytearray()
@@ -170,9 +160,19 @@ def ecrire_ico(chemin, tailles=(16, 32)):
     chemin.write_bytes(struct.pack("<HHH", 0, 1, len(images)) + entrees + b"".join(images))
 
 
-def ecrire_png(chemin, taille):
-    """PNG RGBA sans compression coûteuse, pour l'icône iOS."""
-    rgba = dessiner_icone(taille)
+def ecrire_png(chemin, taille, fond=(255, 255, 255)):
+    """PNG pour l'icône iOS, aplati sur un fond opaque.
+
+    L'écran d'accueil d'iOS ne gère pas la transparence : une icône ajourée y
+    apparaît sur du noir. On compose donc les formes sur un fond plein.
+    """
+    rgba = bytearray(dessiner_icone(taille))
+    for i in range(0, len(rgba), 4):
+        a = rgba[i + 3] / 255
+        for c in range(3):
+            rgba[i + c] = round(rgba[i + c] * a + fond[c] * (1 - a))
+        rgba[i + 3] = 255
+    rgba = bytes(rgba)
     brut = b"".join(b"\x00" + rgba[y * taille * 4:(y + 1) * taille * 4] for y in range(taille))
 
     def bloc(nom, data):
@@ -186,17 +186,14 @@ def ecrire_png(chemin, taille):
     chemin.write_bytes(png)
 
 
-# Le contour de même couleur que le remplissage, avec des jonctions rondes,
-# arrondit tous les angles du pentagone : c'est l'équivalent SVG de la dilatation
-# faite au rastériseur.
+# La maison et ses ouvertures forment un seul tracé : la règle de remplissage
+# « evenodd » creuse les fenêtres, sans masque ni superposition de couleur.
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#{rose}"/>
-  <path d="{courbe}" fill="none" stroke="#fff" stroke-width="{trait}"
+  <path fill="#{rose}" fill-rule="evenodd" d="{maison}"/>
+{barres}
+  <path d="{fleche}" fill="none" stroke="#{rose}" stroke-width="{trait}"
         stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="{fx}" cy="{fy}" r="{pt}" fill="#fff"/>
-  <path d="{maison}Z" fill="#fff" stroke="#fff" stroke-width="{contour}"
-        stroke-linejoin="round"/>
-{trous}
+  <path fill="#{rose}" d="{pointe}"/>
 </svg>
 """
 
@@ -216,16 +213,19 @@ def main():
     (SITE / "css" / "style.css").write_text(style + "\n", encoding="utf-8")
     (SITE / "js" / "app.js").write_text(script + "\n", encoding="utf-8")
     rose_hex = "%02X%02X%02X" % ROSE
+    contour = "M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " Z"
+    for x0, y0, x1, y1 in TROUS:                     # sous-tracés = fenêtres évidées
+        contour += f" M {x0} {y0} H {x1} V {y1} H {x0} Z"
     svg = FAVICON_SVG.format(
         rose=rose_hex,
-        maison="M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " ",
-        contour=RAYON_MAISON * 2,
-        courbe="M " + " L ".join(f"{x} {y}" for x, y in COURBE),
-        trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL,
-        trous="\n".join(
+        maison=contour,
+        barres="\n".join(
             f'  <rect x="{x0}" y="{y0}" width="{round(x1 - x0, 2)}" '
-            f'height="{round(y1 - y0, 2)}" rx="{RAYON_TROU}" fill="#{rose_hex}"/>'
-            for x0, y0, x1, y1 in TROUS))
+            f'height="{round(y1 - y0, 2)}" fill="#{rose_hex}"/>'
+            for x0, y0, x1, y1 in BARRES),
+        fleche="M " + " L ".join(f"{x} {y}" for x, y in FLECHE),
+        trait=TRAIT,
+        pointe="M " + " L ".join(f"{x} {y}" for x, y in POINTE) + " Z")
     (SITE / "assets" / "favicon.svg").write_text(svg, encoding="utf-8")
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
