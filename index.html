@@ -322,6 +322,15 @@ tbody tr.peak td{background:var(--accent-wash)}
 tbody tr.peak td:first-child{font-weight:600; color:var(--accent)}
 td.pos{color:var(--pos)} td.neg{color:var(--neg)}
 
+.faq article{max-width:76ch}
+.faq article + article{margin-top:26px; padding-top:22px; border-top:1px solid var(--line-soft)}
+.faq h3{
+  font-family:Spectral,Georgia,serif; font-size:17px; font-weight:600; color:var(--ink);
+  margin:0 0 8px; letter-spacing:-.01em; text-wrap:balance;
+}
+.faq p{margin:0 0 10px; font-size:14px; color:var(--ink-2); line-height:1.65}
+.faq p:last-child{margin-bottom:0}
+.faq b{color:var(--ink); font-weight:600}
 .notes{font-size:12.5px; color:var(--ink-3); line-height:1.65; max-width:78ch}
 .notes h3{font-family:Spectral,Georgia,serif; font-size:15px; font-weight:600; color:var(--ink-2); margin:0 0 8px}
 .notes ul{margin:0; padding-left:18px} .notes li{margin-bottom:5px}
@@ -553,6 +562,34 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
       </div>
       <div id="warnBox"></div>
       <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="panel faq">
+      <div class="phead"><div><h2>Questions fréquentes</h2></div></div>
+
+      <article>
+        <h3>Quand faut-il revendre un bien locatif&nbsp;?</h3>
+        <p>Il n'existe pas de durée optimale universelle&nbsp;: la bonne date dépend de votre financement et de votre fiscalité, et elle se lit sur la courbe de rendement annualisé. Trois forces s'y opposent. Les <b>frais d'acquisition</b> — notaire, agence, garantie — représentent 8 à 10&nbsp;% du prix et sont perdus le jour de la signature&nbsp;: il faut plusieurs années de loyers et de revalorisation pour les absorber. C'est le point mort, souvent situé entre la 7<sup>e</sup> et la 12<sup>e</sup> année. Ensuite, les <b>abattements sur la plus-value</b> ne démarrent qu'après cinq ans révolus et ne deviennent vraiment intéressants qu'à partir de la 23<sup>e</sup> année, quand l'abattement social passe à 9&nbsp;% par an. Enfin, l'<b>effet de levier s'éteint</b> avec le crédit&nbsp;: une fois le prêt soldé, votre capital immobilisé grossit alors que les loyers, eux, ne suivent que l'inflation — le rendement annualisé se met à décliner.</p>
+        <p>Conséquence contre-intuitive&nbsp;: le pic de rendement et le pic de patrimoine ne tombent pas la même année. Sur un horizon de 40&nbsp;ans, le rendement culmine souvent vers la 30<sup>e</sup> année tandis que le gain en euros continue de croître jusqu'au bout. Revendre au pic de rendement maximise l'efficacité de votre argent&nbsp;; conserver maximise le montant final. Le calculateur affiche les deux.</p>
+      </article>
+
+      <article>
+        <h3>Rendement nominal ou rendement réel&nbsp;: quelle différence&nbsp;?</h3>
+        <p>Le rendement nominal compte les euros&nbsp;; le rendement réel compte ce qu'ils permettent d'acheter. Avec 2&nbsp;% d'inflation, un placement à 4&nbsp;% nominal ne vous enrichit que de 2&nbsp;% en pouvoir d'achat. Sur vingt-cinq ans, l'écart devient vertigineux&nbsp;: 100&nbsp;000&nbsp;€ de gain affiché n'en valent plus que 61&nbsp;000 en euros d'aujourd'hui.</p>
+        <p>La quasi-totalité des simulateurs raisonnent en euros courants sans le préciser, ce qui flatte mécaniquement tous les résultats. Deux effets se compensent d'ailleurs partiellement. D'un côté l'inflation ronge vos loyers futurs et votre prix de revente. De l'autre elle <b>érode votre dette</b>, qui est à taux fixe&nbsp;: vous remboursez en monnaie dévaluée. C'est pourquoi le rendement réel d'un projet à crédit monte légèrement quand l'inflation augmente — un phénomène que seul un calcul en pouvoir d'achat rend visible.</p>
+      </article>
+
+      <article>
+        <h3>Immobilier locatif ou bourse&nbsp;: lequel rapporte le plus&nbsp;?</h3>
+        <p>La comparaison n'a de sens qu'à <b>mise de fonds identique</b>. Opposer un apport de 35&nbsp;000&nbsp;€ placé en bourse à un bien de 200&nbsp;000&nbsp;€ acheté à crédit ne compare rien&nbsp;: le second mobilise, mois après mois, un effort d'épargne que le premier n'exige pas. La méthode correcte consiste à investir en bourse exactement les mêmes sommes aux mêmes dates — l'apport, puis chaque euro de cash-flow négatif.</p>
+        <p>Ainsi posée, la question se déplace. L'immobilier a pour lui le <b>levier du crédit</b>&nbsp;: personne ne vous prête 200&nbsp;000&nbsp;€ à 3,4&nbsp;% pour acheter des actions. La bourse a pour elle un rendement réel historiquement supérieur, l'absence de frais d'entrée à 8&nbsp;%, la liquidité et zéro gestion. Sur nos hypothèses par défaut — 4&nbsp;% réels en bourse contre une pierre qui suit l'inflation — la bourse l'emporte. L'immobilier reprend l'avantage si vous achetez sous le prix du marché, si le rendement locatif dépasse 7&nbsp;%, ou si vous croyez à une hausse réelle des prix. Ces trois leviers sont modifiables ci-dessus&nbsp;: c'est le seul moyen honnête de trancher pour <i>votre</i> projet.</p>
+      </article>
+
+      <article>
+        <h3>Quel régime fiscal choisir&nbsp;?</h3>
+        <p>C'est le paramètre le plus décisif de la page, et de loin. À situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept entre le micro-foncier et le LMNP au réel. Le <b>LMNP au réel</b> l'emporte presque toujours en meublé&nbsp;: l'amortissement du bâti, des travaux et du mobilier annule l'imposition des loyers pendant une à deux décennies. Sa contrepartie, depuis la loi de finances 2025, est la réintégration des amortissements déduits dans le calcul de la plus-value à la revente.</p>
+        <p>En location nue, le <b>régime réel</b> devient intéressant dès que vos charges et intérêts dépassent 30&nbsp;% des loyers — ce qui est courant les premières années d'un crédit, ou après de gros travaux, le déficit foncier s'imputant alors sur votre revenu global à hauteur de 10&nbsp;700&nbsp;€ par an. Le micro-foncier ne se justifie que pour un bien sans crédit, sans travaux et à faibles charges. Changez le régime dans le panneau de gauche&nbsp;: toutes les courbes se recalculent instantanément.</p>
+      </article>
     </section>
 
     <section class="notes">

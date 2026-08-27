@@ -199,10 +199,34 @@ FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
 """
 
 
-# Décrit l'outil pour les moteurs. Pas de FAQPage ici : Google exige que les
-# questions-réponses balisées soient visibles sur la page, ce qui n'est pas
-# encore le cas — le baliser sans le contenu serait une pénalité assurée.
-JSONLD = json.dumps({
+def _faq_depuis_le_html(corps):
+    """Extrait les questions-réponses de la section FAQ visible.
+
+    Google exige que le balisage corresponde mot pour mot à ce que voit le
+    visiteur. En le dérivant du HTML plutôt qu'en le recopiant à la main, les
+    deux ne peuvent pas diverger quand le texte évolue.
+    """
+    def nettoyer(html):
+        return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html)
+                      .replace("&nbsp;", "\u00a0").replace("&amp;", "&")).strip()
+
+    entrees = []
+    for bloc in re.findall(r"<article>(.*?)</article>", corps, re.S):
+        question = re.search(r"<h3>(.*?)</h3>", bloc, re.S)
+        reponses = re.findall(r"<p>(.*?)</p>", bloc, re.S)
+        if not question or not reponses:
+            continue
+        entrees.append({
+            "@type": "Question",
+            "name": nettoyer(question.group(1)),
+            "acceptedAnswer": {"@type": "Answer",
+                               "text": " ".join(nettoyer(p) for p in reponses)},
+        })
+    return entrees
+
+
+def _jsonld(corps):
+    outil = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Mon rendement locatif",
@@ -220,7 +244,14 @@ JSONLD = json.dumps({
         "Quatre régimes fiscaux : micro-foncier, réel, micro-BIC, LMNP au réel",
         "Comparaison avec le Livret A, un fonds euros et la bourse",
     ],
-}, ensure_ascii=False, separators=(",", ":"))
+    }
+    faq = _faq_depuis_le_html(corps)
+    graphe = [outil]
+    if faq:
+        graphe.append({"@context": "https://schema.org", "@type": "FAQPage",
+                       "mainEntity": faq})
+    return json.dumps(graphe if len(graphe) > 1 else outil,
+                      ensure_ascii=False, separators=(",", ":"))
 
 
 # ---------------------------------------------------------------- assemblage
@@ -229,13 +260,18 @@ def main():
 
     style = re.search(r"<style>(.*?)</style>", src, re.S).group(1).strip()
     script = re.search(r"<script>(.*?)</script>", src, re.S).group(1).strip()
-    polices = "\n".join(re.findall(r"^<link [^>]*>$", src, re.M))
     corps = src[src.index('<header class="masthead">'):src.index("<script>")].strip()
 
     for dossier in ("css", "js", "assets"):
         (SITE / dossier).mkdir(parents=True, exist_ok=True)
 
-    (SITE / "css" / "style.css").write_text(style + "\n", encoding="utf-8")
+    # Les @font-face en tête de feuille, et les fichiers copiés : plus aucune
+    # requête vers un domaine tiers.
+    police_css = (RACINE / "polices" / "polices.css").read_text(encoding="utf-8")
+    (SITE / "assets" / "fonts").mkdir(parents=True, exist_ok=True)
+    for woff in sorted((RACINE / "polices").glob("*.woff2")):
+        (SITE / "assets" / "fonts" / woff.name).write_bytes(woff.read_bytes())
+    (SITE / "css" / "style.css").write_text(police_css + style + "\n", encoding="utf-8")
     (SITE / "js" / "app.js").write_text(script + "\n", encoding="utf-8")
     rose_hex = "%02X%02X%02X" % ROSE
     contour = "M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " Z"
@@ -258,6 +294,7 @@ def main():
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
 
+    jsonld = _jsonld(corps)
     (SITE / "index.html").write_text(f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -282,8 +319,8 @@ def main():
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="Mon rendement locatif">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{JSONLD}</script>
-{polices}
+<script type="application/ld+json">{jsonld}</script>
+<link rel="preload" href="/assets/fonts/public-sans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
