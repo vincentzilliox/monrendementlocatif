@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="7" fill="#E10FA6"/>
-  <path d="M 16.0 9.8 L 22.4 15.2 L 22.4 23.8 L 9.6 23.8 L 9.6 15.2 Z" fill="#fff" stroke="#fff" stroke-width="4.6"
+  <path d="M 4.8 12.8 L 12.4 6.6 L 18.2 9.0 L 27.2 3.0" fill="none" stroke="#fff" stroke-width="2.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="27.2" cy="3.0" r="1.5" fill="#fff"/>
+  <path d="M 13.8 12.0 L 19.4 16.6 L 19.4 25.1 L 8.2 25.1 L 8.2 16.6 Z" fill="#fff" stroke="#fff" stroke-width="4.2"
         stroke-linejoin="round"/>
-  <rect x="12.0" y="16.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
-  <rect x="17.0" y="16.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
-  <rect x="12.0" y="21.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
-  <rect x="17.0" y="21.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
+  <rect x="10.0" y="18.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
+  <rect x="15.0" y="18.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
+  <rect x="10.0" y="23.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
+  <rect x="15.0" y="23.0" width="3.0" height="3.0" rx="0.6" fill="#E10FA6"/>
 </svg>

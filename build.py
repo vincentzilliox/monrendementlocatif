@@ -37,17 +37,27 @@ ROSE = (0xE1, 0x0F, 0xA6)          # rose peps du logotype
 # comme les quatre coins du corps. En SVG c'est un contour de même couleur que
 # le remplissage, avec des jonctions rondes ; au rastériseur, une distance au
 # contour. Les deux produisent exactement la même forme.
-MAISON = [(16.0, 9.8), (22.4, 15.2), (22.4, 23.8), (9.6, 23.8), (9.6, 15.2)]
-RAYON_MAISON = 2.3
+# Maison décalée à gauche et posée bas, pour dégager le ciel où passe la courbe.
+MAISON = [(13.8, 12.0), (19.4, 16.6), (19.4, 25.1), (8.2, 25.1), (8.2, 16.6)]
+RAYON_MAISON = 2.1
 
 # Quatre ouvertures en carré, séparées par deux unités.
 # Coordonnées entières à dessein : le carré de référence fait 32 unités et
 # l'ICO 32 pixels, donc une unité vaut un pixel. Des bords entiers tombent pile
 # sur la grille de pixels et restent nets ; des bords décimaux se moyennent en
 # une bouillie grise à cette taille.
-TROUS = [(12.0, 16.0, 15.0, 19.0), (17.0, 16.0, 20.0, 19.0),
-         (12.0, 21.0, 15.0, 24.0), (17.0, 21.0, 20.0, 24.0)]
+TROUS = [(10.0, 18.0, 13.0, 21.0), (15.0, 18.0, 18.0, 21.0),
+         (10.0, 23.0, 13.0, 26.0), (15.0, 23.0, 18.0, 26.0)]
 RAYON_TROU = 0.6
+
+# La courbe démarre dans le prolongement exact de la pente du toit — même
+# inclinaison, décalée perpendiculairement de RAYON_MAISON plus un intervalle —
+# puis dépasse le faîte avant de redescendre un peu et de repartir vers le haut.
+# Le premier segment doit franchir l'aplomb du faîte avant que la courbe ne
+# fléchisse : sinon le creux vient mordre la pointe du toit.
+COURBE = [(4.8, 12.8), (12.4, 6.6), (18.2, 9.0), (27.2, 3.0)]
+TRAIT = 2.4
+POINT_FINAL = 1.5
 
 
 def _sdf_carre_arrondi(x, y, cote=32.0, r=7.0):
@@ -106,8 +116,13 @@ def dessiner_icone(taille, trous=True):
                 continue                                   # hors du carré : transparent
             dans_maison = (_dans_polygone(x, y, MAISON)
                            or _distance_polyligne(x, y, MAISON, ferme=True) <= RAYON_MAISON)
-            blanc = dans_maison and not (trous and any(
-                _dans_rect_arrondi(x, y, *t, RAYON_TROU) for t in TROUS))
+            if dans_maison:
+                blanc = not (trous and any(
+                    _dans_rect_arrondi(x, y, *t, RAYON_TROU) for t in TROUS))
+            else:
+                fin = COURBE[-1]
+                blanc = (_distance_polyligne(x, y, COURBE) <= TRAIT / 2
+                         or math.hypot(x - fin[0], y - fin[1]) <= POINT_FINAL)
             haute[i:i + 4] = bytes((255, 255, 255, 255)) if blanc else bytes((*ROSE, 255))
 
     # moyenne de chaque bloc s×s
@@ -176,6 +191,9 @@ def ecrire_png(chemin, taille):
 # faite au rastériseur.
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="7" fill="#{rose}"/>
+  <path d="{courbe}" fill="none" stroke="#fff" stroke-width="{trait}"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="{fx}" cy="{fy}" r="{pt}" fill="#fff"/>
   <path d="{maison}Z" fill="#fff" stroke="#fff" stroke-width="{contour}"
         stroke-linejoin="round"/>
 {trous}
@@ -202,6 +220,8 @@ def main():
         rose=rose_hex,
         maison="M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " ",
         contour=RAYON_MAISON * 2,
+        courbe="M " + " L ".join(f"{x} {y}" for x, y in COURBE),
+        trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL,
         trous="\n".join(
             f'  <rect x="{x0}" y="{y0}" width="{round(x1 - x0, 2)}" '
             f'height="{round(y1 - y0, 2)}" rx="{RAYON_TROU}" fill="#{rose_hex}"/>'
