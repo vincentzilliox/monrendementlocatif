@@ -50,6 +50,23 @@ python3 build.py
 
 `site/` est le dossier à déployer sur un hébergement statique.
 
+## Vérifier avant de publier
+
+```sh
+python3 outils/verifier.py
+```
+
+35 contrôles : ressources servies, métadonnées, balisage, absence d'appel vers
+un domaine tiers, erreurs JavaScript, débordement horizontal, et cohérence du
+moteur financier. Code de sortie non nul si l'un échoue — utilisable tel quel
+dans une intégration continue.
+
+Pour prévisualiser à la main, les chemins étant absolus il faut un serveur :
+
+```sh
+python3 -m http.server -d site 8000
+```
+
 ## Limites
 
 Les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un
