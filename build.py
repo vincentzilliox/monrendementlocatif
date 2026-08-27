@@ -30,12 +30,20 @@ DESCRIPTION = (
 ROSE = (0xE1, 0x0F, 0xA6)          # rose peps du logotype
 
 # Géométrie dessinée dans un carré de 32 unités, réutilisée par le SVG et le
-# rastériseur : une maison en bas à gauche, une courbe qui monte vers la droite.
-MAISON = [(9.0, 12.6), (16.4, 19.6), (13.9, 19.6), (13.9, 26.6),
-          (4.1, 26.6), (4.1, 19.6), (1.6, 19.6)]
-COURBE = [(16.2, 23.4), (20.4, 18.9), (24.0, 20.4), (28.6, 10.2)]
-TRAIT = 2.9
-POINT_FINAL = 2.0
+# rastériseur : la maison au centre, la courbe qui passe derrière elle.
+#
+# Maison sans débord de toit : un pentagone franc, qui dégage assez d'espace
+# pour que la courbe ressorte de part et d'autre sans frôler le liseré.
+# Boîte de 8,5 à 23,5 en x et de 8,5 à 23,5 en y — centrée sur 16.
+MAISON = [(16.0, 8.5), (23.5, 15.5), (23.5, 23.5), (8.5, 23.5), (8.5, 15.5)]
+
+# Les deux tronçons visibles doivent avoir des pentes nettement différentes :
+# doux à gauche, raide à droite. C'est ce contraste qui fait lire une courbe
+# qui s'envole, là où deux moignons parallèles ne liraient qu'une barre.
+COURBE = [(1.9, 26.1), (9.0, 22.0), (17.0, 18.0), (24.8, 12.0), (29.4, 6.0)]
+TRAIT = 2.7
+POINT_FINAL = 1.9
+ECART = 1.5          # liseré de fond qui sépare la courbe du contour de la maison
 
 
 def _sdf_carre_arrondi(x, y, cote=32.0, r=7.0):
@@ -55,9 +63,12 @@ def _dans_polygone(x, y, sommets):
     return dedans
 
 
-def _distance_polyligne(x, y, sommets):
+def _distance_polyligne(x, y, sommets, ferme=False):
+    segments = list(zip(sommets, sommets[1:]))
+    if ferme:
+        segments.append((sommets[-1], sommets[0]))
     best = 1e9
-    for (x1, y1), (x2, y2) in zip(sommets, sommets[1:]):
+    for (x1, y1), (x2, y2) in segments:
         dx, dy = x2 - x1, y2 - y1
         long2 = dx * dx + dy * dy
         t = 0.0 if long2 == 0 else max(0.0, min(1.0, ((x - x1) * dx + (y - y1) * dy) / long2))
@@ -80,9 +91,14 @@ def dessiner_icone(taille):
             i = (py * n + px) * 4
             if _sdf_carre_arrondi(x, y) > 0:
                 continue                                   # hors du carré : transparent
-            blanc = (_dans_polygone(x, y, MAISON)
-                     or _distance_polyligne(x, y, COURBE) <= TRAIT / 2
-                     or math.hypot(x - fin[0], y - fin[1]) <= POINT_FINAL)
+            # Ordre de superposition : fond, courbe, liseré de fond, maison.
+            if _dans_polygone(x, y, MAISON):
+                blanc = True                               # la maison passe devant
+            elif _distance_polyligne(x, y, MAISON, ferme=True) <= ECART:
+                blanc = False                              # le liseré efface la courbe
+            else:
+                blanc = (_distance_polyligne(x, y, COURBE) <= TRAIT / 2
+                         or math.hypot(x - fin[0], y - fin[1]) <= POINT_FINAL)
             haute[i:i + 4] = bytes((255, 255, 255, 255)) if blanc else bytes((*ROSE, 255))
 
     # moyenne de chaque bloc s×s
@@ -146,12 +162,17 @@ def ecrire_png(chemin, taille):
     chemin.write_bytes(png)
 
 
+# Le contour de la maison est d'abord tracé en couleur de fond, deux fois plus
+# large que l'écart voulu : la moitié extérieure creuse le liseré, la moitié
+# intérieure est recouverte par le remplissage blanc qui suit.
 FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="7" fill="#{rose}"/>
-  <path d="{maison}Z" fill="#fff"/>
   <path d="{courbe}" fill="none" stroke="#fff" stroke-width="{trait}"
         stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="{fx}" cy="{fy}" r="{pt}" fill="#fff"/>
+  <path d="{maison}Z" fill="none" stroke="#{rose}" stroke-width="{liseré}"
+        stroke-linejoin="round"/>
+  <path d="{maison}Z" fill="#fff"/>
 </svg>
 """
 
@@ -174,7 +195,8 @@ def main():
         rose="%02X%02X%02X" % ROSE,
         maison="M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " ",
         courbe="M " + " L ".join(f"{x} {y}" for x, y in COURBE),
-        trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL)
+        trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL,
+        **{"liseré": ECART * 2})
     (SITE / "assets" / "favicon.svg").write_text(svg, encoding="utf-8")
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
