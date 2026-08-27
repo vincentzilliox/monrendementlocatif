@@ -9,6 +9,7 @@ sitemap, et les en-têtes Cloudflare Pages.
     python3 build.py        ->  site/
 """
 
+import math
 import pathlib
 import re
 import struct
@@ -26,53 +27,80 @@ DESCRIPTION = (
     "courants et en pouvoir d'achat. Point mort, meilleure année de revente, et "
     "comparaison avec le Livret A, un fonds euros et la bourse."
 )
-VIOLET = (0x70, 0x40, 0xD8)
+ROSE = (0xE1, 0x0F, 0xA6)          # rose peps du logotype
+
+# Géométrie dessinée dans un carré de 32 unités, réutilisée par le SVG et le
+# rastériseur : une maison en bas à gauche, une courbe qui monte vers la droite.
+MAISON = [(9.0, 12.6), (16.4, 19.6), (13.9, 19.6), (13.9, 26.6),
+          (4.1, 26.6), (4.1, 19.6), (1.6, 19.6)]
+COURBE = [(16.2, 23.4), (20.4, 18.9), (24.0, 20.4), (28.6, 10.2)]
+TRAIT = 2.9
+POINT_FINAL = 2.0
 
 
-# ---------------------------------------------------------------- favicon
+def _sdf_carre_arrondi(x, y, cote=32.0, r=7.0):
+    qx = abs(x - cote / 2) - (cote / 2 - r)
+    qy = abs(y - cote / 2) - (cote / 2 - r)
+    return math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - r
+
+
+def _dans_polygone(x, y, sommets):
+    dedans = False
+    j = len(sommets) - 1
+    for i, (xi, yi) in enumerate(sommets):
+        xj, yj = sommets[j]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            dedans = not dedans
+        j = i
+    return dedans
+
+
+def _distance_polyligne(x, y, sommets):
+    best = 1e9
+    for (x1, y1), (x2, y2) in zip(sommets, sommets[1:]):
+        dx, dy = x2 - x1, y2 - y1
+        long2 = dx * dx + dy * dy
+        t = 0.0 if long2 == 0 else max(0.0, min(1.0, ((x - x1) * dx + (y - y1) * dy) / long2))
+        best = min(best, math.hypot(x - (x1 + t * dx), y - (y1 + t * dy)))
+    return best
+
+
 def dessiner_icone(taille):
-    """Carré violet arrondi, avec une courbe ascendante blanche. Renvoie du RGBA."""
-    r = taille * 7 // 32                      # rayon des coins
-    trait = max(2, taille // 11)
-    pts = [(0.22, 0.70), (0.43, 0.47), (0.60, 0.60), (0.80, 0.30)]
-    sommets = [(x * taille, y * taille) for x, y in pts]
+    """Rendu suréchantillonné puis moyenné : des bords lisses même à 32 px."""
+    s = 4 if taille <= 64 else 2
+    n = taille * s
+    echelle = 32.0 / n
+    fin = COURBE[-1]
 
-    def dans_le_carre(x, y):
-        for cx, cy in ((r, r), (taille - r, r), (r, taille - r), (taille - r, taille - r)):
-            if (x < r or x > taille - r) and (y < r or y > taille - r):
-                if (x - cx) ** 2 + (y - cy) ** 2 <= r * r:
-                    return True
-                continue
-        return not (x < r or x > taille - r) or not (y < r or y > taille - r)
+    haute = bytearray(n * n * 4)
+    for py in range(n):
+        y = (py + 0.5) * echelle
+        for px in range(n):
+            x = (px + 0.5) * echelle
+            i = (py * n + px) * 4
+            if _sdf_carre_arrondi(x, y) > 0:
+                continue                                   # hors du carré : transparent
+            blanc = (_dans_polygone(x, y, MAISON)
+                     or _distance_polyligne(x, y, COURBE) <= TRAIT / 2
+                     or math.hypot(x - fin[0], y - fin[1]) <= POINT_FINAL)
+            haute[i:i + 4] = bytes((255, 255, 255, 255)) if blanc else bytes((*ROSE, 255))
 
-    def distance_au_trace(px, py):
-        best = 1e9
-        for (x1, y1), (x2, y2) in zip(sommets, sommets[1:]):
-            dx, dy = x2 - x1, y2 - y1
-            longueur = dx * dx + dy * dy
-            t = 0 if longueur == 0 else max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / longueur))
-            best = min(best, math_hypot(px - (x1 + t * dx), py - (y1 + t * dy)))
-        return best
-
-    pixels = bytearray()
+    # moyenne de chaque bloc s×s
+    sortie = bytearray()
+    aire = s * s
     for y in range(taille):
         for x in range(taille):
-            cx, cy = x + 0.5, y + 0.5
-            if not dans_le_carre(cx, cy):
-                pixels += bytes((0, 0, 0, 0))
-            elif distance_au_trace(cx, cy) <= trait / 2:
-                pixels += bytes((255, 255, 255, 255))
-            else:
-                pixels += bytes((*VIOLET, 255))
-    return bytes(pixels)
+            r = v = b = a = 0
+            for dy in range(s):
+                for dx in range(s):
+                    i = ((y * s + dy) * n + (x * s + dx)) * 4
+                    r += haute[i]; v += haute[i + 1]; b += haute[i + 2]; a += haute[i + 3]
+            sortie += bytes((r // aire, v // aire, b // aire, a // aire))
+    return bytes(sortie)
 
 
-def math_hypot(a, b):
-    return (a * a + b * b) ** 0.5
-
-
-def ecrire_ico(chemin, taille=32):
-    """ICO minimal : une image 32 bits, données BGRA de bas en haut, masque AND vide."""
+def _image_ico(taille):
+    """Un DIB 32 bits : en-tête, pixels BGRA de bas en haut, masque AND vide."""
     rgba = dessiner_icone(taille)
     lignes = []
     for y in range(taille - 1, -1, -1):            # le BMP se lit du bas vers le haut
@@ -81,18 +109,25 @@ def ecrire_ico(chemin, taille=32):
             i = (y * taille + x) * 4
             r, g, b, a = rgba[i:i + 4]
             ligne += bytes((b, g, r, a))
-
         lignes.append(bytes(ligne))
     xor = b"".join(lignes)
     octets_masque = ((taille + 31) // 32) * 4      # lignes alignées sur 4 octets
     and_mask = b"\x00" * (octets_masque * taille)
-
     entete = struct.pack("<IiiHHIIiiII", 40, taille, taille * 2, 1, 32, 0,
                          len(xor) + len(and_mask), 0, 0, 0, 0)
-    image = entete + xor + and_mask
-    ico = struct.pack("<HHH", 0, 1, 1)
-    ico += struct.pack("<BBBBHHII", taille % 256, taille % 256, 0, 0, 1, 32, len(image), 22)
-    chemin.write_bytes(ico + image)
+    return entete + xor + and_mask
+
+
+def ecrire_ico(chemin, tailles=(16, 32)):
+    """ICO multi-tailles : les onglets non-retina piochent le 16, les autres le 32."""
+    images = [_image_ico(t) for t in tailles]
+    offset = 6 + 16 * len(images)                  # ICONDIR + une entrée par image
+    entrees = b""
+    for taille, image in zip(tailles, images):
+        entrees += struct.pack("<BBBBHHII", taille % 256, taille % 256, 0, 0,
+                               1, 32, len(image), offset)
+        offset += len(image)
+    chemin.write_bytes(struct.pack("<HHH", 0, 1, len(images)) + entrees + b"".join(images))
 
 
 def ecrire_png(chemin, taille):
@@ -111,10 +146,12 @@ def ecrire_png(chemin, taille):
     chemin.write_bytes(png)
 
 
-FAVICON_SVG = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#{VIOLET[0]:02X}{VIOLET[1]:02X}{VIOLET[2]:02X}"/>
-  <path d="M7 22.4 L13.8 15 L19.2 19.2 L25.6 9.6" fill="none" stroke="#fff"
-        stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#{rose}"/>
+  <path d="{maison}Z" fill="#fff"/>
+  <path d="{courbe}" fill="none" stroke="#fff" stroke-width="{trait}"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="{fx}" cy="{fy}" r="{pt}" fill="#fff"/>
 </svg>
 """
 
@@ -133,7 +170,12 @@ def main():
 
     (SITE / "css" / "style.css").write_text(style + "\n", encoding="utf-8")
     (SITE / "js" / "app.js").write_text(script + "\n", encoding="utf-8")
-    (SITE / "assets" / "favicon.svg").write_text(FAVICON_SVG, encoding="utf-8")
+    svg = FAVICON_SVG.format(
+        rose="%02X%02X%02X" % ROSE,
+        maison="M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " ",
+        courbe="M " + " L ".join(f"{x} {y}" for x, y in COURBE),
+        trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL)
+    (SITE / "assets" / "favicon.svg").write_text(svg, encoding="utf-8")
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
 
