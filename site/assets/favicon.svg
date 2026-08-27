@@ -6,4 +6,6 @@
   <path d="M 16.0 8.5 L 23.5 15.5 L 23.5 23.5 L 8.5 23.5 L 8.5 15.5 Z" fill="none" stroke="#E10FA6" stroke-width="3.0"
         stroke-linejoin="round"/>
   <path d="M 16.0 8.5 L 23.5 15.5 L 23.5 23.5 L 8.5 23.5 L 8.5 15.5 Z" fill="#fff"/>
+  <rect x="11.3" y="17.6" width="3.4" height="3.4" fill="#E10FA6"/>
+  <rect x="17.3" y="17.6" width="3.4" height="3.4" fill="#E10FA6"/>
 </svg>

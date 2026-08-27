@@ -45,6 +45,11 @@ TRAIT = 2.7
 POINT_FINAL = 1.9
 ECART = 1.5          # liseré de fond qui sépare la courbe du contour de la maison
 
+# Deux fenêtres évidées dans le corps de la maison, en x0, y0, x1, y1.
+# Elles laissent voir le fond, pas la courbe : sinon le trait blanc réapparaîtrait
+# par la fenêtre et brouillerait la lecture.
+FENETRES = [(11.3, 17.6, 14.7, 21.0), (17.3, 17.6, 20.7, 21.0)]
+
 
 def _sdf_carre_arrondi(x, y, cote=32.0, r=7.0):
     qx = abs(x - cote / 2) - (cote / 2 - r)
@@ -76,8 +81,12 @@ def _distance_polyligne(x, y, sommets, ferme=False):
     return best
 
 
-def dessiner_icone(taille):
-    """Rendu suréchantillonné puis moyenné : des bords lisses même à 32 px."""
+def dessiner_icone(taille, fenetres=True):
+    """Rendu suréchantillonné puis moyenné : des bords lisses même à 32 px.
+
+    `fenetres` est désactivé aux très petites tailles, où des ouvertures de moins
+    de deux pixels saliraient la maison au lieu de la détailler.
+    """
     s = 4 if taille <= 64 else 2
     n = taille * s
     echelle = 32.0 / n
@@ -91,9 +100,10 @@ def dessiner_icone(taille):
             i = (py * n + px) * 4
             if _sdf_carre_arrondi(x, y) > 0:
                 continue                                   # hors du carré : transparent
-            # Ordre de superposition : fond, courbe, liseré de fond, maison.
+            # Ordre de superposition : fond, courbe, liseré de fond, maison, fenêtres.
             if _dans_polygone(x, y, MAISON):
-                blanc = True                               # la maison passe devant
+                blanc = not (fenetres and any(
+                    x0 <= x <= x1 and y0 <= y <= y1 for x0, y0, x1, y1 in FENETRES))
             elif _distance_polyligne(x, y, MAISON, ferme=True) <= ECART:
                 blanc = False                              # le liseré efface la courbe
             else:
@@ -117,7 +127,7 @@ def dessiner_icone(taille):
 
 def _image_ico(taille):
     """Un DIB 32 bits : en-tête, pixels BGRA de bas en haut, masque AND vide."""
-    rgba = dessiner_icone(taille)
+    rgba = dessiner_icone(taille, fenetres=taille >= 32)
     lignes = []
     for y in range(taille - 1, -1, -1):            # le BMP se lit du bas vers le haut
         ligne = bytearray()
@@ -173,6 +183,7 @@ FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <path d="{maison}Z" fill="none" stroke="#{rose}" stroke-width="{liseré}"
         stroke-linejoin="round"/>
   <path d="{maison}Z" fill="#fff"/>
+{fenetres}
 </svg>
 """
 
@@ -196,7 +207,11 @@ def main():
         maison="M " + " L ".join(f"{x} {y}" for x, y in MAISON) + " ",
         courbe="M " + " L ".join(f"{x} {y}" for x, y in COURBE),
         trait=TRAIT, fx=COURBE[-1][0], fy=COURBE[-1][1], pt=POINT_FINAL,
-        **{"liseré": ECART * 2})
+        **{"liseré": ECART * 2},
+        fenetres="\n".join(
+            f'  <rect x="{x0}" y="{y0}" width="{round(x1 - x0, 2)}" '
+            f'height="{round(y1 - y0, 2)}" fill="#%02X%02X%02X"/>' % ROSE
+            for x0, y0, x1, y1 in FENETRES))
     (SITE / "assets" / "favicon.svg").write_text(svg, encoding="utf-8")
     ecrire_ico(SITE / "favicon.ico")
     ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
