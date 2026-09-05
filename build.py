@@ -381,7 +381,7 @@ function vitrine(){
 
 let vid;
 addEventListener("resize", () => { clearTimeout(vid); vid = setTimeout(vitrine, 140); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setTimeout(vitrine, 30));
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => setTimeout(vitrine, 30));
 document.addEventListener("theme", vitrine);
 vitrine();
 """
@@ -444,9 +444,11 @@ def _page(tete, corps, scripts):
 SITE_JS = """"use strict";
 (function(){
   const b = document.getElementById("theme");
+  // Sombre par défaut : seule une préférence système explicitement claire,
+  // ou un choix manuel, fait basculer en clair.
   const estSombre = () => {
     const t = document.documentElement.getAttribute("data-theme");
-    return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    return t ? t === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
   };
   const sync = () => {
     if(!b) return;
@@ -462,7 +464,7 @@ SITE_JS = """"use strict";
     sync();
     document.dispatchEvent(new Event("theme"));
   });
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", sync);
+  matchMedia("(prefers-color-scheme: light)").addEventListener("change", sync);
   sync();
   document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
 })();

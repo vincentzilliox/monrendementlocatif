@@ -1237,9 +1237,11 @@ $("copy").addEventListener("click", async () => {
 
 // L'interrupteur reflète le thème réellement affiché, y compris quand aucun choix
 // n'a été fait et que c'est le système qui décide.
+// Sombre par défaut : seule une préférence système explicitement claire, ou
+// un choix manuel, fait basculer en clair.
 function estSombre(){
   const t = document.documentElement.getAttribute("data-theme");
-  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  return t ? t === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
 }
 function syncTheme(){
   const nuit = estSombre();
@@ -1260,7 +1262,7 @@ try{
 
 let rid;
 addEventListener("resize", () => { clearTimeout(rid); rid = setTimeout(render, 140); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncTheme(); render(); });
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { syncTheme(); render(); });
 
 /* ---------- exemples, régime, lien, export ---------- */
 function appliquerRegime(rg){

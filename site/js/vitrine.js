@@ -796,6 +796,6 @@ function vitrine(){
 
 let vid;
 addEventListener("resize", () => { clearTimeout(vid); vid = setTimeout(vitrine, 140); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setTimeout(vitrine, 30));
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => setTimeout(vitrine, 30));
 document.addEventListener("theme", vitrine);
 vitrine();

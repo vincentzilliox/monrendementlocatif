@@ -3,37 +3,38 @@
      1. Interface : monochrome (noir / blanc / gris). Jamais de couleur.
      2. Données   : --up / --down pour gain et perte, --d1..--d4 pour les
         séries. Réservées aux chiffres et aux graphiques.
-   Thème clair par défaut ; sombre via [data-theme="dark"] ou l'OS.
+   Sombre par défaut ; clair via [data-theme="light"] ou l'OS quand elle
+   préfère explicitement le clair. Sans préférence connue, on reste sombre.
    ===================================================================== */
 :root{
-  color-scheme:light;
-  --bg:#ffffff; --surface:#fafafa; --surface-2:#f0f0f0; --border:#e5e5e5;
-  --text:#111111; --text-muted:#737373;
-  --accent:#111111; --accent-text:#ffffff; --link:#111111;
-  --btn-bg:#ffffff; --input-bg:#ffffff; --ring:rgba(0,0,0,.08);
-  --up:#00a878; --down:#e5254f; --up-bg:rgba(0,168,120,.14); --down-bg:rgba(229,37,79,.14);
-  --d1:#ff6a00; --d2:#0077ff; --d3:#8a2be2; --d4:#c9a800; --d-neutral:var(--text-muted);
-  --radius:6px; --radius-lg:8px;
-  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Helvetica,Arial,sans-serif;
-}
-:root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#000000; --surface:#0a0a0a; --surface-2:#1a1a1a; --border:#262626;
   --text:#ededed; --text-muted:#8a8a8a;
   --accent:#ffffff; --accent-text:#000000; --link:#ededed;
   --btn-bg:#111111; --input-bg:#0a0a0a; --ring:rgba(255,255,255,.12);
   --up:#00e5a0; --down:#ff3b6b; --up-bg:rgba(0,229,160,.16); --down-bg:rgba(255,59,107,.16);
-  --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a;
+  --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a; --d-neutral:var(--text-muted);
+  --radius:6px; --radius-lg:8px;
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Helvetica,Arial,sans-serif;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    color-scheme:dark;
-    --bg:#000000; --surface:#0a0a0a; --surface-2:#1a1a1a; --border:#262626;
-    --text:#ededed; --text-muted:#8a8a8a;
-    --accent:#ffffff; --accent-text:#000000; --link:#ededed;
-    --btn-bg:#111111; --input-bg:#0a0a0a; --ring:rgba(255,255,255,.12);
-    --up:#00e5a0; --down:#ff3b6b; --up-bg:rgba(0,229,160,.16); --down-bg:rgba(255,59,107,.16);
-    --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a;
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#ffffff; --surface:#fafafa; --surface-2:#f0f0f0; --border:#e5e5e5;
+  --text:#111111; --text-muted:#737373;
+  --accent:#111111; --accent-text:#ffffff; --link:#111111;
+  --btn-bg:#ffffff; --input-bg:#ffffff; --ring:rgba(0,0,0,.08);
+  --up:#00a878; --down:#e5254f; --up-bg:rgba(0,168,120,.14); --down-bg:rgba(229,37,79,.14);
+  --d1:#ff6a00; --d2:#0077ff; --d3:#8a2be2; --d4:#c9a800;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    color-scheme:light;
+    --bg:#ffffff; --surface:#fafafa; --surface-2:#f0f0f0; --border:#e5e5e5;
+    --text:#111111; --text-muted:#737373;
+    --accent:#111111; --accent-text:#ffffff; --link:#111111;
+    --btn-bg:#ffffff; --input-bg:#ffffff; --ring:rgba(0,0,0,.08);
+    --up:#00a878; --down:#e5254f; --up-bg:rgba(0,168,120,.14); --down-bg:rgba(229,37,79,.14);
+    --d1:#ff6a00; --d2:#0077ff; --d3:#8a2be2; --d4:#c9a800;
   }
 }
 
