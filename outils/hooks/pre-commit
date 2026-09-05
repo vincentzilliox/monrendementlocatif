@@ -1,0 +1,26 @@
+#!/bin/sh
+# site/ est versionné, mais c'est build.py qui l'écrit. Rien n'obligeait à le
+# relancer avant de committer : on pouvait donc publier une version périmée,
+# Cloudflare servant site/ tel quel.
+#
+# Installation :  ln -sf ../../outils/hooks/pre-commit .git/hooks/pre-commit
+
+racine=$(git rev-parse --show-toplevel)
+cd "$racine" || exit 1
+
+if ! python3 build.py >/tmp/build-hook.log 2>&1; then
+  echo "pre-commit : build.py a échoué." >&2
+  tail -5 /tmp/build-hook.log >&2
+  exit 1
+fi
+
+# On compare l'arbre de travail à l'index, pas au dernier commit : ce qui est
+# déjà indexé est justement ce qu'on s'apprête à committer. Seul ce que build.py
+# vient de changer par-dessus signale un site/ périmé.
+if [ -n "$(git diff --name-only -- site/)" ]; then
+  echo "pre-commit : site/ n'était pas à jour. build.py vient de le régénérer :" >&2
+  git diff --name-only -- site/ | sed 's/^/  /' >&2
+  echo >&2
+  echo "  Relisez le diff, puis :  git add site/ && git commit …" >&2
+  exit 1
+fi

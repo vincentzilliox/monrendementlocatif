@@ -1,11 +1,10 @@
-/* ═════════ modèle et dessin — bloc partagé avec la vitrine ═════════
-   Tout ce qui calcule ou dessine, et rien qui touche au formulaire :
-   build.py en fait aussi js/vitrine.js, le script de la page d'accueil.
-   Ne rien ajouter ici qui lise le DOM de la calculatrice.
-   ══════════════════════════════════════════════════════════════════ */
-
 "use strict";
-const $ = id => document.getElementById(id);
+/* ═════════════════════════════════════════════════════════════════
+   moteur — calcul pur, aucun accès au document.
+   Rien ici ne doit lire le DOM : outils/verifier.py le contrôle,
+   et le harnais JavaScriptCore exécute ce fichier tel quel.
+   ═════════════════════════════════════════════════════════════════ */
+
 const eur = new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0});
 const eur1 = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:0});
 const pct = v => (v<0?"−":"") + Math.abs(v*100).toFixed(1).replace(".",",")+" %";
@@ -330,6 +329,82 @@ function compute(p){
   };
 }
 
+/* ---------- comparatif des régimes ---------- */
+const REGIMES = [
+  ["micro-foncier", "Nu\nmicro-foncier"],
+  ["reel-foncier",  "Nu\nau réel"],
+  ["lmnp-micro",    "Meublé\nmicro-BIC"],
+  ["lmnp-reel",     "Meublé\nLMNP au réel"]
+];
+// Chaque régime emporte ses réglages par défaut (prélèvements sociaux, CFE,
+// abattement) ; le régime en cours garde les valeurs saisies, pour coller au verdict.
+function comparerRegimes(p, courant){
+  return REGIMES.map(([rg, label]) => {
+    let r;
+    if(rg === p.regime) r = courant;
+    else {
+      const q = Object.assign({}, p, {regime:rg, ps:parseFloat(PS_LOYERS[rg]), cfe:parseFloat(CFE_DEFAUT[rg])});
+      if(ABATT_DEFAUT[rg]) q.abattement = parseFloat(ABATT_DEFAUT[rg]);
+      r = compute(q);
+    }
+    const f = r.final;
+    return {rg, label, tri:f.tri, triReel:f.triReel, gain:f.gain,
+      impots: r.rows.reduce((s,x) => s + x.impot, 0) + f.impotPV + f.repriseDF};
+  });
+}
+
+/* ---------- sensibilité ---------- */
+const SENS = [
+  {k:"prix",      nom:"Prix d'achat",            pas:v => v*0.10, txt:"10 %"},
+  {k:"loyer",     nom:"Loyer",                   pas:v => v*0.10, txt:"10 %"},
+  {k:"taux",      nom:"Taux du crédit",          pas:() => 1,     txt:"1 pt"},
+  {k:"vacance",   nom:"Vacance locative",        pas:() => 5,     txt:"5 pts"},
+  {k:"indexPrix", nom:"Revalorisation du bien",  pas:() => 1,     txt:"1 pt/an"},
+  {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"}
+];
+function sensibilite(p, triRef){
+  const essai = (s, signe) => {
+    const q = Object.assign({}, p);
+    if(s.k === "travaux"){
+      q.items = p.items.map(it => Object.assign({}, it, {montant: it.montant*(1 + signe*0.2)}));
+      q.travaux = q.items.reduce((a,it) => a + it.montant, 0);
+    } else {
+      const v = p[s.k] + signe*s.pas(p[s.k]);
+      q[s.k] = s.k === "indexPrix" ? v : Math.max(0, v);
+    }
+    const t = compute(q).final.tri;
+    return t === null ? null : t;
+  };
+  return SENS.map(s => {
+    const moins = essai(s, -1), plus = essai(s, 1);
+    if(moins === null || plus === null) return null;
+    const dm = moins - triRef, dp = plus - triRef;
+    const fav = dp >= dm ? {d:dp, tri:plus, s:"+"} : {d:dm, tri:moins, s:"−"};
+    const def = dp >= dm ? {d:dm, tri:moins, s:"−"} : {d:dp, tri:plus, s:"+"};
+    return {nom:s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
+      amplitude: Math.max(Math.abs(dp), Math.abs(dm))};
+  }).filter(r => r && r.amplitude > 1e-6).sort((a,b) => b.amplitude - a.amplitude);
+}
+const pts = v => (v>=0?"+":"−") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt" + (Math.abs(v*100) >= 1.95 ? "s" : "");
+const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €";
+
+// Le verdict en une phrase, sur le rendement en pouvoir d'achat : battre la
+// bourse, battre seulement l'inflation, ou ne rien battre du tout. Écrit ici
+// pour que la calculatrice et la page d'accueil disent exactement la même chose.
+function avis(triReel, bourseReel){
+  if(triReel === null || !isFinite(triReel)) return null;
+  if(triReel > bourseReel)
+    return `Excellente affaire. Sur vos hypothèses, le projet fait mieux que la bourse — l'un des placements les plus rentables sur longue période, et le plus difficile à battre une fois l'impôt payé.`;
+  if(triReel > 0)
+    return `Belle réserve de valeur. Le projet ne rattrape pas la bourse, mais il bat l'inflation : votre capital garde son pouvoir d'achat, ce que ni un compte courant ni un livret réglementé ne permettent aujourd'hui.`;
+  return `Le rendement ne suit pas l'inflation. Vous récupérerez plus d'euros qu'engagés, mais ils achèteront moins : à ces hypothèses, l'opération vous appauvrit en pouvoir d'achat.`;
+}
+/* ═════════════════════════════════════════════════════════════════
+   graphiques — dessin SVG et infobulles.
+   A le droit au document, jamais aux champs du formulaire :
+   ces fonctions servent aussi la page d'accueil.
+   ═════════════════════════════════════════════════════════════════ */
+
 /* ---------- charts ---------- */
 // Choisit le pas qui donne le nombre de graduations le plus proche de la cible,
 // en préférant le pas le plus fin à égalité. Un simple arrondi du pas brut
@@ -359,7 +434,16 @@ function niceTicks(min, max, count){
 }
 let CLIP_N = 0;
 const svgEl = (n,a) => { const e=document.createElementNS("http://www.w3.org/2000/svg",n); for(const k in a) e.setAttribute(k,a[k]); return e; };
-const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+// Les couleurs sont lues au runtime pour suivre le thème, mais elles ne bougent
+// pas pendant un rendu : sept graphiques les redemandaient une soixantaine de
+// fois au navigateur. On les retient le temps d'un cycle, et `oublierTheme()`
+// vide le cache — la bascule de thème provoque de toute façon un nouveau rendu.
+const _teintes = new Map();
+const css = n => {
+  if(!_teintes.has(n)) _teintes.set(n, getComputedStyle(document.body).getPropertyValue(n).trim());
+  return _teintes.get(n);
+};
+function oublierTheme(){ _teintes.clear(); }
 // Une barre verte se lit à 2,9:1 en thème clair : suffisant pour un tracé,
 // pas pour le chiffre posé à côté. --up-ink / --down-ink sont les mêmes teintes
 // assombries au seuil AA ; tout ce qui est texte y passe.
@@ -719,62 +803,78 @@ function tipRow(color, label, value){
   return `<div class="tr"><span class="tl"><i class="dot" style="background:${color}"></i>${label}</span><span class="tv">${value}</span></div>`;
 }
 
-/* ---------- comparatif des régimes ---------- */
-const REGIMES = [
-  ["micro-foncier", "Nu\nmicro-foncier"],
-  ["reel-foncier",  "Nu\nau réel"],
-  ["lmnp-micro",    "Meublé\nmicro-BIC"],
-  ["lmnp-reel",     "Meublé\nLMNP au réel"]
-];
-// Chaque régime emporte ses réglages par défaut (prélèvements sociaux, CFE,
-// abattement) ; le régime en cours garde les valeurs saisies, pour coller au verdict.
-function comparerRegimes(p, courant){
-  return REGIMES.map(([rg, label]) => {
-    let r;
-    if(rg === p.regime) r = courant;
-    else {
-      const q = Object.assign({}, p, {regime:rg, ps:parseFloat(PS_LOYERS[rg]), cfe:parseFloat(CFE_DEFAUT[rg])});
-      if(ABATT_DEFAUT[rg]) q.abattement = parseFloat(ABATT_DEFAUT[rg]);
-      r = compute(q);
-    }
-    const f = r.final;
-    return {rg, label, tri:f.tri, triReel:f.triReel, gain:f.gain,
-      impots: r.rows.reduce((s,x) => s + x.impot, 0) + f.impotPV + f.repriseDF};
-  });
+/* ---------- configurations partagées ---------- */
+// Les seuils fiscaux créent de vraies ruptures de pente : sans repère, elles
+// passent pour des artefacts de calcul.
+function jalonsFiscaux(p, rows){
+  const j = [
+    {y:6,  text:"seuil 5 ans"},
+    {y:22, text:"exonéré IR"},
+    {y:30, text:"exonéré PS"}
+  ].filter(j => j.y <= p.horizon).map(j => ({i:j.y-1, text:j.text}));
+  if(p.regime === "reel-foncier" && p.horizon >= 4 && rows.some(r => r.repriseDF > 0.5)){
+    j.unshift({i:3, text:"fin de reprise"});
+  }
+  return j;
 }
 
-/* ---------- sensibilité ---------- */
-const SENS = [
-  {k:"prix",      nom:"Prix d'achat",            pas:v => v*0.10, txt:"10 %"},
-  {k:"loyer",     nom:"Loyer",                   pas:v => v*0.10, txt:"10 %"},
-  {k:"taux",      nom:"Taux du crédit",          pas:() => 1,     txt:"1 pt"},
-  {k:"vacance",   nom:"Vacance locative",        pas:() => 5,     txt:"5 pts"},
-  {k:"indexPrix", nom:"Revalorisation du bien",  pas:() => 1,     txt:"1 pt/an"},
-  {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"}
-];
-function sensibilite(p, triRef){
-  const essai = (s, signe) => {
-    const q = Object.assign({}, p);
-    if(s.k === "travaux"){
-      q.items = p.items.map(it => Object.assign({}, it, {montant: it.montant*(1 + signe*0.2)}));
-      q.travaux = q.items.reduce((a,it) => a + it.montant, 0);
-    } else {
-      const v = p[s.k] + signe*s.pas(p[s.k]);
-      q[s.k] = s.k === "indexPrix" ? v : Math.max(0, v);
+// « Gagné ou perdu » : la calculatrice et la page d'accueil tracent le même
+// graphique des mêmes données. Écrit une seule fois — l'entretenir en double
+// avait déjà fait perdre les repères de seuils fiscaux côté accueil.
+function cfgGainNet(p, R, opts){
+  const rows = R.rows;
+  const mort = rows.findIndex(r => r.gainImmo >= 0);
+  return Object.assign({
+    x: rows.map(r => String(r.y)),
+    height: 270, padLeft: 78, zero: true,
+    label: "Gain net immobilier comparé à trois placements",
+    fmtAxis: kEur,
+    fmtVal: sEur,
+    mark: mort > 0 ? {i:mort, text:`point mort · année ${rows[mort].y}`} : null,
+    milestones: jalonsFiscaux(p, rows),
+    // Pas d'aire ici : quatre courbes se croisent, des remplissages superposés
+    // rendraient les zones d'intersection illisibles. Les trois placements
+    // forment une rampe ordonnée du plus risqué au plus sûr, doublée d'un
+    // motif de trait distinct : l'identité ne repose jamais sur la seule couleur.
+    series: [
+      {color:"--d1", nom:"Immobilier", values: rows.map(r=>r.gainImmo), width:2.4},
+      {color:"--d2", nom:"Bourse", values: rows.map(r=>r.gainBourse)},
+      {color:"--d3", nom:"Fonds euros", values: rows.map(r=>r.gainFonds), dash:"7 4"},
+      {color:"--d4", nom:"Livret A", values: rows.map(r=>r.gainLivret), dash:"2 3"}
+    ],
+    tip: i => {
+      const r = rows[i];
+      const meilleur = Math.max(r.gainBourse, r.gainFonds, r.gainLivret);
+      return `<div class="th">Revente fin d'année ${r.y}</div>` +
+        tipRow(css("--d1"),"Immobilier", sEur(r.gainImmo)) +
+        tipRow(css("--d2"),"Bourse", sEur(r.gainBourse)) +
+        tipRow(css("--d3"),"Fonds euros", sEur(r.gainFonds)) +
+        tipRow(css("--d4"),"Livret A", sEur(r.gainLivret)) +
+        `<div class="tr" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">` +
+        `<span class="tl">${r.gainImmo>=meilleur?"Avance sur le meilleur placement":"Retard sur le meilleur placement"}</span>` +
+        `<span class="tv">${eur.format(Math.abs(r.gainImmo-meilleur))}</span></div>` +
+        tipRow("transparent","sorti de votre poche", eur.format(r.mise)) +
+        tipRow("transparent","net de la revente", eur.format(r.netVente));
     }
-    const t = compute(q).final.tri;
-    return t === null ? null : t;
-  };
-  return SENS.map(s => {
-    const moins = essai(s, -1), plus = essai(s, 1);
-    if(moins === null || plus === null) return null;
-    const dm = moins - triRef, dp = plus - triRef;
-    const fav = dp >= dm ? {d:dp, tri:plus, s:"+"} : {d:dm, tri:moins, s:"−"};
-    const def = dp >= dm ? {d:dm, tri:moins, s:"−"} : {d:dp, tri:plus, s:"+"};
-    return {nom:s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
-      amplitude: Math.max(Math.abs(dp), Math.abs(dm))};
-  }).filter(r => r && r.amplitude > 1e-6).sort((a,b) => b.amplitude - a.amplitude);
+  }, opts || {});
 }
+
+// Sensibilité : même graphique des deux côtés, mêmes libellés.
+function cfgSensibilite(sens, triRef){
+  return {
+    label: "Sensibilité du rendement annualisé",
+    fmtAxis: v => (v>0?"+":v<0?"−":"") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt",
+    rows: sens.map(s => ({label:s.nom, lo:s.lo, hi:s.hi, loText:pts(s.lo), hiText:pts(s.hi)})),
+    tip: i => {
+      const s = sens[i];
+      return `<div class="th">${s.nom} · ±${s.txt}</div>` +
+        tipRow(css("--up"), `${s.nom} ${s.fav.s}${s.txt}`, sPct(s.fav.tri)) +
+        tipRow(css("--down"), `${s.nom} ${s.def.s}${s.txt}`, sPct(s.def.tri)) +
+        tipRow("transparent","Aujourd'hui", sPct(triRef));
+    }
+  };
+}
+
 let sensTimer = null;
 function planifier(fn){
   if(sensTimer !== null){ (window.cancelIdleCallback || clearTimeout)(sensTimer); }
@@ -782,23 +882,12 @@ function planifier(fn){
     ? requestIdleCallback(() => { sensTimer = null; fn(); }, {timeout:400})
     : setTimeout(() => { sensTimer = null; fn(); }, 60);
 }
+/* ═════════════════════════════════════════════════════════════════
+   calculatrice — lecture du formulaire, rendu, persistance.
+   Seul fichier autorisé à connaître les identifiants des champs.
+   ═════════════════════════════════════════════════════════════════ */
 
-const pts = v => (v>=0?"+":"−") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt" + (Math.abs(v*100) >= 1.95 ? "s" : "");
-const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €";
-
-// Le verdict en une phrase, sur le rendement en pouvoir d'achat : battre la
-// bourse, battre seulement l'inflation, ou ne rien battre du tout. Écrit ici
-// pour que la calculatrice et la page d'accueil disent exactement la même chose.
-function avis(triReel, bourseReel){
-  if(triReel === null || !isFinite(triReel)) return null;
-  if(triReel > bourseReel)
-    return `Excellente affaire. Sur vos hypothèses, le projet fait mieux que la bourse — l'un des placements les plus rentables sur longue période, et le plus difficile à battre une fois l'impôt payé.`;
-  if(triReel > 0)
-    return `Belle réserve de valeur. Le projet ne rattrape pas la bourse, mais il bat l'inflation : votre capital garde son pouvoir d'achat, ce que ni un compte courant ni un livret réglementé ne permettent aujourd'hui.`;
-  return `Le rendement ne suit pas l'inflation. Vous récupérerez plus d'euros qu'engagés, mais ils achèteront moins : à ces hypothèses, l'opération vous appauvrit en pouvoir d'achat.`;
-}
-
-/* ═════════ fin du bloc partagé — l'interface commence ici ═════════ */
+const $ = id => document.getElementById(id);
 
 /* ---------- formulaire ---------- */
 const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
@@ -861,6 +950,7 @@ try{
 }catch(e){}
 
 function render(){
+  oublierTheme();
   // Tant que la case est cochée, prix, loyers et charges recopient l'inflation
   // et disparaissent du panneau : trois champs de moins à régler.
   syncRegime();
@@ -1008,15 +1098,7 @@ function render(){
 
   const xs = rows.map(r=>String(r.y));
 
-  // Seuils de la fiscalité des plus-values, qui créent de vraies ruptures de pente.
-  const jalons = [
-    {y:6,  text:"seuil 5 ans"},
-    {y:22, text:"exonéré IR"},
-    {y:30, text:"exonéré PS"}
-  ].filter(j => j.y <= p.horizon).map(j => ({i:j.y-1, text:j.text}));
-  if(p.regime === "reel-foncier" && p.horizon >= 4 && rows.some(r => r.repriseDF > 0.5)){
-    jalons.unshift({i:3, text:"fin de reprise"});
-  }
+  const jalons = jalonsFiscaux(p, rows);
 
   // Les toutes premières années sont massivement négatives (frais d'acquisition non
   // amortis). En « zone lisible » on plafonne le bas du graphe sans jamais masquer
@@ -1077,38 +1159,7 @@ function render(){
       : ` À ${p.horizon} ans, il devance ${liste(bat)} mais reste derrière ${liste(perd.map(r=>r.nom))}.`;
   $("netNote").textContent = phraseMort + phraseRang;
 
-  drawChart($("plotNet"), $("tipNet"), {
-    x: xs, height: 270, padLeft: 78, label:"Gain net immobilier comparé à un placement boursier",
-    fmtAxis: (v,ref) => ref>=10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €",
-    zero:true,
-    mark: (mort > 0) ? {i:mort, text:`point mort · année ${rows[mort].y}`} : null,
-    milestones: jalons,
-    // Pas d'aire ici : quatre courbes se croisent, des remplissages superposés
-    // rendraient les zones d'intersection illisibles. Les trois placements
-    // forment une rampe ordonnée du plus risqué au plus sûr, doublée d'un
-    // motif de trait distinct : l'identité ne repose jamais sur la seule couleur.
-    fmtVal: sEur,
-    series: [
-      {color:"--d1", nom:"Immobilier", values: rows.map(r=>r.gainImmo), width:2.4},
-      {color:"--d2", nom:"Bourse", values: rows.map(r=>r.gainBourse)},
-      {color:"--d3", nom:"Fonds euros", values: rows.map(r=>r.gainFonds), dash:"7 4"},
-      {color:"--d4", nom:"Livret A", values: rows.map(r=>r.gainLivret), dash:"2 3"}
-    ],
-    tip: i => {
-      const r = rows[i];
-      const meilleur = Math.max(r.gainBourse, r.gainFonds, r.gainLivret);
-      return `<div class="th">Revente fin d'année ${r.y}</div>` +
-        tipRow(css("--d1"),"Immobilier", sEur(r.gainImmo)) +
-        tipRow(css("--d2"),"Bourse", sEur(r.gainBourse)) +
-        tipRow(css("--d3"),"Fonds euros", sEur(r.gainFonds)) +
-        tipRow(css("--d4"),"Livret A", sEur(r.gainLivret)) +
-        `<div class="tr" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">` +
-        `<span class="tl">${r.gainImmo>=meilleur?"Avance sur le meilleur placement":"Retard sur le meilleur placement"}</span>` +
-        `<span class="tv">${eur.format(Math.abs(r.gainImmo-meilleur))}</span></div>` +
-        tipRow("transparent","sorti de votre poche", eur.format(r.mise)) +
-        tipRow("transparent","net de la revente", eur.format(r.netVente));
-    }
-  });
+  drawChart($("plotNet"), $("tipNet"), cfgGainNet(p, R));
 
   drawChart($("plotCf"), $("tipCf"), {
     x: xs, height: 200, padLeft: 78, band:true, zero:true, label:"Trésorerie annuelle après impôt",
@@ -1272,18 +1323,7 @@ function renderComplements(p){
     host.querySelectorAll(".pending").forEach(el => el.remove());
     if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; return; }
     const sens = sensibilite(p, f.tri);
-    drawTornado(host, $("tipSens"), {
-      label:"Sensibilité du rendement annualisé",
-      fmtAxis: v => (v>0?"+":v<0?"−":"") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt",
-      rows: sens.map(s => ({label:s.nom, lo:s.lo, hi:s.hi, loText:pts(s.lo), hiText:pts(s.hi)})),
-      tip: i => {
-        const s = sens[i];
-        return `<div class="th">${s.nom} · ±${s.txt}</div>` +
-          tipRow(css("--up"), `${s.nom} ${s.fav.s}${s.txt}`, sPct(s.fav.tri)) +
-          tipRow(css("--down"), `${s.nom} ${s.def.s}${s.txt}`, sPct(s.def.tri)) +
-          tipRow("transparent","Aujourd'hui", sPct(f.tri));
-      }
-    });
+    drawTornado(host, $("tipSens"), cfgSensibilite(sens, f.tri));
     $("sensNote").textContent = sens.length
       ? `Le paramètre le plus sensible est ${sens[0].nom.toLowerCase()} : ${sens[0].txt} d'écart déplace le rendement de ${pts(sens[0].lo)} à ${pts(sens[0].hi)} par an.`
       : "";
@@ -1348,9 +1388,17 @@ function syncRegime(){
   // l'état, jamais les champs eux-mêmes.
   $("tvxList").classList.toggle("sans-deduc", rg !== "reel-foncier");
 }
+// Chaque frappe redessinait les sept graphiques. On laisse retomber la frappe
+// (60 ms) ; les listes et les cases gardent un rendu immédiat, le geste y étant
+// unique et la sonde de outils/verifier.py comptant dessus.
+let frappe = null;
+function rendreBientot(){
+  clearTimeout(frappe);
+  frappe = setTimeout(() => { frappe = null; render(); }, 60);
+}
 FIELDS.concat(SELECTS).forEach(k => {
   if(k === "regime") return;
-  $(k).addEventListener("input", render);
+  $(k).addEventListener("input", $(k).tagName === "SELECT" ? render : rendreBientot);
   $(k).addEventListener("change", render);
 });
 $("regime").addEventListener("change", () => { appliquerRegime($("regime").value); render(); });

@@ -44,10 +44,25 @@ Deux principes ont guidé cette passe, et méritent d'être conservés :
    couleur illisible sans qu'il bronche. Il a été réécrit pour lire la couleur
    dans la règle du composant.
 
-**Phase 2 — refactor : à faire.** Voir la section D, qui n'a pas bougé, à ceci
-près que D.3 (placement d'infobulle copié trois fois) a été factorisé en
-passant, puisque les trois fonctions étaient de toute façon réécrites pour
-l'accessibilité.
+**Phase 2 — refactor : faite.** `index.html` ne porte plus que du balisage
+(391 lignes au lieu de 2 271) ; le style et le script vivent dans `src/`, que
+`build.py` **concatène** au lieu de découper :
+
+```
+src/moteur.js + src/graphiques.js + src/calculatrice.js  ->  site/js/app.js
+src/moteur.js + src/graphiques.js + src/vitrine.js       ->  site/js/vitrine.js
+```
+
+Critère d'acceptation tenu : **toutes les pages HTML et le CSS produits sont
+identiques au bit près** avant et après le refactor, et le moteur rend les
+mêmes chiffres. Seuls les deux fichiers JS diffèrent — réordonnancement de la
+concaténation, et les configurations de graphiques désormais partagées.
+
+Ce qui était une convention est devenu un contrôle : `src/moteur.js` ne peut
+plus toucher au document, `src/graphiques.js` ne peut plus connaître un champ,
+`index.html` ne peut plus reprendre de code, et les marqueurs de découpe ne
+peuvent plus manquer, se dupliquer ou se croiser sans arrêter la construction.
+Quatre mutations l'ont vérifié.
 
 ---
 
@@ -99,28 +114,30 @@ variables réellement déclarées.
 7. ✅ Contraste de `--text-muted` en clair : 4,54:1, moins de 1 % de marge.
    **Corrigé** en `#6b6b6b` (5,11:1), vérifié automatiquement.
 
-### Limitations connues et chantiers de refactor
+### Chantiers de refactor (tous traités)
 
-8. 🟡 **`VITRINE_JS` (page d'accueil) a déjà divergé de `render()` (calculatrice)** :
-   le graphique « gagné/perdu » de la calculatrice affiche des repères de
-   seuils fiscaux (`milestones`) que la version accueil omet purement et
-   simplement — divergence silencieuse entre deux copies à synchroniser à la
-   main.
-9. 🟡 Le découpage d'`index.html` en « bloc partagé »/« interface » par
-   marqueurs texte, et le découpage de `build.py` par `.index()` sur des
-   repères HTML, ne sont protégés que par la *présence* des marqueurs, pas par
-   leur *position relative* — rien n'empêche un réordonnancement silencieux de
-   produire une page cassée sur tout le site.
-10. 🟡 `site/` est versionné dans git sans aucun garde-fou (hook, CI) qui
-    force sa resynchronisation avec les sources avant un commit.
-11. 🟡 Pas de *debounce* sur les champs numériques : `render()` redessine les
-    7 graphiques à chaque frappe.
-12. 🟡 CSS mort (`.faq`, `.visually-hidden`, `.notes`) et une variable CSS
-    fantôme (`--ink-3`, jamais définie, silencieusement vide).
+8. ✅ **`VITRINE_JS` avait divergé de `render()`** : la page d'accueil perdait
+   les repères de seuils fiscaux. `VITRINE_JS` n'existe plus ; les deux
+   graphiques communs sont écrits une seule fois. → D.2
+9. ✅ Le découpage par marqueurs ne protégeait que leur *présence*, pas leur
+   *position* : un réordonnancement des sections HTML aurait produit un
+   en-tête corrompu sur tout le site sans la moindre erreur de build. Les
+   sources sont désormais des fichiers séparés, et les trois règles de
+   séparation sont des contrôles. → D.1
+10. ✅ `site/` versionné sans garde-fou : hook `pre-commit` ajouté. → B.2
+11. ✅ Pas de *debounce* sur les champs numériques. → E.6
+12. ✅ CSS mort et variable CSS fantôme. `.visually-hidden` est conservée :
+    elle porte les équivalents textuels des graphiques. → B.6
 13. 🟢 Positif à préserver : sur mobile, le verdict (TRI + indicateurs)
     s'affiche **avant** le formulaire de 40+ champs grâce à un réordonnancement
     CSS (`order`) — bon choix UX déjà en place, à ne pas perdre dans une
     refonte.
+
+**Ce qui reste ouvert**, et c'est peu : le taux de prélèvements sociaux meublé
+à revérifier sur source primaire (A.2), la reste de duplication SVG entre les
+trois fonctions de dessin (D.3), les classes CSS mortes toujours non détectées
+automatiquement (B.6), la taille de la poignée du curseur non testée sur un
+appareil réel (E.8), et la pastille de légende à 2,93:1 assumée (E.3).
 
 ### Fausses pistes écartées après vérification
 
@@ -313,7 +330,7 @@ Cohérents : `assets.directory: "./site/"` correspond à `SITE = RACINE /
 "site"` ; `not_found_handling: "404-page"` correspond à l'écriture de
 `site/404.html` à la racine.
 
-### B.2 🟡 Aucun garde-fou n'empêche un `site/` désynchronisé
+### B.2 ✅ Aucun garde-fou n'empêchait un `site/` désynchronisé (CORRIGÉ)
 
 `site/` est **versionné dans git** alors que le README le décrit comme
 « généré, à ne pas éditer à la main ». Rien n'oblige à relancer `python3
@@ -321,10 +338,15 @@ build.py` avant un commit touchant `index.html`/`pages/`/`guides/`. Pas de
 `.github/workflows`, pas de hook git actif. Le risque : déployer une version
 périmée, Cloudflare Pages servant `site/` tel quel.
 
-**Suggestion** : hook `pre-commit` qui lance `build.py` et refuse le commit si
-`git status --porcelain site/` n'est pas vide après coup.
+**Corrigé le 2026-09-05** : `outils/hooks/pre-commit` lance `build.py` et
+refuse le commit si `site/` bouge après coup, en affichant ce qui a changé. Il
+vit dans le dépôt et s'installe d'une ligne, documentée dans le README :
 
-### B.3 🟡 Liste de nettoyage des dossiers codée en dur
+```sh
+ln -sf ../../outils/hooks/pre-commit .git/hooks/pre-commit
+```
+
+### B.3 ✅ Liste de nettoyage des dossiers codée en dur (CORRIGÉ)
 
 ```python
 for ancien in ("guides", "calculatrice", "questions-frequentes",
@@ -335,6 +357,9 @@ Correspond à l'état actuel de `pages/`, mais si une page est ajoutée puis
 retirée plus tard, son dossier de sortie ne sera jamais nettoyé
 automatiquement (contrairement à `guides/`, entièrement rasé et reconstruit).
 `"assets/fonts"` ne correspond plus à rien (nettoyage mort mais inoffensif).
+
+**Corrigé le 2026-09-05** : la liste se déduit du contenu de `pages/`, et
+`"assets/fonts"` a disparu.
 
 ### B.4 ✅ Trous de couverture dans `outils/verifier.py` (COMBLÉS)
 
@@ -414,11 +439,16 @@ Tous cohérents : sitemap complet, sans URL fantôme, priorités défendables ;
 favicon/apple-touch-icon/SVG dessinés à partir des mêmes constantes
 géométriques.
 
-### B.8 🟡 Asymétrie de fraîcheur du sitemap (`lastmod`)
+### B.8 ✅ Asymétrie de fraîcheur du sitemap (`lastmod`) (CORRIGÉ)
 
 Pour les guides, `<lastmod>` vient d'une métadonnée JSON explicite. Pour les
-pages, `<lastmod>` vient de l'horodatage du fichier sur disque, que git ne
-préserve pas après un clone frais.
+pages, `<lastmod>` venait de l'horodatage du fichier sur disque, que git ne
+préserve pas après un clone frais : le sitemap annonçait alors que toutes les
+pages dataient du jour du clone.
+
+**Corrigé le 2026-09-05** : les pages prennent leur date de leur bloc `meta`,
+comme les guides, et `build.py` refuse de construire une page indexable qui
+n'en aurait pas.
 
 ### B.9 ✅ README — petit défaut de formatage Markdown (CORRIGÉ)
 
@@ -585,7 +615,7 @@ nécessaire.
 n'évalue pas la correction du code mais sa maintenabilité et les obstacles
 structurels à un remaniement.)*
 
-### D.1 🟡 Le découpage par marqueurs texte d'`index.html` ne protège que la présence, pas la position
+### D.1 ✅ Le découpage par marqueurs ne protégeait que la présence, pas la position (CORRIGÉ)
 
 `build.py` isole le « bloc partagé » (calcul + dessin, réutilisé pour
 `site/js/vitrine.js`) via deux marqueurs commentaires et `str.index()` :
@@ -636,14 +666,27 @@ silencieusement le footer, et cet en-tête corrompu serait réutilisé sur
 scénario « page cassée sur tout le site sans erreur de build » le plus
 concret trouvé dans cet audit.
 
-**Recommandation pour un refactor** : remplacer les marqueurs texte par de
-vrais modules ES (`engine.js`, `charts.js` exportés, importés à la fois par
-la calculatrice et par un futur `vitrine.js` généré différemment) — la
-frontière `import`/`export` empêche *mécaniquement* le code DOM de se
-retrouver dans le module partagé, alors que la convention actuelle ne fait
-que le documenter.
+**Corrigé le 2026-09-05**, sans modules ES — la contrainte « aucun bundler,
+un seul fichier servi » a été conservée, et le résultat est aussi vérifiable :
 
-### D.2 🟡 `VITRINE_JS` (build.py) est une copie manuelle qui a déjà divergé
+- Le bloc partagé n'est plus une zone dans un fichier mais **deux fichiers**,
+  `src/moteur.js` et `src/graphiques.js`, que `build.py` concatène. Il n'y a
+  donc plus de marqueur à respecter dans le script, ni de `_bloc_partage()`.
+- La règle « ne rien mettre ici qui lise le formulaire » est devenue un
+  contrôle : `src/moteur.js` ne doit contenir ni `document`, ni
+  `getElementById`, ni `getComputedStyle`, ni `window.`, ni `$(` ;
+  `src/graphiques.js` ne doit contenir aucun identifiant déclaré dans `FIELDS`.
+  Le harnais JavaScriptCore exécute désormais `src/moteur.js` **tel quel, sans
+  bouchon DOM** — ce qui est la preuve d'exécution de la même règle.
+- Les quatre `.index()` sur des repères HTML sont remplacés par `_entre()`, qui
+  exige des marqueurs `<!-- entete:début -->` / `<!-- entete:fin -->` présents
+  une seule fois chacun et dans l'ordre, et refuse de construire sinon. Le
+  scénario « en-tête corrompu sur tout le site sans erreur de build » ne peut
+  plus se produire.
+- `outils/verifier.py` remonte désormais le message d'erreur de `build.py` au
+  lieu de le noyer dans un `CalledProcessError`.
+
+### D.2 ✅ `VITRINE_JS` était une copie manuelle qui avait déjà divergé (CORRIGÉ)
 
 `VITRINE_JS` est une chaîne JS écrite à la main dans `build.py` qui
 réimplémente une partie de `render()`/`renderComplements()` plutôt que de
@@ -660,12 +703,20 @@ partager le code :
   que la calculatrice sans que personne ne l'ait décidé — un oubli de
   synchronisation pure.
 
-**Conséquence pour un refactor** : toute modification future de la
-configuration des graphiques dans `render()` doit être répercutée à la main
-dans la chaîne Python de `build.py`, sans qu'aucun mécanisme ne le rappelle.
-Un refactor qui fait de la vitrine un vrai import du même module de dessin
-(plutôt qu'une chaîne de caractères à maintenir en miroir) supprimerait ce
-risque structurellement.
+**Corrigé le 2026-09-05** : `VITRINE_JS` n'existe plus. La vitrine est
+`src/vitrine.js`, un vrai fichier JavaScript, et les deux graphiques qu'elle
+partageait avec la calculatrice sont écrits **une seule fois**, dans
+`cfgGainNet()` et `cfgSensibilite()` (`src/graphiques.js`), la vitrine ne
+passant qu'une hauteur différente.
+
+La page d'accueil y gagne au passage tout ce que la divergence lui avait coûté :
+les repères de seuils fiscaux, le nom des quatre séries dans son équivalent
+textuel, les valeurs exactes plutôt qu'arrondies au millier, et l'infobulle
+complète (avance ou retard sur le meilleur placement, net de la revente).
+
+Les valeurs par défaut restent relues dans le balisage par `_defauts()` — un
+`src/vitrine.js` qui les recopierait ferait échouer la construction, ce qu'une
+mutation a vérifié.
 
 ### D.3 🟡 Duplication de code SVG entre les trois fonctions de dessin
 
@@ -684,22 +735,28 @@ coûtait moins que de le faire deux fois.
 boucle de graduation/grille sont toujours triplés (~30-40 lignes). À traiter
 dans la phase 2, quand `graphiques.js` deviendra un fichier à part.
 
-### D.4 🟡 `build.py` mélange deux responsabilités sans rapport
+### D.4 ✅ `build.py` mélangeait deux responsabilités sans rapport (CORRIGÉ)
 
 Environ 140 lignes (~19 % du fichier) forment un moteur de rasterisation
 d'icônes autonome écrit à la main (champ de distance signée, encodeurs
 ICO/PNG binaires, écriture de chunks PNG avec CRC) — entièrement indépendant
-du reste (extraction/assemblage HTML). Candidat naturel à extraire dans
-`outils/favicon.py`, indépendamment de tout refactor du reste du pipeline.
+du reste (extraction/assemblage HTML).
 
-### D.5 🟡 Trois scripts `outils/*.py` dupliquent le même code serveur local
+**Corrigé le 2026-09-05** : `outils/favicon.py` (206 lignes) porte la géométrie,
+le rastériseur et l'assemblage du SVG ; `build.py` l'appelle en trois lignes et
+passe de 738 à 487 lignes.
+
+### D.5 ✅ Trois scripts `outils/*.py` dupliquaient le même code serveur local (CORRIGÉ)
 
 `outils/verifier.py`, `outils/captures.py` et `outils/servir.py` redéfinissent
 chacun, quasiment à l'identique, l'idiome `type("Handler",
 (http.server.SimpleHTTPRequestHandler,), {...})` pour servir `site/` en
 local, et chacun sa propre copie du tuple `CHROME = (...)` de chemins
-candidats pour trouver Chrome. Candidat facile pour un module partagé
-(`outils/_local.py`).
+candidats pour trouver Chrome.
+
+**Corrigé le 2026-09-05** : `outils/_local.py` porte le serveur, la recherche
+d'un port libre, la détection de Chrome et de JavaScriptCore, et l'appel à
+`build.py`. `captures.py` passe de 85 à 65 lignes, `servir.py` de 79 à 61.
 
 ### D.6 🟢 Ce qui fonctionne bien et ne doit pas être « corrigé » par un refactor générique
 
@@ -858,7 +915,7 @@ exécution par le contrôle de contraste ajouté en E.3.
   mutualisés et mis en cache entre toutes les pages du site. Rien
   d'anormalement gonflé.
 
-### E.6 🟡 Pas de debounce sur les champs numériques
+### E.6 ✅ Pas de debounce sur les champs numériques (CORRIGÉ)
 
 ```js
 FIELDS.concat(SELECTS).forEach(k => {
@@ -872,17 +929,22 @@ Seul le `resize` de fenêtre est debouncé. Chaque frappe dans un champ
 numérique redessine intégralement les 7 graphiques (suppression + recréation
 de tous les nœuds SVG). Probablement sous les 16 ms sur un poste récent, mais
 candidat plausible au jank sur mobile d'entrée de gamme en frappe rapide.
-Correction simple et peu risquée : debouncer les `input` des champs
-numériques (~50-100 ms), garder `change` synchrone pour select/checkbox.
+**Corrigé le 2026-09-05** : la frappe est laissée retomber 60 ms ; les listes
+et les cases gardent un rendu immédiat, le geste y étant unique.
 
-### E.7 🟡 `getComputedStyle` appelé de façon redondante (pas par point de donnée)
+### E.7 ✅ `getComputedStyle` appelé de façon redondante (CORRIGÉ)
 
 Le helper `css()` est rappelé plusieurs fois par graphique pour des valeurs
 constantes sur tout un cycle de rendu (`--border`, `--text-muted`, `--up`,
 `--down`, etc.) — de l'ordre de 40-60 appels au total pour les 7 graphiques,
 mais **pas** en boucle sur les points de données (pas de scaling avec le
-nombre d'années). Amélioration simple : un objet `theme = {...}` calculé une
-fois en tête de `render()`, passé aux fonctions de dessin.
+nombre d'années).
+
+**Corrigé le 2026-09-05**, sans changer une seule signature de fonction : `css()`
+retient ses réponses le temps d'un rendu, et `oublierTheme()` vide le cache en
+tête de `render()` et de `vitrine()`. Une sonde bascule le thème et vérifie que
+la couleur des tracés change bien puis revient — sans elle, un cache non vidé
+aurait laissé les graphiques peints comme avant.
 
 ### E.8 🟡 Curseur `#cascAnnee` — taille tactile non garantie explicitement
 
@@ -907,7 +969,7 @@ quel horizon son optimum est cherché.
 
 ```sh
 cd "/Users/vincent/Documents/Calculatrice Immobilier"
-python3 build.py && python3 outils/verifier.py   # 146 contrôles au vert après la phase 1
+python3 build.py && python3 outils/verifier.py   # 150 contrôles au vert après la phase 2
 python3 outils/servir.py                         # ouvre le site en local
 git log --oneline -5                             # commit de référence : 30bd897
 ```

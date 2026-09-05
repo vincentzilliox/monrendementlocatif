@@ -62,11 +62,19 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | La calculatrice : un seul fichier (style, corps, script), source de vérité. Sa feuille de style sert à tout le site. |
+| `index.html` | Le balisage de la calculatrice, et la seule source de l'en-tête et du pied de page de tout le site. |
+| `src/style.css` | La feuille de style, unique pour tout le site. |
+| `src/moteur.js` | Le calcul. Aucun accès au document : `outils/verifier.py` le contrôle, et le harnais de test l'exécute tel quel. |
+| `src/graphiques.js` | Le dessin SVG et les infobulles, plus les configurations de graphiques partagées par les deux pages. |
+| `src/calculatrice.js` | L'interface : lecture du formulaire, rendu, persistance. Seul fichier à connaître les identifiants des champs. |
+| `src/vitrine.js` | Le pilote de la page d'accueil. |
 | `pages/accueil.html` | La page d'accueil, servie sur `/`. |
 | `pages/*.html` | Questions fréquentes, hypothèses de calcul, mentions légales, 404. |
 | `guides/*.html` | Les six guides : un bloc `meta` JSON puis un `<article class="prose">`. |
-| `build.py` | Produit `site/` : éclate `index.html`, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère `vitrine.js`, favicons, JSON-LD, sitemap, robots, en-têtes Cloudflare. |
+| `build.py` | Produit `site/` : concatène les sources, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère JSON-LD, sitemap, robots, en-têtes Cloudflare. |
+| `outils/favicon.py` | Le logotype et les icônes qu'on en tire, rastérisées sans dépendance. |
+| `outils/_local.py` | Le serveur local et la détection de Chrome, partagés par les trois outils. |
+| `outils/hooks/pre-commit` | Refuse un commit dont `site/` n'a pas été régénéré. |
 | `outils/servir.py` | Construit, sert et ouvre le site en local. |
 | `outils/verifier.py` | Contrôles avant publication. |
 | `outils/captures.py` | Captures d'écran clair/sombre, grand et petit écran. |
@@ -80,18 +88,43 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 pages annexes détaillent la méthode : `/questions-frequentes/` et
 `/hypotheses-de-calcul/`.
 
-Le script de `index.html` est coupé en deux par des marqueurs. Le **bloc
-partagé** ne contient que ce qui calcule ou dessine — il devient aussi
-`site/js/vitrine.js`, de sorte que la page d'accueil rejoue le scénario par
-défaut avec le moteur de la calculatrice, sans capture d'écran et sans risque de
-dérive (`outils/verifier.py` compare les deux rendements). L'**interface**, en
-dessous, est la seule à toucher au formulaire.
+### Comment les sources s'assemblent
 
-Éditez `index.html`, un guide ou une page, puis :
+```
+src/moteur.js + src/graphiques.js + src/calculatrice.js  ->  site/js/app.js
+src/moteur.js + src/graphiques.js + src/vitrine.js       ->  site/js/vitrine.js
+```
+
+Un seul moteur, un seul jeu de graphiques, deux pilotes : la page d'accueil
+rejoue le scénario par défaut avec le code exact de la calculatrice, sans
+capture d'écran et sans possibilité de dérive. Les valeurs par défaut sont
+relues dans le balisage de `index.html`, jamais recopiées.
+
+Trois règles, et ce sont des contrôles, pas des conventions :
+
+- `src/moteur.js` ne touche jamais au document — il sert aussi la vitrine, et
+  le harnais de test l'exécute hors navigateur.
+- `src/graphiques.js` a le droit au document, jamais aux identifiants des
+  champs.
+- `index.html` ne porte que du balisage, délimité par des marqueurs appariés
+  `<!-- entete:début -->` / `<!-- entete:fin -->` : `build.py` refuse de
+  construire s'ils manquent, sont dupliqués ou se croisent.
+
+Éditez une source, un guide ou une page, puis :
 
 ```sh
 python3 outils/servir.py     # construit, sert et ouvre le navigateur
 python3 build.py             # construit seulement
+python3 outils/verifier.py   # 150 contrôles avant publication
+```
+
+### Installer le garde-fou
+
+`site/` est versionné mais généré. Un hook empêche de committer une version
+périmée — sans quoi on déploie un site qui ne correspond plus aux sources :
+
+```sh
+ln -sf ../../outils/hooks/pre-commit .git/hooks/pre-commit
 ```
 
 ### Écrire un guide

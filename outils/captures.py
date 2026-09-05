@@ -11,47 +11,27 @@ Sans chemin, capture la page d'accueil. Les fichiers sont nommés
 <page>-<largeur>-<theme>.png.
 """
 
-import http.server
 import pathlib
-import socket
-import socketserver
 import subprocess
 import sys
-import threading
 
-RACINE = pathlib.Path(__file__).parent.parent
-SITE = RACINE / "site"
-CHROME = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          "/Applications/Chromium.app/Contents/MacOS/Chromium",
-          "/usr/bin/google-chrome", "/usr/bin/chromium")
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+from _local import CHROME, RACINE, SITE, premier_existant, servir_en_fond
 TAILLES = ((1360, 4800), (390, 6500))
 # Chrome sans fenêtre refuse une fenêtre de moins de 500 px : pour les largeurs
 # inférieures, on contraint la page elle-même et on recadre la capture.
 MIN_CHROME = 500
 
 
-def servir():
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-    classe = type("Handler", (http.server.SimpleHTTPRequestHandler,),
-                  {"__init__": lambda self, *a, **k:
-                   http.server.SimpleHTTPRequestHandler.__init__(self, *a, directory=str(SITE), **k),
-                   "log_message": lambda *a: None})
-    serveur = socketserver.ThreadingTCPServer(("127.0.0.1", port), classe)
-    threading.Thread(target=serveur.serve_forever, daemon=True).start()
-    return serveur, "http://127.0.0.1:%d" % port
-
-
 def main():
     args = sys.argv[1:]
     sortie = pathlib.Path(args[0]) if args else RACINE / "captures"
     chemins = args[1:] or ["/"]
-    chrome = next((c for c in CHROME if pathlib.Path(c).exists()), None)
+    chrome = premier_existant(CHROME)
     if not chrome:
         print("Chrome introuvable"); return 1
     sortie.mkdir(parents=True, exist_ok=True)
-    serveur, base = servir()
+    serveur, base = servir_en_fond()
     temoins = []
     try:
         for chemin in chemins:

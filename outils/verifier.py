@@ -13,27 +13,30 @@ dont une erreur ne se voit pas à l'écran.
 Sortie : une ligne par contrôle, et un code de sortie non nul si l'un échoue.
 """
 
-import http.server
 import json
 import pathlib
 import re
-import socket
-import socketserver
 import subprocess
 import sys
-import threading
 import urllib.error
 import urllib.request
 
-RACINE = pathlib.Path(__file__).parent.parent
-SITE = RACINE / "site"
-CHROME = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          "/Applications/Chromium.app/Contents/MacOS/Chromium",
-          "/usr/bin/google-chrome", "/usr/bin/chromium")
-JSC = ("/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc",)
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+import _local
+from _local import CHROME, JSC, RACINE, SITE, premier_existant, servir_en_fond
+
+SRC = RACINE / "src"
+SOURCE = RACINE / "index.html"
 DOMAINE = "https://monrendementlocatif.fr"
 
 resultats = []
+
+
+def sans_commentaires(js):
+    """Le code seul. Un contrôle qui lirait les commentaires se ferait piéger
+    par la phrase même qui décrit la règle."""
+    js = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
+    return re.sub(r"(^|[^:])//[^\n]*", r"\1", js)
 
 
 def _luminance(rgb):
@@ -106,26 +109,6 @@ def controle(nom, ok, detail=""):
     print("  %s  %-46s %s" % ("OK  " if ok else "ECHEC", nom, detail))
 
 
-def premier_existant(chemins):
-    return next((c for c in chemins if pathlib.Path(c).exists()), None)
-
-
-def servir():
-    """Sert site/ sur un port libre, dans un thread de fond."""
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-
-    classe = type("Handler", (http.server.SimpleHTTPRequestHandler,),
-                  {"__init__": lambda self, *a, **k:
-                   http.server.SimpleHTTPRequestHandler.__init__(
-                       self, *a, directory=str(SITE), **k),
-                   "log_message": lambda *a: None})
-    serveur = socketserver.ThreadingTCPServer(("127.0.0.1", port), classe)
-    threading.Thread(target=serveur.serve_forever, daemon=True).start()
-    return serveur, "http://127.0.0.1:%d" % port
-
-
 def pages_html():
     """Toutes les pages générées, avec leur chemin public."""
     for f in sorted(SITE.rglob("*.html")):
@@ -180,6 +163,17 @@ setTimeout(function(){
     var b = tp.textContent;
     g.dispatchEvent(new FocusEvent("blur"));
     r.clavier = (ouvert ? "1" : "0") + (a && b && a !== b ? "1" : "0") + (tp.classList.contains("on") ? "0" : "1");
+  }
+  // Les couleurs sont mises en cache le temps d'un rendu : si la bascule de
+  // theme ne le vidait pas, les graphiques resteraient peints comme avant.
+  var trace = function(){ var e = document.querySelector("#plotTri path[stroke]"); return e ? e.getAttribute("stroke") : ""; };
+  var bouton = document.getElementById("theme");
+  if(bouton && trace()){
+    var avant = trace();
+    bouton.click();
+    var apres = trace();
+    bouton.click();
+    r.theme = avant + " -> " + apres + (avant !== apres && trace() === avant ? " |ok" : " |ko");
   }
   var av = document.getElementById("vAvisBox");
   r.vAvis = av && !av.hidden ? (document.getElementById("vAvis").textContent || "").slice(0, 40) : "";
@@ -270,11 +264,16 @@ def propre(t):
 
 def main():
     print("Construction…")
-    subprocess.run([sys.executable, "build.py"], cwd=RACINE,
-                   capture_output=True, check=True)
+    erreur = _local.construire()
+    if erreur:
+        # Sans cela, une source mal formée ressortait en CalledProcessError nue :
+        # le message que build.py a pris soin d'écrire restait invisible.
+        controle("construction du site", False, erreur.splitlines()[-1][:70])
+        print("\n%d contrôle, 1 échec(s)" % 1)
+        raise SystemExit(1)
 
     pages = list(pages_html())
-    serveur, base = servir()
+    serveur, base = servir_en_fond()
     try:
         print("\nRESSOURCES")
         for chemin in ("/", "/calculatrice/", "/guides/", "/questions-frequentes/",
@@ -395,6 +394,27 @@ def main():
         controle("police système, aucune police embarquée",
                  "@font-face" not in css and not polices, "%d fichier(s)" % len(polices))
 
+        print("\nSÉPARATION DES SOURCES")
+        moteur_src = sans_commentaires((SRC / "moteur.js").read_text(encoding="utf-8"))
+        graph_src = sans_commentaires((SRC / "graphiques.js").read_text(encoding="utf-8"))
+        calc_src = (SRC / "calculatrice.js").read_text(encoding="utf-8")
+        # Le moteur alimente aussi la page d'accueil : s'il lisait un élément
+        # propre à la calculatrice, la vitrine planterait en silence.
+        fuites = [m for m in ("document", "getElementById", "getComputedStyle", "window.", "$(")
+                  if re.search(r"(?<![\w.])" + re.escape(m), moteur_src)]
+        controle("src/moteur.js ne touche jamais au document", not fuites, ", ".join(fuites))
+        # Les graphiques ont le droit au document — ils dessinent — mais pas aux
+        # champs : ils servent les deux pages.
+        champs = json.loads(re.search(r"const FIELDS = (\[.*?\]);", calc_src, re.S)
+                            .group(1).replace("\n", " "))
+        vus = sorted({c for c in champs if re.search(r'["\']%s["\']' % re.escape(c), graph_src)})
+        controle("src/graphiques.js ignore les champs du formulaire", not vus, ", ".join(vus))
+        # Personne ne doit remettre du code dans index.html : il ne porte que le
+        # balisage, et build.py ne saurait pas quoi en faire.
+        balisage = SOURCE.read_text(encoding="utf-8")
+        controle("index.html ne porte que le balisage",
+                 "<style>" not in balisage and "<script>" not in balisage)
+
         print("\nCONFIDENTIALITÉ ET POIDS")
         textes = css + "".join(f.read_text(encoding="utf-8") for _, f in pages)
         textes += (SITE / "js" / "app.js").read_text(encoding="utf-8")
@@ -456,6 +476,9 @@ def main():
                     # « ouvre au focus », « les flèches déplacent », « se ferme au blur »
                     controle("infobulle pilotable au clavier", r.get("clavier") == "111",
                              r.get("clavier") or "sonde muette")
+                    controle("les graphiques suivent la bascule de thème",
+                             (r.get("theme") or "").endswith("|ok"),
+                             (r.get("theme") or "sonde muette").replace(" |ok", ""))
                     controle("quatre courbes comparées", r["courbes"] == 4, str(r["courbes"]))
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
@@ -502,12 +525,12 @@ def main():
         print("\nMOTEUR FINANCIER : JavaScriptCore introuvable, contrôles ignorés")
     else:
         print("\nMOTEUR FINANCIER")
-        js = (SITE / "js" / "app.js").read_text(encoding="utf-8")
-        moteur = js[js.index("/* ---------- postes de travaux ---------- */"):
-                    js.index("/* ---------- charts ---------- */")]
+        # src/moteur.js ne touche pas au document : il s'exécute tel quel, sans
+        # découpe ni bouchon. C'est ce qui rend le contrôle « aucun accès au
+        # document » ci-dessus vérifiable plutôt que promis en commentaire.
+        moteur = (SRC / "moteur.js").read_text(encoding="utf-8")
         essai = RACINE / "outils" / "__moteur.js"
         essai.write_text(moteur + """
-var $ = function(){ return {innerHTML:'', value:'', textContent:''}; };
 function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,

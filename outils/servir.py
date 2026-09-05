@@ -13,27 +13,15 @@ c'est un fichier source, pas une page.
 Ctrl+C pour arrêter.
 """
 
-import http.server
 import pathlib
-import socket
-import socketserver
-import subprocess
 import sys
 import threading
 import webbrowser
 
-RACINE = pathlib.Path(__file__).parent.parent
-SITE = RACINE / "site"
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+import _local
+
 PORT_PAR_DEFAUT = 8000
-
-
-def libre(port):
-    with socket.socket() as s:
-        try:
-            s.bind(("127.0.0.1", port))
-            return True
-        except OSError:
-            return False
 
 
 def main():
@@ -42,24 +30,18 @@ def main():
     depart = int(args[0]) if args else PORT_PAR_DEFAUT
 
     print("Construction…")
-    fait = subprocess.run([sys.executable, "build.py"], cwd=RACINE,
-                          capture_output=True, text=True)
-    if fait.returncode != 0:
-        print(fait.stderr.strip() or fait.stdout.strip())
+    erreur = _local.construire()
+    if erreur:
+        print(erreur)
         return 1
 
     # Le port demandé peut être pris par une session précédente : on avance.
-    port = next((p for p in range(depart, depart + 20) if libre(p)), None)
+    port = _local.port_libre(depart)
     if port is None:
         print("Aucun port libre entre %d et %d." % (depart, depart + 19))
         return 1
 
-    classe = type("Handler", (http.server.SimpleHTTPRequestHandler,),
-                  {"__init__": lambda self, *a, **k:
-                   http.server.SimpleHTTPRequestHandler.__init__(
-                       self, *a, directory=str(SITE), **k),
-                   "log_message": lambda self, f, *a: print("  " + f % a)})
-    serveur = socketserver.ThreadingTCPServer(("127.0.0.1", port), classe)
+    serveur = _local.serveur(port, journal=lambda l: print("  " + l))
     serveur.daemon_threads = True
     url = "http://127.0.0.1:%d/" % port
 
