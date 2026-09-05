@@ -55,7 +55,10 @@ svg{display:block}
 button,input,select{font-family:inherit}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 [hidden]{display:none !important}
-.visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+.visually-hidden{
+  position:absolute; width:1px; height:1px; margin:-1px; padding:0; border:0;
+  overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
+}
 
 /* ---------- boutons ---------- */
 .btn{
@@ -354,25 +357,25 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
 
 /* ---------- page d'accueil ---------- */
 .accroche{border-bottom:1px solid var(--border); background:var(--surface); padding:clamp(40px,6vw,80px) clamp(16px,3vw,32px) clamp(32px,4vw,56px)}
-.accroche-in{max-width:1180px; margin:0 auto}
+.accroche-in{max-width:1180px; margin:0 auto; text-align:center}
 .accroche .eyebrow{margin:0 0 14px}
-.accroche h1{font-size:clamp(30px,5vw,50px); font-weight:600; letter-spacing:-.03em; line-height:1.08; margin:0; max-width:19ch; text-wrap:balance}
-.pitch{font-size:clamp(15px,1.6vw,17px); color:var(--text-muted); max-width:62ch; margin:20px 0 0; line-height:1.6}
+.accroche h1{font-size:clamp(30px,5vw,50px); font-weight:600; letter-spacing:-.03em; line-height:1.08; margin:0 auto; max-width:19ch; text-wrap:balance}
+.pitch{font-size:clamp(15px,1.6vw,17px); color:var(--text-muted); max-width:62ch; margin:20px auto 0; line-height:1.6}
 .pitch b{color:var(--text); font-weight:600}
-.accroche-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px}
+.accroche-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; justify-content:center}
 .accroche-actions .btn{height:40px; padding:0 20px; font-size:15px}
-.trust{list-style:none; margin:24px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 22px; font-size:13px; color:var(--text-muted)}
+.trust{list-style:none; margin:24px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 22px; font-size:13px; color:var(--text-muted); justify-content:center}
 .trust li{display:flex; align-items:center; gap:7px}
 .trust li::before{content:""; width:5px; height:5px; border-radius:50%; background:var(--text-muted); flex:none}
 
 .vitrine{display:flex; flex-direction:column; gap:clamp(28px,4vw,52px)}
-.vitrine .phead{margin-bottom:14px}
+.vitrine .phead{margin-bottom:14px; justify-content:center; text-align:center}
 .vitrine .phead h2{font-size:clamp(18px,2.2vw,22px); letter-spacing:-.02em}
-.vitrine .phead p{font-size:14px; max-width:74ch}
+.vitrine .phead p{font-size:14px; max-width:74ch; margin-inline:auto}
 .apercu .verdict{background:var(--surface)}
 .apercu-note{margin:12px 0 0; font-size:12.5px; color:var(--text-muted)}
 .concept{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:clamp(16px,2vw,24px)}
-.concept article{border-top:2px solid var(--text); padding-top:16px}
+.concept article{border-top:2px solid var(--text); padding-top:16px; text-align:center}
 .concept h2{font-size:16px; font-weight:600; margin:0 0 8px; letter-spacing:-.01em}
 .concept p{margin:0; font-size:14px; color:var(--text-muted); line-height:1.6}
 .features ul{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px 28px}
@@ -426,6 +429,9 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
 .prose .faqg p{color:var(--text-muted); font-size:14px; margin:0 0 6px}
 .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-top:24px}
 .gcard{display:block; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; color:var(--text)}
+/* Sur la vitrine, les cartes suivent le centrage de la page ; dans les guides,
+   où elles bordent un texte courant, elles restent alignées à gauche. */
+.vitrine .gcard{text-align:center}
 .gcard:hover{text-decoration:none; background:var(--surface-2)}
 .gcard b{display:block; font-size:16px; margin-bottom:6px; letter-spacing:-.01em}
 .gcard p{margin:0; font-size:13.5px; color:var(--text-muted); line-height:1.5}

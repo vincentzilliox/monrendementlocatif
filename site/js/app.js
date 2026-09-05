@@ -463,17 +463,21 @@ function roundedBar(x, y0, y1, w, r){
 // d'écran annonce le titre du graphique et pas une seule de ses valeurs.
 // Le tableau est posé dans le même conteneur, invisible à l'écran.
 function resumeTexte(host, titre, entetes, lignes){
-  host.querySelectorAll("table.visually-hidden").forEach(el => el.remove());
+  host.querySelectorAll(".visually-hidden").forEach(el => el.remove());
   if(!lignes.length) return;
-  const t = document.createElement("table");
-  t.className = "visually-hidden";
-  t.innerHTML = `<caption>${esc(titre)}</caption><thead><tr>`
+  // Le tableau vit dans un <div>, jamais posé directement : `height:1px` n'est
+  // qu'un *minimum* sur un élément de type table, qui se dimensionne toujours à
+  // son contenu. Nu, il mesurait 423 px et donnait à la cascade — seul graphique
+  // logé dans un conteneur défilant — un ascenseur vertical invisible.
+  const boite = document.createElement("div");
+  boite.className = "visually-hidden";
+  boite.innerHTML = `<table><caption>${esc(titre)}</caption><thead><tr>`
     + entetes.map(h => `<th scope="col">${esc(h)}</th>`).join("")
     + `</tr></thead><tbody>`
     + lignes.map(l => `<tr><th scope="row">${esc(l[0])}</th>`
         + l.slice(1).map(c => `<td>${esc(c)}</td>`).join("") + `</tr>`).join("")
     + `</tbody></table>`;
-  host.appendChild(t);
+  host.appendChild(boite);
 }
 
 // Même placement pour les trois graphiques : centrée sur le point, jamais

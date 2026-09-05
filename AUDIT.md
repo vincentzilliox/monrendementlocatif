@@ -849,6 +849,15 @@ de la sonde, pas un contournement.
 
 Contrôle : « sept équivalents textuels », vérifié par mutation.
 
+**Régression introduite puis corrigée le 2026-09-05** : posé nu, le `<table>`
+mesurait 423 px et non 1 px — `height` n'est qu'un *minimum* sur un élément de
+type table, qui se dimensionne toujours à son contenu. La cascade étant le seul
+graphique logé dans un `.plotwrap` (dont l'`overflow-x:auto` fait calculer
+`overflow-y:auto`), elle a gagné un ascenseur vertical invisible : la molette y
+restait piégée au lieu de faire descendre la page. Le tableau est désormais
+enveloppé dans un `<div class="visually-hidden">`, et un contrôle vérifie
+qu'aucun `.plot` ni `.plotwrap` n'a de débordement vertical défilant.
+
 ### E.3 🔴 Texte vert et rouge illisible en mode clair — bien plus large que le seul badge
 
 Le constat initial visait `.pill.win`/`.pill.lose` : texte `--up`/`--down` sur

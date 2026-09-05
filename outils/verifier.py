@@ -153,7 +153,7 @@ setTimeout(function(){
   r.tuiles    = document.querySelectorAll(".tile").length;
   // Un SVG n'annonce que son titre : chaque graphique doit doubler ses valeurs
   // d'un tableau hors ecran, et rester atteignable au clavier.
-  r.equiv     = document.querySelectorAll(".plot table.visually-hidden").length;
+  r.equiv     = document.querySelectorAll(".plot .visually-hidden table").length;
   r.focalisables = document.querySelectorAll(".plot svg[tabindex]").length;
   var g = document.querySelector("#plotTri svg"), tp = document.getElementById("tipTri");
   if(g && tp){
@@ -175,6 +175,13 @@ setTimeout(function(){
     bouton.click();
     r.theme = avant + " -> " + apres + (avant !== apres && trace() === avant ? " |ok" : " |ko");
   }
+  // Un graphique ne doit jamais devenir une boite defilante : la molette y
+  // resterait piegee au lieu de faire descendre la page. Le tableau equivalent,
+  // pose nu, avait donne 423 px de defilement invisible a la cascade.
+  r.piege = Array.prototype.filter.call(
+    document.querySelectorAll(".plot, .plotwrap"),
+    function(e){ return e.scrollHeight - e.clientHeight > 1; }
+  ).map(function(e){ return (e.id || e.className) + " +" + (e.scrollHeight - e.clientHeight) + "px"; }).join(", ");
   var av = document.getElementById("vAvisBox");
   r.vAvis = av && !av.hidden ? (document.getElementById("vAvis").textContent || "").slice(0, 40) : "";
   r.graphes   = document.querySelectorAll(".plot svg").length;
@@ -451,6 +458,8 @@ def main():
                     controle("accueil : rendement affiché", "%" in r["vitrine"], r["vitrine"])
                     controle("accueil : avis éditorial rendu",
                              len(r.get("vAvis") or "") > 20, r.get("vAvis") or "absent")
+                    controle("accueil : aucun graphique ne piège le défilement",
+                             not r.get("piege"), r.get("piege") or "")
 
             for largeur in (1360, 390):
                 r = sonde_navigateur(chrome, base, SITE / "calculatrice" / "index.html", largeur)
@@ -476,6 +485,8 @@ def main():
                     # « ouvre au focus », « les flèches déplacent », « se ferme au blur »
                     controle("infobulle pilotable au clavier", r.get("clavier") == "111",
                              r.get("clavier") or "sonde muette")
+                    controle("aucun graphique ne piège le défilement",
+                             not r.get("piege"), r.get("piege") or "")
                     controle("les graphiques suivent la bascule de thème",
                              (r.get("theme") or "").endswith("|ok"),
                              (r.get("theme") or "sonde muette").replace(" |ok", ""))
