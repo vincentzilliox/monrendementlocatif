@@ -245,6 +245,9 @@ input[type=number]{-moz-appearance:textfield}
 .pill.win{color:var(--up); background:var(--up-bg)}
 .pill.lose{color:var(--down); background:var(--down-bg)}
 .pill.flat{color:var(--text-muted); background:var(--surface-2)}
+.avis{margin-top:16px; padding:12px 14px; border-radius:var(--radius); background:var(--surface-2); border-left:3px solid var(--text)}
+.avis .eyebrow{margin:0 0 5px}
+.avis p:last-child{margin:0; font-size:13.5px; color:var(--text); line-height:1.55; max-width:52ch}
 .best{background:var(--surface-2); border-radius:var(--radius-lg); padding:clamp(16px,2vw,20px); display:flex; flex-direction:column; justify-content:center; gap:4px}
 .best .yr{font-size:26px; font-weight:600; line-height:1.1; letter-spacing:-.02em}
 .best p{margin:6px 0 0; font-size:13px; color:var(--text-muted); line-height:1.5}
@@ -264,6 +267,12 @@ input[type=number]{-moz-appearance:textfield}
 .phead h2{font-size:15px; font-weight:600; margin:0; letter-spacing:-.01em; text-wrap:balance}
 .phead p{margin:4px 0 0; font-size:13px; color:var(--text-muted); max-width:66ch}
 .phead .tools{display:flex; gap:8px; flex:none; align-items:center}
+.tools.annee{display:flex; align-items:center; gap:9px; font-size:12px; color:var(--text-muted)}
+.tools.annee label{white-space:nowrap}
+.tools.annee input[type=range]{
+  width:clamp(110px,16vw,190px); accent-color:var(--accent); background:transparent; cursor:pointer;
+}
+.tools.annee output{min-width:6.5ch; text-align:right; color:var(--text); font-weight:500}
 .seg{display:inline-flex; flex:none; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden}
 .seg button{font:inherit; font-size:12px; padding:5px 11px; border:0; cursor:pointer; background:transparent; color:var(--text-muted)}
 .seg button + button{border-left:1px solid var(--border)}

@@ -98,8 +98,6 @@ function surtaxePV(base){
 const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
-// Le mobilier ne concerne que le meublé : repasser en nu remet le champ à zéro.
-const MOBILIER_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
@@ -537,7 +535,7 @@ function drawColumns(host, tip, cfg){
     }
     const monte = it.to >= it.from;
     const ty = monte ? Math.min(y0,y1) - 7 : Math.max(y0,y1) + 14;
-    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || it.color), "font-size":"11.5", "font-weight":"600"});
+    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || it.color), "font-size":"11.5", "font-weight":"600", class:"valeur"});
     tv.textContent = it.text;
     svg.appendChild(tv);
     String(it.label).split("\n").forEach((l,k) => {
@@ -683,12 +681,24 @@ function planifier(fn){
 const pts = v => (v>=0?"+":"−") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt" + (Math.abs(v*100) >= 1.95 ? "s" : "");
 const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €";
 
+// Le verdict en une phrase, sur le rendement en pouvoir d'achat : battre la
+// bourse, battre seulement l'inflation, ou ne rien battre du tout. Écrit ici
+// pour que la calculatrice et la page d'accueil disent exactement la même chose.
+function avis(triReel, bourseReel){
+  if(triReel === null || !isFinite(triReel)) return null;
+  if(triReel > bourseReel)
+    return `Excellente affaire. Sur vos hypothèses, le projet fait mieux que la bourse — l'un des placements les plus rentables sur longue période, et le plus difficile à battre une fois l'impôt payé.`;
+  if(triReel > 0)
+    return `Belle réserve de valeur. Le projet ne rattrape pas la bourse, mais il bat l'inflation : votre capital garde son pouvoir d'achat, ce que ni un compte courant ni un livret réglementé ne permettent aujourd'hui.`;
+  return `Le rendement ne suit pas l'inflation. Vous récupérerez plus d'euros qu'engagés, mais ils achèteront moins : à ces hypothèses, l'opération vous appauvrit en pouvoir d'achat.`;
+}
+
 /* ---------- page d'accueil ---------- */
 const DEFAUTS = {
   "prix": 200000.0,
   "notairePct": 8.0,
   "fraisAcq": 0.0,
-  "mobilier": 0.0,
+  "mobilier": 8000.0,
   "apport": 35000.0,
   "duree": 20.0,
   "taux": 3.4,
@@ -761,6 +771,10 @@ function vitrine(){
     pastille.className = "pill num " + (Math.abs(ecart) < 0.002 ? "flat" : ecart > 0 ? "win" : "lose");
   }
   ecrire("vBourse", sPct(f.triBourseReel));
+  const mot = avis(f.triReel, f.triBourseReel);
+  const boite = g("vAvisBox");
+  if(boite) boite.hidden = mot === null;
+  if(mot) ecrire("vAvis", mot);
 
   const xs = R.rows.map(r => String(r.y));
   drawChart(g("vPlotNet"), g("vTipNet"), {

@@ -110,7 +110,7 @@
         <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
         <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation · 2 à 3 % dans le neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
         <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
-        <div class="f" id="fMobilier"><label for="mobilier">Mobilier<span class="hint">meubles, électroménager, literie — amortissables au LMNP réel</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <div class="f" id="fMobilier"><label for="mobilier">Mobilier<span class="hint">meubles, électroménager, literie — environ 4 % du prix pour un appartement entièrement meublé, amortissable au LMNP réel</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="8000"><span class="unit">€</span></div></div>
       </div>
     </details>
 
@@ -228,6 +228,10 @@
         <p class="reel" id="heroReel"></p>
         <p class="herosub" id="heroSub"></p>
         <div class="bench"><span class="pill num" id="benchPill">—</span><span id="benchText"></span></div>
+        <div class="avis" id="avisBox" hidden>
+          <p class="eyebrow">L'avis de Mon Rendement Locatif</p>
+          <p id="avisText"></p>
+        </div>
       </div>
       <div class="best">
         <p class="eyebrow">Meilleur moment pour revendre</p>
@@ -262,7 +266,7 @@
       <div class="phead">
         <div>
           <h2>Le même projet sous les quatre régimes fiscaux</h2>
-          <p>Rendement annualisé à l'horizon, toutes hypothèses égales par ailleurs — seuls changent le régime et les réglages qui en découlent (prélèvements sociaux, CFE, abattement). Cliquez sur une barre pour adopter ce régime.</p>
+          <p>Rendement annualisé à l'horizon, toutes hypothèses égales par ailleurs — seuls changent le régime et les réglages qui en découlent (prélèvements sociaux, CFE, abattement). Louer meublé suppose d'acheter des meubles : les deux régimes meublés retiennent le mobilier saisi dans vos hypothèses, la location nue l'exclut du coût de l'opération. Cliquez sur une barre pour adopter ce régime.</p>
         </div>
       </div>
       <div class="plot" id="plotReg"><div class="tip" id="tipReg"></div></div>
@@ -289,8 +293,13 @@
     <section class="panel" id="cascade">
       <div class="phead">
         <div>
-          <h2>D'où vient le gain, à l'horizon</h2>
-          <p>Tout ce qui entre et tout ce qui sort sur la période, en euros courants, jusqu'au gain net si vous revendez à l'horizon. La plus-value est prise avant impôt et frais de revente, qui apparaissent séparément.</p>
+          <h2>D'où vient le gain</h2>
+          <p>Tout ce qui entre et tout ce qui sort depuis l'achat, en euros courants, jusqu'au gain net si vous revendiez à la date choisie. Déplacez le curseur pour voir la décomposition se former année après année : cela ne change que ce graphique, pas l'horizon de la simulation.</p>
+        </div>
+        <div class="tools annee">
+          <label for="cascAnnee">Revente fin d'année</label>
+          <input type="range" id="cascAnnee" min="1" step="1" value="25">
+          <output class="num" id="cascAnneeVal">25</output>
         </div>
       </div>
       <div class="plotwrap"><div class="plot large" id="plotCasc"><div class="tip" id="tipCasc"></div></div></div>

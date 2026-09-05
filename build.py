@@ -339,6 +339,10 @@ function vitrine(){
     pastille.className = "pill num " + (Math.abs(ecart) < 0.002 ? "flat" : ecart > 0 ? "win" : "lose");
   }
   ecrire("vBourse", sPct(f.triBourseReel));
+  const mot = avis(f.triReel, f.triBourseReel);
+  const boite = g("vAvisBox");
+  if(boite) boite.hidden = mot === null;
+  if(mot) ecrire("vAvis", mot);
 
   const xs = R.rows.map(r => String(r.y));
   drawChart(g("vPlotNet"), g("vTipNet"), {

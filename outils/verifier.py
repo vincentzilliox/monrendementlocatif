@@ -105,6 +105,26 @@ setTimeout(function(){
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
   r.sens      = document.querySelectorAll("#plotSens svg rect").length;
   r.liens     = document.querySelectorAll("#suite a").length;
+  var boite = document.getElementById("avisBox");
+  r.avis = boite && !boite.hidden ? (document.getElementById("avisText").textContent || "").slice(0, 40) : "";
+  // Le curseur de la cascade ne doit redessiner que sa section : on note le total
+  // a l'horizon, puis a la premiere annee, et on verifie que le verdict ne bouge pas.
+  var curseur = document.getElementById("cascAnnee");
+  var totalCascade = function(){
+    var t = document.querySelectorAll("#plotCasc svg text.valeur");
+    return t.length ? t[t.length - 1].textContent : "";
+  };
+  if(curseur){
+    r.cascMax = curseur.max;
+    r.cascHorizon = totalCascade();
+    var triAvant = (document.getElementById("heroTri")||{}).textContent;
+    curseur.value = 1;
+    curseur.dispatchEvent(new Event("input", {bubbles:true}));
+    r.cascAn1 = totalCascade();
+    r.triStable = (document.getElementById("heroTri")||{}).textContent === triAvant;
+    curseur.value = curseur.max;
+    curseur.dispatchEvent(new Event("input", {bubbles:true}));
+  }
   // Le formulaire ne doit poser que les questions du régime choisi : on parcourt
   // les quatre régimes et on relève, pour chacun, les champs réellement visibles.
   var conditionnels = ["fAbattement","fPlafondDeficit","fCfe","fMobilier","fPartBati","fAmortBati","fAmortTvx","fAmortMob"];
@@ -319,6 +339,14 @@ def main():
                              ", ".join(ecarts) or "4 régimes vérifiés")
                     controle("renvois vers les pages annexes",
                              r["liens"] >= 3, "%d liens" % r["liens"])
+                    controle("avis éditorial affiché", bool(r.get("avis")),
+                             (r.get("avis") or "absent")[:38])
+                    controle("curseur de cascade borné par l'horizon",
+                             r.get("cascMax") == "25", "max=%s" % r.get("cascMax"))
+                    controle("le curseur ne change que la cascade",
+                             bool(r.get("cascAn1")) and r.get("cascAn1") != r.get("cascHorizon")
+                             and r.get("triStable"),
+                             "%s → %s" % (r.get("cascHorizon"), r.get("cascAn1")))
                     controle("tableau annuel rempli", r["lignes"] >= 10, "%d lignes" % r["lignes"])
                     controle("rendement calculé", "%" in r["tri"], r["tri"])
             for chemin in ("/guides/", "/guides/tri-immobilier/", "/questions-frequentes/",
@@ -343,7 +371,7 @@ def main():
         essai = RACINE / "outils" / "__moteur.js"
         essai.write_text(moteur + """
 var $ = function(){ return {innerHTML:'', value:'', textContent:''}; };
-function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:5000,apport:35000,
+function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,
  amortBatiAns:30,amortTvxAns:15,amortMobAns:7,horizon:25,inflation:2,indexPrix:2,indexLoyer:2,
@@ -379,9 +407,11 @@ var attendu=Math.max(0,b2+Math.min(0,b1))*0.486;
 lignes.push('deficit BIC reporte sur l annee suivante|'+(b1<0 && b2>0 && Math.abs(r2.impot-attendu)<1?1:0)+'|'+r2.impot.toFixed(0)+' vs '+attendu.toFixed(0)+' EUR');
 // La cascade du gain est une identite comptable exacte.
 var c=run({}), f=c.final;
-// Neuf marches, frais d'acquisition et travaux sortis de la revalorisation.
-var fraisAcq=c.notaire+c.p.fraisAcq+c.mobilier+c.p.fraisDossier;
-var somme=f.cumulLoyers-f.cumulCharges-f.cumulCredit-f.cumulImpot-fraisAcq-c.p.travaux
+// Neuf marches : frais d'acquisition (sans le mobilier), travaux et mobilier,
+// puis revalorisation. Le mobilier a change de colonne, pas de signe.
+var fraisAcq=c.notaire+c.p.fraisAcq+c.p.fraisDossier;
+var equipement=c.p.travaux+c.mobilier;
+var somme=f.cumulLoyers-f.cumulCharges-f.cumulCredit-f.cumulImpot-fraisAcq-equipement
   +(f.valeur-c.p.prix)-(f.fraisVente+f.ira)-(f.impotPV+f.repriseDF);
 lignes.push('cascade du gain : somme des marches = gain|'+(Math.abs(somme-f.gain)<1?1:0)+'|ecart '+(somme-f.gain).toFixed(2)+' EUR');
 lignes.push('CFE exoneree la premiere annee|'

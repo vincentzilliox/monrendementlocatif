@@ -97,8 +97,6 @@ function surtaxePV(base){
 const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
-// Le mobilier ne concerne que le meublé : repasser en nu remet le champ à zéro.
-const MOBILIER_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
@@ -536,7 +534,7 @@ function drawColumns(host, tip, cfg){
     }
     const monte = it.to >= it.from;
     const ty = monte ? Math.min(y0,y1) - 7 : Math.max(y0,y1) + 14;
-    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || it.color), "font-size":"11.5", "font-weight":"600"});
+    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || it.color), "font-size":"11.5", "font-weight":"600", class:"valeur"});
     tv.textContent = it.text;
     svg.appendChild(tv);
     String(it.label).split("\n").forEach((l,k) => {
@@ -682,6 +680,18 @@ function planifier(fn){
 const pts = v => (v>=0?"+":"−") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt" + (Math.abs(v*100) >= 1.95 ? "s" : "");
 const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €";
 
+// Le verdict en une phrase, sur le rendement en pouvoir d'achat : battre la
+// bourse, battre seulement l'inflation, ou ne rien battre du tout. Écrit ici
+// pour que la calculatrice et la page d'accueil disent exactement la même chose.
+function avis(triReel, bourseReel){
+  if(triReel === null || !isFinite(triReel)) return null;
+  if(triReel > bourseReel)
+    return `Excellente affaire. Sur vos hypothèses, le projet fait mieux que la bourse — l'un des placements les plus rentables sur longue période, et le plus difficile à battre une fois l'impôt payé.`;
+  if(triReel > 0)
+    return `Belle réserve de valeur. Le projet ne rattrape pas la bourse, mais il bat l'inflation : votre capital garde son pouvoir d'achat, ce que ni un compte courant ni un livret réglementé ne permettent aujourd'hui.`;
+  return `Le rendement ne suit pas l'inflation. Vous récupérerez plus d'euros qu'engagés, mais ils achèteront moins : à ces hypothèses, l'opération vous appauvrit en pouvoir d'achat.`;
+}
+
 /* ═════════ fin du bloc partagé — l'interface commence ici ═════════ */
 
 /* ---------- formulaire ---------- */
@@ -734,6 +744,9 @@ function read(){
 /* ---------- render ---------- */
 let R = null;
 let echelleTri = "lisible";   // « lisible » borne le bas du graphe, « complete » montre tout
+// Année de revente explorée dans la cascade. null = l'horizon retenu ; la valeur
+// est bornée à chaque rendu, pour suivre un horizon qu'on raccourcirait.
+let anneeCascade = null;
 try{
   const e = localStorage.getItem("rentaloc.echelle");
   if(e === "lisible" || e === "complete") echelleTri = e;
@@ -796,6 +809,9 @@ function render(){
       : Math.abs(d)<0.002 ? `— équivalent à ${bourseTxt}.`
       : `de moins que ${bourseTxt}.`;
   }
+  const mot = triF === null ? null : avis(triReel, final.triBourseReel === null ? bourseReelle : final.triBourseReel);
+  $("avisBox").hidden = mot === null;
+  if(mot) $("avisText").textContent = mot;
 
   if(best){
     $("bestYear").textContent = "Année " + best.y;
@@ -1052,17 +1068,29 @@ function renderComplements(p){
     onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
   });
   const enCours = regs.find(r => r.rg === p.regime);
-  $("regNote").textContent = !meilleur || meilleur.tri === null ? "" :
+  // L'hypothèse de mobilier décide d'une partie de l'écart : elle doit être dite.
+  const hypMobilier = p.mobilier > 0
+    ? `Les deux régimes meublés retiennent ${eur.format(p.mobilier)} de mobilier, soit ${pct(p.prix > 0 ? p.mobilier/p.prix : 0)} du prix ; en location nue, ce montant sort du coût de l'opération.`
+    : `Aucun mobilier n'est renseigné : les régimes meublés sont ici calculés sans meubles, ce qui les désavantage — un logement loué meublé doit être équipé.`;
+  $("regNote").textContent = (!meilleur || meilleur.tri === null ? "" :
     meilleur.rg === p.regime
-      ? `Sur vos hypothèses, votre régime est déjà le plus favorable des quatre.`
-      : `Sur vos hypothèses, ${meilleur.label.replace("\n"," ").toLowerCase()} ferait mieux : ${sPct(meilleur.tri)} contre ${sPct(enCours.tri)} par an, soit ${sEur(meilleur.gain - enCours.gain)} de gain sur ${p.horizon} ans. Vérifiez que vous y êtes éligible.`;
+      ? `Sur vos hypothèses, votre régime est déjà le plus favorable des quatre. `
+      : `Sur vos hypothèses, ${meilleur.label.replace("\n"," ").toLowerCase()} ferait mieux : ${sPct(meilleur.tri)} contre ${sPct(enCours.tri)} par an, soit ${sEur(meilleur.gain - enCours.gain)} de gain sur ${p.horizon} ans. Vérifiez que vous y êtes éligible. `) + hypMobilier;
 
-  // D'où vient le gain : une cascade dont la somme des marches est exactement le gain.
-  const f = final;
-  // Les frais d'acquisition et les travaux sont sortis de la revalorisation :
-  // ils sont payés le premier jour et doivent se voir. La somme est inchangée,
-  // puisque besoin = prix + notaire + travaux + agence + mobilier + dossier.
-  const fraisAcquisition = R.notaire + p.fraisAcq + R.mobilier + p.fraisDossier;
+  // D'où vient le gain : une cascade dont la somme des marches est exactement le
+  // gain, à l'année de revente choisie au curseur.
+  const curseur = $("cascAnnee");
+  curseur.max = p.horizon;
+  const anCasc = Math.max(1, Math.min(p.horizon, anneeCascade === null ? p.horizon : anneeCascade));
+  curseur.value = anCasc;
+  $("cascAnneeVal").textContent = anCasc + (anCasc === p.horizon ? " (horizon)" : "");
+  const f = rows[anCasc - 1];
+  // Les frais d'acquisition, les travaux et le mobilier sont sortis de la
+  // revalorisation : ils sont payés le premier jour et doivent se voir. La somme
+  // reste identique, puisque besoin = prix + notaire + travaux + agence +
+  // mobilier + dossier.
+  const fraisAcquisition = R.notaire + p.fraisAcq + p.fraisDossier;
+  const equipement = p.travaux + R.mobilier;
   const marches = [
     {label:"Loyers\nencaissés",        v: f.cumulLoyers},
     {label:"Charges",                  v: -f.cumulCharges},
@@ -1070,8 +1098,9 @@ function renderComplements(p){
     {label:"Impôt sur\nles loyers",    v: -f.cumulImpot},
     {label:"Frais\nd'acquisition",     v: -fraisAcquisition,
      detail: [["Frais de notaire", R.notaire], ["Frais d'agence", p.fraisAcq],
-              ["Mobilier", R.mobilier], ["Dossier et garantie", p.fraisDossier]]},
-    {label:"Travaux",                  v: -p.travaux},
+              ["Dossier et garantie", p.fraisDossier]]},
+    {label: R.mobilier > 0 ? "Travaux et\nmobilier" : "Travaux", v: -equipement,
+     detail: [["Travaux", p.travaux], ["Mobilier", R.mobilier]]},
     {label:"Revalorisation\ndu bien",  v: f.valeur - p.prix},
     {label:"Frais de\nrevente",        v: -(f.fraisVente + f.ira)},
     {label:"Impôt sur la\nplus-value", v: -(f.impotPV + f.repriseDF)}
@@ -1084,12 +1113,12 @@ function renderComplements(p){
   });
   items.push({label:"Gain net", from:0, to:f.gain, color:"--text", text:sEur(f.gain), textColor:"--text", strong:true});
   drawColumns($("plotCasc"), $("tipCasc"), {
-    height:250, padLeft:78, connect:true, label:"Décomposition du gain à l'horizon",
+    height:250, padLeft:78, connect:true, label:"Décomposition du gain à la revente",
     fmtAxis: kEur,
     items,
     tip: i => {
       const it = items[i];
-      return `<div class="th">${it.label.replace("\n"," ")} · ${p.horizon} ans</div>` +
+      return `<div class="th">${it.label.replace("\n"," ")} · ${anCasc} ${anCasc > 1 ? "ans" : "an"}</div>` +
         tipRow("transparent", i < items.length-1 ? "Montant" : "Total", it.text) +
         (it.detail || []).filter(d => d[1] > 0.5).map(d => tipRow("transparent", "dont " + d[0].toLowerCase(), cost(d[1]))).join("") +
         (i < items.length-1 ? tipRow("transparent","Cumul à cette étape", sEur(it.to)) : "");
@@ -1097,7 +1126,7 @@ function renderComplements(p){
   });
   const revalorisation = f.valeur - p.prix;
   $("cascNote").textContent =
-    `Sur ${p.horizon} ans, les loyers apportent ${eur.format(f.cumulLoyers)} et le bien se revend ${revalorisation >= 0 ? eur.format(revalorisation) + " au-dessus" : eur.format(-revalorisation) + " en dessous"} de son prix d'achat. En face, ${eur.format(fraisAcquisition)} de frais d'acquisition — dont ${eur.format(R.notaire)} de notaire — sont perdus dès la signature, le crédit coûte ${eur.format(f.cumulCredit)} et la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`;
+    `En revendant fin d'année ${anCasc}, les loyers ont apporté ${eur.format(f.cumulLoyers)} et le bien se revend ${revalorisation >= 0 ? eur.format(revalorisation) + " au-dessus" : eur.format(-revalorisation) + " en dessous"} de son prix d'achat. En face, ${eur.format(fraisAcquisition)} de frais d'acquisition — dont ${eur.format(R.notaire)} de notaire — sont perdus dès la signature, ${eur.format(equipement)} sont partis en travaux et mobilier, le crédit a coûté ${eur.format(f.cumulCredit)} et la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`;
 
   // Patrimoine net et dette.
   const xs = rows.map(r => String(r.y));
@@ -1234,6 +1263,10 @@ function setEchelle(v){
   try{ localStorage.setItem("rentaloc.echelle", v); }catch(e){}
   render();
 }
+$("cascAnnee").addEventListener("input", () => {
+  anneeCascade = parseInt($("cascAnnee").value, 10);
+  render();
+});
 $("echLisible").addEventListener("click", () => setEchelle("lisible"));
 $("echComplete").addEventListener("click", () => setEchelle("complete"));
 
@@ -1291,7 +1324,8 @@ function appliquerRegime(rg){
   $("ps").value = PS_LOYERS[rg] || "17.2";
   $("cfe").value = CFE_DEFAUT[rg] || "0";
   if(ABATT_DEFAUT[rg]) $("abattement").value = ABATT_DEFAUT[rg];
-  if(MOBILIER_DEFAUT[rg] !== undefined) $("mobilier").value = MOBILIER_DEFAUT[rg];
+  // Le mobilier n'est pas effacé en repassant en nu : il est masqué et neutralisé
+  // par compute, donc la saisie survit à un aller-retour entre les régimes.
 }
 function retablirDefauts(){
   Object.keys(DEFAULTS).forEach(k => {
