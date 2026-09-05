@@ -104,20 +104,6 @@ button,input,select{font-family:inherit}
 .pagehead h1{font-size:clamp(20px,2.4vw,26px); font-weight:600; letter-spacing:-.02em; line-height:1.2; margin:0; text-wrap:balance}
 .pagehead p{margin:6px 0 0; font-size:14px; color:var(--text-muted); max-width:76ch; line-height:1.5}
 
-/* ---------- exemples de projets ---------- */
-.examples{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
-.exlabel{font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); width:100%}
-.chip{
-  height:32px; padding:0 14px; border-radius:999px; border:1px solid var(--border);
-  background:var(--btn-bg); color:var(--text); font-size:13px; font-weight:500; cursor:pointer;
-}
-.chip:hover{background:var(--surface-2)}
-.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-text)}
-.exnote{width:100%; font-size:12px; color:var(--text-muted); margin:2px 0 0}
-/* dans le panneau d'hypothèses, les exemples s'empilent sur toute la largeur */
-.rail .examples{padding:14px clamp(16px,2vw,22px) 16px; border-bottom:1px solid var(--border); gap:7px}
-.rail .examples .chip{width:100%; text-align:left; padding:0 12px}
-
 /* ---------- structure ---------- */
 .shell{display:grid; grid-template-columns:352px minmax(0,1fr); align-items:start}
 .rail{border-right:1px solid var(--border); background:var(--surface); position:sticky; top:0; max-height:100vh; overflow-y:auto}
@@ -213,6 +199,7 @@ input[type=number]{-moz-appearance:textfield}
 /* postes de travaux dépréciables */
 .grouphint{margin:0 0 4px; font-size:11.5px; color:var(--text-muted); line-height:1.55}
 .tvxlist{display:flex; flex-direction:column; gap:9px}
+.tvxlist.sans-deduc .deduc{display:none}   /* « déductible » ne vaut qu'au réel foncier */
 .tvxrow{border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px 10px; background:var(--bg); display:flex; flex-direction:column; gap:8px}
 .tvxhead{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:center}
 .tvxhead input{font:inherit; font-size:13px; font-weight:500; color:var(--text); width:100%; background:transparent; border:0; border-bottom:1px solid transparent; padding:2px 0}
@@ -294,6 +281,10 @@ input[type=number]{-moz-appearance:textfield}
 .swatch.points{background:linear-gradient(90deg,currentColor 42%,transparent 42%) 0 0/5px 3px}
 .swatch.sq{width:10px; height:10px; border-radius:2px}
 .plot{position:relative; margin-top:8px}
+/* une cascade à dix colonnes : plutôt défiler que tasser les libellés */
+.plotwrap{overflow-x:auto; margin-top:8px}
+.plotwrap .plot{margin-top:0}
+@media (max-width:760px){ .plot.large{min-width:620px} }
 .plot svg{display:block; width:100%; overflow:visible}
 .plot svg text{font-family:var(--font); font-variant-numeric:tabular-nums}
 .plot .clickable{cursor:pointer}

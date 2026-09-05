@@ -97,11 +97,17 @@ function surtaxePV(base){
 const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
+// Le mobilier ne concerne que le meublé : repasser en nu remet le champ à zéro.
+const MOBILIER_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
   const notaire = p.prix * p.notairePct/100;
-  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + p.mobilier + p.fraisDossier;
+  // Meublé ou nu : ce qui ne concerne pas le régime choisi est masqué à l'écran,
+  // donc neutralisé ici. Un champ masqué ne doit jamais peser sur le résultat.
+  const meuble = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
+  const mobilier = meuble ? p.mobilier : 0;
+  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + mobilier + p.fraisDossier;
   const emprunt = Math.max(0, besoin - p.apport);
   const cash0 = Math.max(0, besoin - emprunt);
   const sch = schedule(emprunt, p.taux, p.duree, p.assur);
@@ -115,9 +121,9 @@ function compute(p){
   const surAns = (montant, ans) => ans > 0 ? montant/ans : 0;
   const amortBati = surAns((p.prix + notaire + p.fraisAcq)*(p.partBati/100), p.amortBatiAns);
   const amortTvx = surAns(p.travaux, p.amortTvxAns);
-  const amortMob = surAns(p.mobilier, p.amortMobAns);
-  // Un champ masqué ne doit jamais peser sur le résultat : la CFE relève du BIC.
-  const cfeApplicable = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
+  const amortMob = surAns(mobilier, p.amortMobAns);
+  // La CFE relève du BIC : elle ne concerne pas la location nue.
+  const cfeApplicable = meuble;
 
   // Déficits fonciers reportables : chaque millésime expire au bout de 10 ans.
   // Imputations sur le revenu global : reprises si le bien est vendu avant le
@@ -128,7 +134,8 @@ function compute(p){
   // avant l'amortissement, qui lui se reporte sans limite.
   let deficitsBIC = [];
   // Deux stocks d'amortissement : le bâti et les travaux sont réintégrés dans
-  // la plus-value depuis la loi de finances 2025, le mobilier non — il n'entre
+  // la plus-value depuis la loi de finances 2025, confirmée en 2026 ; le mobilier
+  // non — il n'entre
   // pas dans la cession immobilière.
   let stockImm = 0, stockMob = 0, amortCumul = 0, amortReintegre = 0;
   // Comparaison à mise de fonds identique. Les deux scénarios partent du même
@@ -292,7 +299,7 @@ function compute(p){
     r.gainConstant = r.gainImmo/Math.pow(1 + p.inflation/100, r.y);
   });
   return {
-    p, rows, best, notaire, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
+    p, rows, best, notaire, mobilier, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
     bruteCout: loyerBrutAn/besoin,
@@ -700,7 +707,7 @@ function renderItems(){
         <label>Montant<span class="tw"><input type="number" step="500" min="0" data-i="${i}" data-f="montant" value="${it.montant}"><span class="u">€</span></span></label>
         <label>Perte / an<span class="tw"><input type="number" step="0.5" min="0" max="100" data-i="${i}" data-f="taux" value="${it.taux}"><span class="u">%</span></span></label>
         <label>Pendant<span class="tw"><input type="number" step="1" min="0" max="60" data-i="${i}" data-f="duree" value="${it.duree}"><span class="u">ans</span></span></label>
-        <label>Déductible<span class="tw"><input type="number" step="5" min="0" max="100" data-i="${i}" data-f="deduc" value="${it.deduc}"><span class="u">%</span></span></label>
+        <label class="deduc">Déductible<span class="tw"><input type="number" step="5" min="0" max="100" data-i="${i}" data-f="deduc" value="${it.deduc}"><span class="u">%</span></span></label>
       </div>
     </div>`).join("");
 }
@@ -824,7 +831,7 @@ function render(){
   $("dApport").textContent = "− " + eur.format(R.cash0);
   $("dEmprunt").textContent = eur.format(R.emprunt);
   const postes = [["le prix", p.prix], ["les frais de notaire", R.notaire], ["les travaux", p.travaux],
-    ["les frais d'agence", p.fraisAcq], ["le mobilier", p.mobilier], ["les frais de dossier", p.fraisDossier]]
+    ["les frais d'agence", p.fraisAcq], ["le mobilier", R.mobilier], ["les frais de dossier", p.fraisDossier]]
     .filter(x => x[1] > 0).map(x => x[0]);
   $("dCap").textContent = R.emprunt > 0
     ? "Coût total = " + postes.join(", ") + "."
@@ -1042,7 +1049,7 @@ function renderComplements(p){
         tipRow("transparent","Impôts cumulés", r.impots >= 0 ? cost(r.impots) : "+"+eur.format(-r.impots)) +
         (r.rg===p.regime ? "" : `<div class="tr" style="margin-top:6px;color:var(--text-muted)">Cliquer pour adopter ce régime</div>`);
     },
-    onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); marquerExemple(null); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
+    onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
   });
   const enCours = regs.find(r => r.rg === p.regime);
   $("regNote").textContent = !meilleur || meilleur.tri === null ? "" :
@@ -1052,18 +1059,27 @@ function renderComplements(p){
 
   // D'où vient le gain : une cascade dont la somme des marches est exactement le gain.
   const f = final;
+  // Les frais d'acquisition et les travaux sont sortis de la revalorisation :
+  // ils sont payés le premier jour et doivent se voir. La somme est inchangée,
+  // puisque besoin = prix + notaire + travaux + agence + mobilier + dossier.
+  const fraisAcquisition = R.notaire + p.fraisAcq + R.mobilier + p.fraisDossier;
   const marches = [
     {label:"Loyers\nencaissés",        v: f.cumulLoyers},
     {label:"Charges",                  v: -f.cumulCharges},
     {label:"Intérêts et\nassurance",   v: -f.cumulCredit},
     {label:"Impôt sur\nles loyers",    v: -f.cumulImpot},
-    {label:"Plus-value\nbrute",        v: f.valeur - R.besoin},
+    {label:"Frais\nd'acquisition",     v: -fraisAcquisition,
+     detail: [["Frais de notaire", R.notaire], ["Frais d'agence", p.fraisAcq],
+              ["Mobilier", R.mobilier], ["Dossier et garantie", p.fraisDossier]]},
+    {label:"Travaux",                  v: -p.travaux},
+    {label:"Revalorisation\ndu bien",  v: f.valeur - p.prix},
     {label:"Frais de\nrevente",        v: -(f.fraisVente + f.ira)},
     {label:"Impôt sur la\nplus-value", v: -(f.impotPV + f.repriseDF)}
   ];
   let acc = 0;
   const items = marches.map(m => {
-    const it = {label:m.label, from:acc, to:acc+m.v, color: m.v >= 0 ? "--up" : "--down", text: sEur(m.v)};
+    const it = {label:m.label, from:acc, to:acc+m.v, color: m.v >= 0 ? "--up" : "--down",
+      text: sEur(m.v), detail: m.detail};
     acc += m.v; return it;
   });
   items.push({label:"Gain net", from:0, to:f.gain, color:"--text", text:sEur(f.gain), textColor:"--text", strong:true});
@@ -1075,13 +1091,13 @@ function renderComplements(p){
       const it = items[i];
       return `<div class="th">${it.label.replace("\n"," ")} · ${p.horizon} ans</div>` +
         tipRow("transparent", i < items.length-1 ? "Montant" : "Total", it.text) +
+        (it.detail || []).filter(d => d[1] > 0.5).map(d => tipRow("transparent", "dont " + d[0].toLowerCase(), cost(d[1]))).join("") +
         (i < items.length-1 ? tipRow("transparent","Cumul à cette étape", sEur(it.to)) : "");
     }
   });
-  const plusValue = f.valeur - R.besoin;
-  $("cascNote").textContent = plusValue >= 0
-    ? `Sur ${p.horizon} ans, les loyers apportent ${eur.format(f.cumulLoyers)} et la revalorisation ${eur.format(plusValue)} au-dessus du coût total de l'opération ; le crédit en absorbe ${eur.format(f.cumulCredit)}, la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`
-    : `Sur ${p.horizon} ans, le bien se revend ${eur.format(-plusValue)} sous le coût total de l'opération : le gain, s'il existe, vient des loyers.`;
+  const revalorisation = f.valeur - p.prix;
+  $("cascNote").textContent =
+    `Sur ${p.horizon} ans, les loyers apportent ${eur.format(f.cumulLoyers)} et le bien se revend ${revalorisation >= 0 ? eur.format(revalorisation) + " au-dessus" : eur.format(-revalorisation) + " en dessous"} de son prix d'achat. En face, ${eur.format(fraisAcquisition)} de frais d'acquisition — dont ${eur.format(R.notaire)} de notaire — sont perdus dès la signature, le crédit coûte ${eur.format(f.cumulCredit)} et la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`;
 
   // Patrimoine net et dette.
   const xs = rows.map(r => String(r.y));
@@ -1175,13 +1191,18 @@ function toast(msg){
 const CHAMPS_REGIME = {
   "micro-foncier": ["fAbattement"],
   "reel-foncier":  ["fPlafondDeficit"],
-  "lmnp-micro":    ["fAbattement", "fCfe"],
-  "lmnp-reel":     ["fCfe", "fPartBati", "fAmortBati", "fAmortTvx", "fAmortMob"]
+  "lmnp-micro":    ["fAbattement", "fCfe", "fMobilier"],
+  "lmnp-reel":     ["fCfe", "fMobilier", "fPartBati", "fAmortBati", "fAmortTvx", "fAmortMob"]
 };
 const TOUS_CHAMPS_REGIME = [...new Set(Object.values(CHAMPS_REGIME).flat())];
 function syncRegime(){
-  const visibles = CHAMPS_REGIME[$("regime").value] || [];
+  const rg = $("regime").value;
+  const visibles = CHAMPS_REGIME[rg] || [];
   TOUS_CHAMPS_REGIME.forEach(id => { $(id).hidden = !visibles.includes(id); });
+  // La part déductible d'un poste de travaux ne vaut qu'au réel foncier. Les
+  // lignes étant reconstruites à chaque frappe, c'est le conteneur qui porte
+  // l'état, jamais les champs eux-mêmes.
+  $("tvxList").classList.toggle("sans-deduc", rg !== "reel-foncier");
 }
 FIELDS.concat(SELECTS).forEach(k => {
   if(k === "regime") return;
@@ -1225,7 +1246,7 @@ $("tvxAdd").addEventListener("click", () => {
 });
 
 $("reset").addEventListener("click", () => {
-  retablirDefauts(); marquerExemple(null);
+  retablirDefauts();
   renderItems(); render(); toast("Hypothèses réinitialisées");
 });
 
@@ -1270,6 +1291,7 @@ function appliquerRegime(rg){
   $("ps").value = PS_LOYERS[rg] || "17.2";
   $("cfe").value = CFE_DEFAUT[rg] || "0";
   if(ABATT_DEFAUT[rg]) $("abattement").value = ABATT_DEFAUT[rg];
+  if(MOBILIER_DEFAUT[rg] !== undefined) $("mobilier").value = MOBILIER_DEFAUT[rg];
 }
 function retablirDefauts(){
   Object.keys(DEFAULTS).forEach(k => {
@@ -1278,34 +1300,6 @@ function retablirDefauts(){
   });
   items = TVX_DEFAUT.map(o => ({...o}));
 }
-// Trois projets plausibles, pour partir de chiffres concrets plutôt que d'un formulaire vide.
-const EXEMPLES = {
-  studio: {nom:"Studio à Lyon", regime:"lmnp-reel",
-    champs:{prix:135000, mobilier:4000, apport:20000, duree:20, taux:3.4, loyer:640, vacance:6, copro:40, tf:650, pno:160, horizon:20},
-    items:[{nom:"Rafraîchissement", montant:6000, taux:5, duree:15, deduc:100}]},
-  t2: {nom:"T2 à Nantes", regime:"lmnp-reel",
-    champs:{prix:195000, mobilier:6000, apport:30000, duree:25, taux:3.5, loyer:800, vacance:5, copro:70, tf:1050, pno:180, horizon:25},
-    items:[{nom:"Cuisine et salle de bain", montant:15000, taux:5, duree:20, deduc:100}]},
-  maison: {nom:"Maison à Angers, en location nue", regime:"reel-foncier",
-    champs:{prix:245000, mobilier:0, apport:45000, duree:20, taux:3.4, loyer:980, vacance:4, copro:0, tf:1400, pno:220, horizon:25},
-    items:[{nom:"Rénovation énergétique", montant:30000, taux:3, duree:25, deduc:100}]}
-};
-function marquerExemple(cle){
-  document.querySelectorAll("#exemples .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.ex === cle ? "true" : "false"));
-}
-function appliquerExemple(cle){
-  const ex = EXEMPLES[cle]; if(!ex) return;
-  retablirDefauts();
-  Object.keys(ex.champs).forEach(k => { if($(k)) $(k).value = ex.champs[k]; });
-  appliquerRegime(ex.regime);
-  items = ex.items.map(o => ({...o}));
-  renderItems(); render();
-  marquerExemple(cle);
-  toast(ex.nom + " : hypothèses chargées");
-  $("verdict").scrollIntoView({behavior:"smooth", block:"start"});
-}
-$("exemples").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) appliquerExemple(b.dataset.ex); });
-document.querySelector(".rail").addEventListener("input", () => marquerExemple(null));
 
 // L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
 // un guide peut ouvrir le calculateur pré-réglé (/#regime=reel-foncier).
@@ -1409,7 +1403,7 @@ mqEtroit.addEventListener("change", () => { if(!mqEtroit.matches) $("railbox").o
 document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
 
 load();
-if(depuisHash()) marquerExemple(null);
+depuisHash();
 renderItems();
 syncTheme();
 $("echLisible").setAttribute("aria-pressed", echelleTri === "lisible" ? "true" : "false");

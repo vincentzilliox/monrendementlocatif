@@ -67,27 +67,55 @@
 
 <div class="shell">
   <aside class="rail" aria-label="Hypothèses de calcul">
-  <div class="examples" id="exemples">
-    <span class="exlabel">Partir d'un exemple :</span>
-    <button type="button" class="chip" data-ex="studio">Studio à Lyon</button>
-    <button type="button" class="chip" data-ex="t2">T2 à Nantes</button>
-    <button type="button" class="chip" data-ex="maison">Maison à Angers, en location nue</button>
-    <p class="exnote">Scénarios illustratifs : tous les champs restent modifiables ci-dessous.</p>
-  </div>
   <details class="railbox" id="railbox" open>
     <summary>Vos hypothèses</summary>
     <details class="group" open>
-      <summary>Le bien</summary>
+      <summary>1 · Régime fiscal</summary>
       <div class="fields">
-        <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
-        <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 % ancien · 2,5 % neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="7.5"><span class="unit">%</span></div></div>
-        <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
-        <div class="f"><label for="mobilier">Mobilier<span class="hint">utile en meublé (LMNP)</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <p class="grouphint">C'est le paramètre le plus décisif : à situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept d'un régime à l'autre. Les questions posées ensuite s'adaptent au régime choisi.</p>
+        <div class="f stack"><label for="regime">Location nue ou meublée<span class="hint">le comparatif plus bas chiffre les quatre régimes sur votre projet</span></label>
+          <select id="regime">
+            <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
+            <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
+            <option value="lmnp-micro">Meublé — micro-BIC (abattement 50 %)</option>
+            <option value="lmnp-reel" selected>Meublé — LMNP au réel (amortissement)</option>
+          </select>
+        </div>
+        <div class="f stack"><label for="tmi">Tranche marginale d'imposition</label>
+          <select id="tmi">
+            <option value="0">0 %</option><option value="11">11 %</option>
+            <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
+          </select>
+        </div>
+        <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
+        <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
+        <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
+        <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
+        <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
+        <details class="more">
+          <summary>Prélèvements sociaux</summary>
+          <div class="fields">
+            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
+            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
+          </div>
+        </details>
       </div>
     </details>
 
     <details class="group" open>
-      <summary>Le financement</summary>
+      <summary>2 · Le bien</summary>
+      <div class="fields">
+        <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation · 2 à 3 % dans le neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <div class="f" id="fMobilier"><label for="mobilier">Mobilier<span class="hint">meubles, électroménager, literie — amortissables au LMNP réel</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>3 · Le financement</summary>
       <div class="fields">
         <div class="f"><label for="apport">Apport personnel</label><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
         <dl class="derived">
@@ -115,7 +143,7 @@
     </details>
 
     <details class="group" open>
-      <summary>L'exploitation</summary>
+      <summary>4 · L'exploitation</summary>
       <div class="fields">
         <div class="f"><label for="loyer">Loyer mensuel hors charges</label><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
         <div class="f"><label for="vacance">Vacance locative + impayés</label><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
@@ -132,42 +160,8 @@
       </div>
     </details>
 
-    <details class="group" open>
-      <summary>Fiscalité</summary>
-      <div class="fields">
-        <div class="f stack"><label for="regime">Régime fiscal<span class="hint">le paramètre le plus décisif — comparez-les plus bas</span></label>
-          <select id="regime">
-            <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
-            <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
-            <option value="lmnp-micro">Meublé — micro-BIC (abattement 50 %)</option>
-            <option value="lmnp-reel" selected>Meublé — LMNP au réel (amortissement)</option>
-          </select>
-        </div>
-        <div class="f stack"><label for="tmi">Tranche marginale d'imposition</label>
-          <select id="tmi">
-            <option value="0">0 %</option><option value="11">11 %</option>
-            <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
-          </select>
-        </div>
-        <details class="more">
-          <summary>Prélèvements sociaux, CFE, amortissements</summary>
-          <div class="fields">
-            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
-            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
-            <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
-            <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
-            <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
-            <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
-            <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
-            <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
-            <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
-          </div>
-        </details>
-      </div>
-    </details>
-
     <details class="group">
-      <summary>Travaux &amp; dépréciation</summary>
+      <summary>5 · Travaux &amp; dépréciation</summary>
       <div class="fields">
         <p class="grouphint">Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez. Une cuisine neuve fait grimper le prix aujourd'hui ; vingt ans plus tard, elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel : entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</p>
         <div class="tvxlist" id="tvxList"></div>
@@ -182,7 +176,7 @@
     </details>
 
     <details class="group">
-      <summary>Projection &amp; revente</summary>
+      <summary>6 · Projection &amp; revente</summary>
       <div class="fields">
         <div class="f"><label for="horizon">Horizon d'analyse</label><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
         <div class="f"><label for="inflation">Inflation</label><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
@@ -195,14 +189,14 @@
     </details>
 
     <details class="group">
-      <summary>Placements comparés</summary>
+      <summary>7 · Placements comparés</summary>
       <div class="fields">
         <p class="grouphint">Taux <b>hors inflation</b> et <b>avant impôt</b>, comme le rendement réel du bien. La comparaison, elle, se fait nette d'impôt des deux côtés : le Livret A est exonéré, les deux autres supportent le taux que vous indiquez sur leurs gains.</p>
         <div class="f"><label for="livretA">Livret A<span class="hint" id="hLivret"></span></label><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.3"><span class="unit">%/an</span></div></div>
         <div class="f"><label for="fondsEuros">Fonds euros<span class="hint" id="hFonds"></span></label><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
         <div class="f"><label for="bourse">Bourse<span class="hint" id="hBourse"></span></label><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
-        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">30 % en compte-titres (PFU) · 17,2 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
-        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">31,4 % en compte-titres depuis 2026 (PFU : 12,8 % + 18,6 % de prélèvements sociaux) · 18,6 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="31.4"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">l'assurance-vie échappe à la hausse de CSG : 30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
       </div>
     </details>
 
@@ -299,7 +293,7 @@
           <p>Tout ce qui entre et tout ce qui sort sur la période, en euros courants, jusqu'au gain net si vous revendez à l'horizon. La plus-value est prise avant impôt et frais de revente, qui apparaissent séparément.</p>
         </div>
       </div>
-      <div class="plot" id="plotCasc"><div class="tip" id="tipCasc"></div></div>
+      <div class="plotwrap"><div class="plot large" id="plotCasc"><div class="tip" id="tipCasc"></div></div></div>
       <p class="axisnote" id="cascNote"></p>
     </section>
 

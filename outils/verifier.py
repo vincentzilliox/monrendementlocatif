@@ -104,8 +104,28 @@ setTimeout(function(){
   r.courbes   = document.querySelectorAll("#plotNet path[stroke]").length;
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
   r.sens      = document.querySelectorAll("#plotSens svg rect").length;
-  r.exemples  = document.querySelectorAll("#exemples .chip").length;
   r.liens     = document.querySelectorAll("#suite a").length;
+  // Le formulaire ne doit poser que les questions du régime choisi : on parcourt
+  // les quatre régimes et on relève, pour chacun, les champs réellement visibles.
+  var conditionnels = ["fAbattement","fPlafondDeficit","fCfe","fMobilier","fPartBati","fAmortBati","fAmortTvx","fAmortMob"];
+  var select = document.getElementById("regime");
+  if(select){
+    var initial = select.value;
+    r.conditionnement = {};
+    ["micro-foncier","reel-foncier","lmnp-micro","lmnp-reel"].forEach(function(rg){
+      select.value = rg;
+      select.dispatchEvent(new Event("change", {bubbles:true}));
+      var vus = conditionnels.filter(function(id){
+        var el = document.getElementById(id);
+        return el && !el.hidden && el.offsetParent !== null;
+      });
+      var ligne = document.querySelector("#tvxList .deduc");
+      r.conditionnement[rg] = {champs: vus.sort().join(","),
+                       deduc: !!(ligne && ligne.offsetParent !== null)};
+    });
+    select.value = initial;
+    select.dispatchEvent(new Event("change", {bubbles:true}));
+  }
   r.lignes    = document.querySelectorAll("#tbl tbody tr").length;
   r.questions = document.querySelectorAll(".faqg article").length;
   r.tri       = (document.getElementById("heroTri")||{}).textContent || "";
@@ -285,7 +305,18 @@ def main():
                     controle("quatre courbes comparées", r["courbes"] == 4, str(r["courbes"]))
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
-                    controle("trois exemples proposés", r["exemples"] == 3, str(r["exemples"]))
+                    attendu = {
+                        "micro-foncier": ("fAbattement", False),
+                        "reel-foncier": ("fPlafondDeficit", True),
+                        "lmnp-micro": ("fAbattement,fCfe,fMobilier", False),
+                        "lmnp-reel": ("fAmortBati,fAmortMob,fAmortTvx,fCfe,fMobilier,fPartBati", False),
+                    }
+                    vus = r.get("conditionnement") or {}
+                    ecarts = [rg for rg, (champs, deduc) in attendu.items()
+                              if vus.get(rg, {}).get("champs") != champs
+                              or vus.get(rg, {}).get("deduc") != deduc]
+                    controle("chaque régime n'expose que ses champs", not ecarts,
+                             ", ".join(ecarts) or "4 régimes vérifiés")
                     controle("renvois vers les pages annexes",
                              r["liens"] >= 3, "%d liens" % r["liens"])
                     controle("tableau annuel rempli", r["lignes"] >= 10, "%d lignes" % r["lignes"])
@@ -312,11 +343,11 @@ def main():
         essai = RACINE / "outils" / "__moteur.js"
         essai.write_text(moteur + """
 var $ = function(){ return {innerHTML:'', value:'', textContent:''}; };
-function base(){ return {prix:200000,notairePct:7.5,fraisAcq:0,mobilier:5000,apport:35000,
+function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:5000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,
  amortBatiAns:30,amortTvxAns:15,amortMobAns:7,horizon:25,inflation:2,indexPrix:2,indexLoyer:2,
- indexCharges:2,fraisVente:5,bourse:4,fondsEuros:0,livretA:-0.3,fiscBourse:30,fiscFonds:30,
+ indexCharges:2,fraisVente:5,bourse:4,fondsEuros:0,livretA:-0.3,fiscBourse:31.4,fiscFonds:30,
  regime:'lmnp-reel',tmi:30,ira:true,items:[{nom:'R',montant:20000,taux:5,duree:20,deduc:100}]}; }
 function run(o){ var p=base(); for(var k in o) p[k]=o[k];
  p.travaux=p.items.reduce(function(s,i){return s+i.montant;},0); return compute(p); }
@@ -332,7 +363,7 @@ var lignes=[];
     +'|ecart '+(x.final.gainImmo-x.final.gainBourse).toFixed(2)+' EUR');
 });
 // Sans impot, le TRI du portefeuille boursier est exactement son taux nominal.
-var s0=run({fiscBourse:0}), s30=run({fiscBourse:30});
+var s0=run({fiscBourse:0}), s30=run({fiscBourse:31.4});
 lignes.push('TRI bourse sans impot = taux nominal|'+(Math.abs(s0.final.triBourse-0.0608)<1e-4?1:0)+'|'+(s0.final.triBourse*100).toFixed(3)+' %');
 lignes.push('impot des placements reduit leur gain|'+(s30.final.gainBourse<s0.final.gainBourse && s30.final.gainFonds<=s0.final.gainFonds?1:0)+'|');
 // Les frais d'agence du vendeur minorent le prix de cession.
@@ -348,12 +379,20 @@ var attendu=Math.max(0,b2+Math.min(0,b1))*0.486;
 lignes.push('deficit BIC reporte sur l annee suivante|'+(b1<0 && b2>0 && Math.abs(r2.impot-attendu)<1?1:0)+'|'+r2.impot.toFixed(0)+' vs '+attendu.toFixed(0)+' EUR');
 // La cascade du gain est une identite comptable exacte.
 var c=run({}), f=c.final;
-var somme=f.cumulLoyers-f.cumulCharges-f.cumulCredit-f.cumulImpot+(f.valeur-c.besoin)-(f.fraisVente+f.ira)-(f.impotPV+f.repriseDF);
+// Neuf marches, frais d'acquisition et travaux sortis de la revalorisation.
+var fraisAcq=c.notaire+c.p.fraisAcq+c.mobilier+c.p.fraisDossier;
+var somme=f.cumulLoyers-f.cumulCharges-f.cumulCredit-f.cumulImpot-fraisAcq-c.p.travaux
+  +(f.valeur-c.p.prix)-(f.fraisVente+f.ira)-(f.impotPV+f.repriseDF);
 lignes.push('cascade du gain : somme des marches = gain|'+(Math.abs(somme-f.gain)<1?1:0)+'|ecart '+(somme-f.gain).toFixed(2)+' EUR');
 lignes.push('CFE exoneree la premiere annee|'
   +(Math.abs(run({}).rows[0].charges-run({cfe:0}).rows[0].charges)<0.01?1:0)+'|');
 lignes.push('CFE neutralisee en location nue|'
   +(Math.abs(run({regime:'reel-foncier',cfe:400}).final.tri-run({regime:'reel-foncier',cfe:0}).final.tri)<1e-9?1:0)+'|');
+// Le mobilier est masque en location nue : il ne doit pas gonfler le cout de l'operation.
+lignes.push('mobilier neutralise en location nue|'
+  +(Math.abs(run({regime:'reel-foncier',mobilier:8000}).final.tri-run({regime:'reel-foncier',mobilier:0}).final.tri)<1e-9?1:0)+'|');
+lignes.push('mobilier compte en meuble|'
+  +(Math.abs(run({mobilier:8000}).final.tri-run({mobilier:0}).final.tri)>1e-6?1:0)+'|');
 lignes.push('apport nul : TRI non calculable|'+(run({apport:0}).final.tri===null?1:0)+'|');
 lignes.push('duree amortissement nulle sans plantage|'+(isFinite(run({amortBatiAns:0}).final.tri)?1:0)+'|');
 lignes.push('horizon 1 an sans plantage|'+(isFinite(run({horizon:1}).final.tri)?1:0)+'|');

@@ -98,11 +98,17 @@ function surtaxePV(base){
 const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
+// Le mobilier ne concerne que le meublé : repasser en nu remet le champ à zéro.
+const MOBILIER_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
   const notaire = p.prix * p.notairePct/100;
-  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + p.mobilier + p.fraisDossier;
+  // Meublé ou nu : ce qui ne concerne pas le régime choisi est masqué à l'écran,
+  // donc neutralisé ici. Un champ masqué ne doit jamais peser sur le résultat.
+  const meuble = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
+  const mobilier = meuble ? p.mobilier : 0;
+  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + mobilier + p.fraisDossier;
   const emprunt = Math.max(0, besoin - p.apport);
   const cash0 = Math.max(0, besoin - emprunt);
   const sch = schedule(emprunt, p.taux, p.duree, p.assur);
@@ -116,9 +122,9 @@ function compute(p){
   const surAns = (montant, ans) => ans > 0 ? montant/ans : 0;
   const amortBati = surAns((p.prix + notaire + p.fraisAcq)*(p.partBati/100), p.amortBatiAns);
   const amortTvx = surAns(p.travaux, p.amortTvxAns);
-  const amortMob = surAns(p.mobilier, p.amortMobAns);
-  // Un champ masqué ne doit jamais peser sur le résultat : la CFE relève du BIC.
-  const cfeApplicable = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
+  const amortMob = surAns(mobilier, p.amortMobAns);
+  // La CFE relève du BIC : elle ne concerne pas la location nue.
+  const cfeApplicable = meuble;
 
   // Déficits fonciers reportables : chaque millésime expire au bout de 10 ans.
   // Imputations sur le revenu global : reprises si le bien est vendu avant le
@@ -129,7 +135,8 @@ function compute(p){
   // avant l'amortissement, qui lui se reporte sans limite.
   let deficitsBIC = [];
   // Deux stocks d'amortissement : le bâti et les travaux sont réintégrés dans
-  // la plus-value depuis la loi de finances 2025, le mobilier non — il n'entre
+  // la plus-value depuis la loi de finances 2025, confirmée en 2026 ; le mobilier
+  // non — il n'entre
   // pas dans la cession immobilière.
   let stockImm = 0, stockMob = 0, amortCumul = 0, amortReintegre = 0;
   // Comparaison à mise de fonds identique. Les deux scénarios partent du même
@@ -293,7 +300,7 @@ function compute(p){
     r.gainConstant = r.gainImmo/Math.pow(1 + p.inflation/100, r.y);
   });
   return {
-    p, rows, best, notaire, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
+    p, rows, best, notaire, mobilier, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
     bruteCout: loyerBrutAn/besoin,
@@ -679,7 +686,7 @@ const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.forma
 /* ---------- page d'accueil ---------- */
 const DEFAUTS = {
   "prix": 200000.0,
-  "notairePct": 7.5,
+  "notairePct": 8.0,
   "fraisAcq": 0.0,
   "mobilier": 0.0,
   "apport": 35000.0,
@@ -712,7 +719,7 @@ const DEFAUTS = {
   "bourse": 4.0,
   "fondsEuros": 0.0,
   "livretA": -0.3,
-  "fiscBourse": 30.0,
+  "fiscBourse": 31.4,
   "fiscFonds": 30.0,
   "regime": "lmnp-reel",
   "tmi": 30.0,

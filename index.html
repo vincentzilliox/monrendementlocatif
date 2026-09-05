@@ -107,20 +107,6 @@ button,input,select{font-family:inherit}
 .pagehead h1{font-size:clamp(20px,2.4vw,26px); font-weight:600; letter-spacing:-.02em; line-height:1.2; margin:0; text-wrap:balance}
 .pagehead p{margin:6px 0 0; font-size:14px; color:var(--text-muted); max-width:76ch; line-height:1.5}
 
-/* ---------- exemples de projets ---------- */
-.examples{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
-.exlabel{font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); width:100%}
-.chip{
-  height:32px; padding:0 14px; border-radius:999px; border:1px solid var(--border);
-  background:var(--btn-bg); color:var(--text); font-size:13px; font-weight:500; cursor:pointer;
-}
-.chip:hover{background:var(--surface-2)}
-.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-text)}
-.exnote{width:100%; font-size:12px; color:var(--text-muted); margin:2px 0 0}
-/* dans le panneau d'hypothèses, les exemples s'empilent sur toute la largeur */
-.rail .examples{padding:14px clamp(16px,2vw,22px) 16px; border-bottom:1px solid var(--border); gap:7px}
-.rail .examples .chip{width:100%; text-align:left; padding:0 12px}
-
 /* ---------- structure ---------- */
 .shell{display:grid; grid-template-columns:352px minmax(0,1fr); align-items:start}
 .rail{border-right:1px solid var(--border); background:var(--surface); position:sticky; top:0; max-height:100vh; overflow-y:auto}
@@ -216,6 +202,7 @@ input[type=number]{-moz-appearance:textfield}
 /* postes de travaux dépréciables */
 .grouphint{margin:0 0 4px; font-size:11.5px; color:var(--text-muted); line-height:1.55}
 .tvxlist{display:flex; flex-direction:column; gap:9px}
+.tvxlist.sans-deduc .deduc{display:none}   /* « déductible » ne vaut qu'au réel foncier */
 .tvxrow{border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px 10px; background:var(--bg); display:flex; flex-direction:column; gap:8px}
 .tvxhead{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:center}
 .tvxhead input{font:inherit; font-size:13px; font-weight:500; color:var(--text); width:100%; background:transparent; border:0; border-bottom:1px solid transparent; padding:2px 0}
@@ -297,6 +284,10 @@ input[type=number]{-moz-appearance:textfield}
 .swatch.points{background:linear-gradient(90deg,currentColor 42%,transparent 42%) 0 0/5px 3px}
 .swatch.sq{width:10px; height:10px; border-radius:2px}
 .plot{position:relative; margin-top:8px}
+/* une cascade à dix colonnes : plutôt défiler que tasser les libellés */
+.plotwrap{overflow-x:auto; margin-top:8px}
+.plotwrap .plot{margin-top:0}
+@media (max-width:760px){ .plot.large{min-width:620px} }
 .plot svg{display:block; width:100%; overflow:visible}
 .plot svg text{font-family:var(--font); font-variant-numeric:tabular-nums}
 .plot .clickable{cursor:pointer}
@@ -477,27 +468,55 @@ td.pos{color:var(--up)} td.neg{color:var(--down)}
 
 <div class="shell">
   <aside class="rail" aria-label="Hypothèses de calcul">
-  <div class="examples" id="exemples">
-    <span class="exlabel">Partir d'un exemple :</span>
-    <button type="button" class="chip" data-ex="studio">Studio à Lyon</button>
-    <button type="button" class="chip" data-ex="t2">T2 à Nantes</button>
-    <button type="button" class="chip" data-ex="maison">Maison à Angers, en location nue</button>
-    <p class="exnote">Scénarios illustratifs : tous les champs restent modifiables ci-dessous.</p>
-  </div>
   <details class="railbox" id="railbox" open>
     <summary>Vos hypothèses</summary>
     <details class="group" open>
-      <summary>Le bien</summary>
+      <summary>1 · Régime fiscal</summary>
       <div class="fields">
-        <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
-        <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 % ancien · 2,5 % neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="7.5"><span class="unit">%</span></div></div>
-        <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
-        <div class="f"><label for="mobilier">Mobilier<span class="hint">utile en meublé (LMNP)</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <p class="grouphint">C'est le paramètre le plus décisif : à situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept d'un régime à l'autre. Les questions posées ensuite s'adaptent au régime choisi.</p>
+        <div class="f stack"><label for="regime">Location nue ou meublée<span class="hint">le comparatif plus bas chiffre les quatre régimes sur votre projet</span></label>
+          <select id="regime">
+            <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
+            <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
+            <option value="lmnp-micro">Meublé — micro-BIC (abattement 50 %)</option>
+            <option value="lmnp-reel" selected>Meublé — LMNP au réel (amortissement)</option>
+          </select>
+        </div>
+        <div class="f stack"><label for="tmi">Tranche marginale d'imposition</label>
+          <select id="tmi">
+            <option value="0">0 %</option><option value="11">11 %</option>
+            <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
+          </select>
+        </div>
+        <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
+        <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
+        <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
+        <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
+        <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
+        <details class="more">
+          <summary>Prélèvements sociaux</summary>
+          <div class="fields">
+            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
+            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
+          </div>
+        </details>
       </div>
     </details>
 
     <details class="group" open>
-      <summary>Le financement</summary>
+      <summary>2 · Le bien</summary>
+      <div class="fields">
+        <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation · 2 à 3 % dans le neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <div class="f" id="fMobilier"><label for="mobilier">Mobilier<span class="hint">meubles, électroménager, literie — amortissables au LMNP réel</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>3 · Le financement</summary>
       <div class="fields">
         <div class="f"><label for="apport">Apport personnel</label><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
         <dl class="derived">
@@ -525,7 +544,7 @@ td.pos{color:var(--up)} td.neg{color:var(--down)}
     </details>
 
     <details class="group" open>
-      <summary>L'exploitation</summary>
+      <summary>4 · L'exploitation</summary>
       <div class="fields">
         <div class="f"><label for="loyer">Loyer mensuel hors charges</label><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
         <div class="f"><label for="vacance">Vacance locative + impayés</label><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
@@ -542,42 +561,8 @@ td.pos{color:var(--up)} td.neg{color:var(--down)}
       </div>
     </details>
 
-    <details class="group" open>
-      <summary>Fiscalité</summary>
-      <div class="fields">
-        <div class="f stack"><label for="regime">Régime fiscal<span class="hint">le paramètre le plus décisif — comparez-les plus bas</span></label>
-          <select id="regime">
-            <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
-            <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
-            <option value="lmnp-micro">Meublé — micro-BIC (abattement 50 %)</option>
-            <option value="lmnp-reel" selected>Meublé — LMNP au réel (amortissement)</option>
-          </select>
-        </div>
-        <div class="f stack"><label for="tmi">Tranche marginale d'imposition</label>
-          <select id="tmi">
-            <option value="0">0 %</option><option value="11">11 %</option>
-            <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
-          </select>
-        </div>
-        <details class="more">
-          <summary>Prélèvements sociaux, CFE, amortissements</summary>
-          <div class="fields">
-            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
-            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
-            <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
-            <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
-            <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
-            <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
-            <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
-            <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
-            <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
-          </div>
-        </details>
-      </div>
-    </details>
-
     <details class="group">
-      <summary>Travaux &amp; dépréciation</summary>
+      <summary>5 · Travaux &amp; dépréciation</summary>
       <div class="fields">
         <p class="grouphint">Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez. Une cuisine neuve fait grimper le prix aujourd'hui ; vingt ans plus tard, elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel : entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</p>
         <div class="tvxlist" id="tvxList"></div>
@@ -592,7 +577,7 @@ td.pos{color:var(--up)} td.neg{color:var(--down)}
     </details>
 
     <details class="group">
-      <summary>Projection &amp; revente</summary>
+      <summary>6 · Projection &amp; revente</summary>
       <div class="fields">
         <div class="f"><label for="horizon">Horizon d'analyse</label><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
         <div class="f"><label for="inflation">Inflation</label><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
@@ -605,14 +590,14 @@ td.pos{color:var(--up)} td.neg{color:var(--down)}
     </details>
 
     <details class="group">
-      <summary>Placements comparés</summary>
+      <summary>7 · Placements comparés</summary>
       <div class="fields">
         <p class="grouphint">Taux <b>hors inflation</b> et <b>avant impôt</b>, comme le rendement réel du bien. La comparaison, elle, se fait nette d'impôt des deux côtés : le Livret A est exonéré, les deux autres supportent le taux que vous indiquez sur leurs gains.</p>
         <div class="f"><label for="livretA">Livret A<span class="hint" id="hLivret"></span></label><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.3"><span class="unit">%/an</span></div></div>
         <div class="f"><label for="fondsEuros">Fonds euros<span class="hint" id="hFonds"></span></label><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
         <div class="f"><label for="bourse">Bourse<span class="hint" id="hBourse"></span></label><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
-        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">30 % en compte-titres (PFU) · 17,2 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
-        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">31,4 % en compte-titres depuis 2026 (PFU : 12,8 % + 18,6 % de prélèvements sociaux) · 18,6 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="31.4"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">l'assurance-vie échappe à la hausse de CSG : 30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
       </div>
     </details>
 
@@ -709,7 +694,7 @@ td.pos{color:var(--up)} td.neg{color:var(--down)}
           <p>Tout ce qui entre et tout ce qui sort sur la période, en euros courants, jusqu'au gain net si vous revendez à l'horizon. La plus-value est prise avant impôt et frais de revente, qui apparaissent séparément.</p>
         </div>
       </div>
-      <div class="plot" id="plotCasc"><div class="tip" id="tipCasc"></div></div>
+      <div class="plotwrap"><div class="plot large" id="plotCasc"><div class="tip" id="tipCasc"></div></div></div>
       <p class="axisnote" id="cascNote"></p>
     </section>
 
@@ -918,11 +903,17 @@ function surtaxePV(base){
 const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
+// Le mobilier ne concerne que le meublé : repasser en nu remet le champ à zéro.
+const MOBILIER_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
   const notaire = p.prix * p.notairePct/100;
-  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + p.mobilier + p.fraisDossier;
+  // Meublé ou nu : ce qui ne concerne pas le régime choisi est masqué à l'écran,
+  // donc neutralisé ici. Un champ masqué ne doit jamais peser sur le résultat.
+  const meuble = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
+  const mobilier = meuble ? p.mobilier : 0;
+  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + mobilier + p.fraisDossier;
   const emprunt = Math.max(0, besoin - p.apport);
   const cash0 = Math.max(0, besoin - emprunt);
   const sch = schedule(emprunt, p.taux, p.duree, p.assur);
@@ -936,9 +927,9 @@ function compute(p){
   const surAns = (montant, ans) => ans > 0 ? montant/ans : 0;
   const amortBati = surAns((p.prix + notaire + p.fraisAcq)*(p.partBati/100), p.amortBatiAns);
   const amortTvx = surAns(p.travaux, p.amortTvxAns);
-  const amortMob = surAns(p.mobilier, p.amortMobAns);
-  // Un champ masqué ne doit jamais peser sur le résultat : la CFE relève du BIC.
-  const cfeApplicable = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
+  const amortMob = surAns(mobilier, p.amortMobAns);
+  // La CFE relève du BIC : elle ne concerne pas la location nue.
+  const cfeApplicable = meuble;
 
   // Déficits fonciers reportables : chaque millésime expire au bout de 10 ans.
   // Imputations sur le revenu global : reprises si le bien est vendu avant le
@@ -949,7 +940,8 @@ function compute(p){
   // avant l'amortissement, qui lui se reporte sans limite.
   let deficitsBIC = [];
   // Deux stocks d'amortissement : le bâti et les travaux sont réintégrés dans
-  // la plus-value depuis la loi de finances 2025, le mobilier non — il n'entre
+  // la plus-value depuis la loi de finances 2025, confirmée en 2026 ; le mobilier
+  // non — il n'entre
   // pas dans la cession immobilière.
   let stockImm = 0, stockMob = 0, amortCumul = 0, amortReintegre = 0;
   // Comparaison à mise de fonds identique. Les deux scénarios partent du même
@@ -1113,7 +1105,7 @@ function compute(p){
     r.gainConstant = r.gainImmo/Math.pow(1 + p.inflation/100, r.y);
   });
   return {
-    p, rows, best, notaire, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
+    p, rows, best, notaire, mobilier, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
     bruteCout: loyerBrutAn/besoin,
@@ -1521,7 +1513,7 @@ function renderItems(){
         <label>Montant<span class="tw"><input type="number" step="500" min="0" data-i="${i}" data-f="montant" value="${it.montant}"><span class="u">€</span></span></label>
         <label>Perte / an<span class="tw"><input type="number" step="0.5" min="0" max="100" data-i="${i}" data-f="taux" value="${it.taux}"><span class="u">%</span></span></label>
         <label>Pendant<span class="tw"><input type="number" step="1" min="0" max="60" data-i="${i}" data-f="duree" value="${it.duree}"><span class="u">ans</span></span></label>
-        <label>Déductible<span class="tw"><input type="number" step="5" min="0" max="100" data-i="${i}" data-f="deduc" value="${it.deduc}"><span class="u">%</span></span></label>
+        <label class="deduc">Déductible<span class="tw"><input type="number" step="5" min="0" max="100" data-i="${i}" data-f="deduc" value="${it.deduc}"><span class="u">%</span></span></label>
       </div>
     </div>`).join("");
 }
@@ -1645,7 +1637,7 @@ function render(){
   $("dApport").textContent = "− " + eur.format(R.cash0);
   $("dEmprunt").textContent = eur.format(R.emprunt);
   const postes = [["le prix", p.prix], ["les frais de notaire", R.notaire], ["les travaux", p.travaux],
-    ["les frais d'agence", p.fraisAcq], ["le mobilier", p.mobilier], ["les frais de dossier", p.fraisDossier]]
+    ["les frais d'agence", p.fraisAcq], ["le mobilier", R.mobilier], ["les frais de dossier", p.fraisDossier]]
     .filter(x => x[1] > 0).map(x => x[0]);
   $("dCap").textContent = R.emprunt > 0
     ? "Coût total = " + postes.join(", ") + "."
@@ -1863,7 +1855,7 @@ function renderComplements(p){
         tipRow("transparent","Impôts cumulés", r.impots >= 0 ? cost(r.impots) : "+"+eur.format(-r.impots)) +
         (r.rg===p.regime ? "" : `<div class="tr" style="margin-top:6px;color:var(--text-muted)">Cliquer pour adopter ce régime</div>`);
     },
-    onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); marquerExemple(null); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
+    onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
   });
   const enCours = regs.find(r => r.rg === p.regime);
   $("regNote").textContent = !meilleur || meilleur.tri === null ? "" :
@@ -1873,18 +1865,27 @@ function renderComplements(p){
 
   // D'où vient le gain : une cascade dont la somme des marches est exactement le gain.
   const f = final;
+  // Les frais d'acquisition et les travaux sont sortis de la revalorisation :
+  // ils sont payés le premier jour et doivent se voir. La somme est inchangée,
+  // puisque besoin = prix + notaire + travaux + agence + mobilier + dossier.
+  const fraisAcquisition = R.notaire + p.fraisAcq + R.mobilier + p.fraisDossier;
   const marches = [
     {label:"Loyers\nencaissés",        v: f.cumulLoyers},
     {label:"Charges",                  v: -f.cumulCharges},
     {label:"Intérêts et\nassurance",   v: -f.cumulCredit},
     {label:"Impôt sur\nles loyers",    v: -f.cumulImpot},
-    {label:"Plus-value\nbrute",        v: f.valeur - R.besoin},
+    {label:"Frais\nd'acquisition",     v: -fraisAcquisition,
+     detail: [["Frais de notaire", R.notaire], ["Frais d'agence", p.fraisAcq],
+              ["Mobilier", R.mobilier], ["Dossier et garantie", p.fraisDossier]]},
+    {label:"Travaux",                  v: -p.travaux},
+    {label:"Revalorisation\ndu bien",  v: f.valeur - p.prix},
     {label:"Frais de\nrevente",        v: -(f.fraisVente + f.ira)},
     {label:"Impôt sur la\nplus-value", v: -(f.impotPV + f.repriseDF)}
   ];
   let acc = 0;
   const items = marches.map(m => {
-    const it = {label:m.label, from:acc, to:acc+m.v, color: m.v >= 0 ? "--up" : "--down", text: sEur(m.v)};
+    const it = {label:m.label, from:acc, to:acc+m.v, color: m.v >= 0 ? "--up" : "--down",
+      text: sEur(m.v), detail: m.detail};
     acc += m.v; return it;
   });
   items.push({label:"Gain net", from:0, to:f.gain, color:"--text", text:sEur(f.gain), textColor:"--text", strong:true});
@@ -1896,13 +1897,13 @@ function renderComplements(p){
       const it = items[i];
       return `<div class="th">${it.label.replace("\n"," ")} · ${p.horizon} ans</div>` +
         tipRow("transparent", i < items.length-1 ? "Montant" : "Total", it.text) +
+        (it.detail || []).filter(d => d[1] > 0.5).map(d => tipRow("transparent", "dont " + d[0].toLowerCase(), cost(d[1]))).join("") +
         (i < items.length-1 ? tipRow("transparent","Cumul à cette étape", sEur(it.to)) : "");
     }
   });
-  const plusValue = f.valeur - R.besoin;
-  $("cascNote").textContent = plusValue >= 0
-    ? `Sur ${p.horizon} ans, les loyers apportent ${eur.format(f.cumulLoyers)} et la revalorisation ${eur.format(plusValue)} au-dessus du coût total de l'opération ; le crédit en absorbe ${eur.format(f.cumulCredit)}, la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`
-    : `Sur ${p.horizon} ans, le bien se revend ${eur.format(-plusValue)} sous le coût total de l'opération : le gain, s'il existe, vient des loyers.`;
+  const revalorisation = f.valeur - p.prix;
+  $("cascNote").textContent =
+    `Sur ${p.horizon} ans, les loyers apportent ${eur.format(f.cumulLoyers)} et le bien se revend ${revalorisation >= 0 ? eur.format(revalorisation) + " au-dessus" : eur.format(-revalorisation) + " en dessous"} de son prix d'achat. En face, ${eur.format(fraisAcquisition)} de frais d'acquisition — dont ${eur.format(R.notaire)} de notaire — sont perdus dès la signature, le crédit coûte ${eur.format(f.cumulCredit)} et la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`;
 
   // Patrimoine net et dette.
   const xs = rows.map(r => String(r.y));
@@ -1996,13 +1997,18 @@ function toast(msg){
 const CHAMPS_REGIME = {
   "micro-foncier": ["fAbattement"],
   "reel-foncier":  ["fPlafondDeficit"],
-  "lmnp-micro":    ["fAbattement", "fCfe"],
-  "lmnp-reel":     ["fCfe", "fPartBati", "fAmortBati", "fAmortTvx", "fAmortMob"]
+  "lmnp-micro":    ["fAbattement", "fCfe", "fMobilier"],
+  "lmnp-reel":     ["fCfe", "fMobilier", "fPartBati", "fAmortBati", "fAmortTvx", "fAmortMob"]
 };
 const TOUS_CHAMPS_REGIME = [...new Set(Object.values(CHAMPS_REGIME).flat())];
 function syncRegime(){
-  const visibles = CHAMPS_REGIME[$("regime").value] || [];
+  const rg = $("regime").value;
+  const visibles = CHAMPS_REGIME[rg] || [];
   TOUS_CHAMPS_REGIME.forEach(id => { $(id).hidden = !visibles.includes(id); });
+  // La part déductible d'un poste de travaux ne vaut qu'au réel foncier. Les
+  // lignes étant reconstruites à chaque frappe, c'est le conteneur qui porte
+  // l'état, jamais les champs eux-mêmes.
+  $("tvxList").classList.toggle("sans-deduc", rg !== "reel-foncier");
 }
 FIELDS.concat(SELECTS).forEach(k => {
   if(k === "regime") return;
@@ -2046,7 +2052,7 @@ $("tvxAdd").addEventListener("click", () => {
 });
 
 $("reset").addEventListener("click", () => {
-  retablirDefauts(); marquerExemple(null);
+  retablirDefauts();
   renderItems(); render(); toast("Hypothèses réinitialisées");
 });
 
@@ -2091,6 +2097,7 @@ function appliquerRegime(rg){
   $("ps").value = PS_LOYERS[rg] || "17.2";
   $("cfe").value = CFE_DEFAUT[rg] || "0";
   if(ABATT_DEFAUT[rg]) $("abattement").value = ABATT_DEFAUT[rg];
+  if(MOBILIER_DEFAUT[rg] !== undefined) $("mobilier").value = MOBILIER_DEFAUT[rg];
 }
 function retablirDefauts(){
   Object.keys(DEFAULTS).forEach(k => {
@@ -2099,34 +2106,6 @@ function retablirDefauts(){
   });
   items = TVX_DEFAUT.map(o => ({...o}));
 }
-// Trois projets plausibles, pour partir de chiffres concrets plutôt que d'un formulaire vide.
-const EXEMPLES = {
-  studio: {nom:"Studio à Lyon", regime:"lmnp-reel",
-    champs:{prix:135000, mobilier:4000, apport:20000, duree:20, taux:3.4, loyer:640, vacance:6, copro:40, tf:650, pno:160, horizon:20},
-    items:[{nom:"Rafraîchissement", montant:6000, taux:5, duree:15, deduc:100}]},
-  t2: {nom:"T2 à Nantes", regime:"lmnp-reel",
-    champs:{prix:195000, mobilier:6000, apport:30000, duree:25, taux:3.5, loyer:800, vacance:5, copro:70, tf:1050, pno:180, horizon:25},
-    items:[{nom:"Cuisine et salle de bain", montant:15000, taux:5, duree:20, deduc:100}]},
-  maison: {nom:"Maison à Angers, en location nue", regime:"reel-foncier",
-    champs:{prix:245000, mobilier:0, apport:45000, duree:20, taux:3.4, loyer:980, vacance:4, copro:0, tf:1400, pno:220, horizon:25},
-    items:[{nom:"Rénovation énergétique", montant:30000, taux:3, duree:25, deduc:100}]}
-};
-function marquerExemple(cle){
-  document.querySelectorAll("#exemples .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.ex === cle ? "true" : "false"));
-}
-function appliquerExemple(cle){
-  const ex = EXEMPLES[cle]; if(!ex) return;
-  retablirDefauts();
-  Object.keys(ex.champs).forEach(k => { if($(k)) $(k).value = ex.champs[k]; });
-  appliquerRegime(ex.regime);
-  items = ex.items.map(o => ({...o}));
-  renderItems(); render();
-  marquerExemple(cle);
-  toast(ex.nom + " : hypothèses chargées");
-  $("verdict").scrollIntoView({behavior:"smooth", block:"start"});
-}
-$("exemples").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) appliquerExemple(b.dataset.ex); });
-document.querySelector(".rail").addEventListener("input", () => marquerExemple(null));
 
 // L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
 // un guide peut ouvrir le calculateur pré-réglé (/#regime=reel-foncier).
@@ -2230,7 +2209,7 @@ mqEtroit.addEventListener("change", () => { if(!mqEtroit.matches) $("railbox").o
 document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
 
 load();
-if(depuisHash()) marquerExemple(null);
+depuisHash();
 renderItems();
 syncTheme();
 $("echLisible").setAttribute("aria-pressed", echelleTri === "lisible" ? "true" : "false");
