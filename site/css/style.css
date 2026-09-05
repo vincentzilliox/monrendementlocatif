@@ -372,6 +372,10 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
 .vitrine .phead{margin-bottom:14px; justify-content:center; text-align:center}
 .vitrine .phead h2{font-size:clamp(18px,2.2vw,22px); letter-spacing:-.02em}
 .vitrine .phead p{font-size:14px; max-width:74ch; margin-inline:auto}
+/* Ce qui accompagne un graphique suit son titre : une légende restée à gauche
+   sous un en-tête centré se retrouve orpheline au bord de la carte. */
+.vitrine .legend{justify-content:center}
+.vitrine .axisnote, .vitrine .apercu-note{margin-inline:auto; text-align:center}
 .apercu .verdict{background:var(--surface)}
 .apercu-note{margin:12px 0 0; font-size:12.5px; color:var(--text-muted)}
 .concept{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:clamp(16px,2vw,24px)}
