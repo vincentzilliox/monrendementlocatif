@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rendement locatif : votre TRI net d'impôt, année par année</title>
+<meta name="description" content="Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleur moment pour revendre, comparaison bourse à mise égale.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://monrendementlocatif.fr/calculatrice/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://monrendementlocatif.fr/calculatrice/">
+<meta property="og:title" content="Rendement locatif : votre TRI net d'impôt, année par année">
+<meta property="og:description" content="Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleur moment pour revendre, comparaison bourse à mise égale.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mon rendement locatif — calculateur de rendement locatif">
+<meta property="og:site_name" content="Mon rendement locatif">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rendement locatif : votre TRI net d'impôt, année par année">
+<meta name="twitter:description" content="Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleur moment pour revendre, comparaison bourse à mise égale.">
+<meta name="twitter:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"WebApplication","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/calculatrice/","description":"Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleur moment pour revendre, comparaison bourse à mise égale.","applicationCategory":"FinanceApplication","operatingSystem":"Tout navigateur web","inLanguage":"fr-FR","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"featureList":["Taux de rendement interne année par année","Rendement réel net d'inflation","Point mort et meilleure année de revente","Quatre régimes fiscaux : micro-foncier, réel, micro-BIC, LMNP au réel","Comparaison avec le Livret A, un fonds euros et la bourse"]},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"https://monrendementlocatif.fr/"},{"@type":"ListItem","position":2,"name":"Calculatrice"}]}]</script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Mon rendement locatif — accueil">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6 20 H 8 V 22 H 6 Z M 9 20 H 11 V 22 H 9 Z M 6 23 H 8 V 25 H 6 Z M 9 23 H 11 V 25 H 9 Z"/>
+      <rect x="15.6" y="19.4" width="3.4" height="7.2" fill="currentColor"/>
+      <rect x="20.2" y="13.6" width="3.4" height="13" fill="currentColor"/>
+      <path d="M 1.6 16.4 L 8.6 9.2 L 15 15.8 L 23.6 6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path fill="currentColor" d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
+    </svg>
+    <span>Mon rendement locatif</span>
+  </a>
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="/calculatrice/" aria-current="page">Calculatrice</a>
+    <a href="/guides/">Guides</a>
+    <a href="/questions-frequentes/">Questions fréquentes</a>
+    <a href="/hypotheses-de-calcul/">Hypothèses de calcul</a>
+  </nav>
+  <span class="spacer"></span>
+  <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
+    <span class="knob"></span>
+    <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2"></circle>
+      <path d="M12 1.8v2.2M12 20v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M1.8 12h2.2M20 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"></path>
+    </svg>
+    <svg class="ico moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.6 8.6 0 1 0 11.3 11.3z"></path>
+    </svg>
+  </button>
+</header>
+
+<div class="pagehead">
+  <h1>Calculatrice de rendement locatif</h1>
+  <p>Renseignez votre projet : le rendement annualisé net d'impôt, le meilleur moment pour revendre et la comparaison avec la bourse se recalculent à chaque frappe.</p>
+</div>
+
+<div class="shell">
+  <aside class="rail" aria-label="Hypothèses de calcul">
+  <div class="examples" id="exemples">
+    <span class="exlabel">Partir d'un exemple :</span>
+    <button type="button" class="chip" data-ex="studio">Studio à Lyon</button>
+    <button type="button" class="chip" data-ex="t2">T2 à Nantes</button>
+    <button type="button" class="chip" data-ex="maison">Maison à Angers, en location nue</button>
+    <p class="exnote">Scénarios illustratifs : tous les champs restent modifiables ci-dessous.</p>
+  </div>
+  <details class="railbox" id="railbox" open>
+    <summary>Vos hypothèses</summary>
+    <details class="group" open>
+      <summary>Le bien</summary>
+      <div class="fields">
+        <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 % ancien · 2,5 % neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="7.5"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <div class="f"><label for="mobilier">Mobilier<span class="hint">utile en meublé (LMNP)</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Le financement</summary>
+      <div class="fields">
+        <div class="f"><label for="apport">Apport personnel</label><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
+        <dl class="derived">
+          <dt>Coût total de l'opération</dt><dd id="dCout">—</dd>
+          <dt>Votre apport</dt><dd id="dApport">—</dd>
+          <dt class="tot">Montant emprunté</dt><dd class="tot" id="dEmprunt">—</dd>
+          <dd class="cap" id="dCap"></dd>
+        </dl>
+        <div class="f"><label for="duree">Durée du prêt</label><div class="wrap uw"><input id="duree" type="number" step="1" value="20"><span class="unit">ans</span></div></div>
+        <div class="f"><label for="taux">Taux d'intérêt</label><div class="wrap"><input id="taux" type="number" step="0.05" value="3.4"><span class="unit">%</span></div></div>
+        <div class="f"><label for="assur">Assurance emprunteur<span class="hint">% du capital emprunté / an</span></label><div class="wrap"><input id="assur" type="number" step="0.01" value="0.34"><span class="unit">%</span></div></div>
+        <dl class="derived">
+          <dt>Mensualité, assurance incluse</dt><dd id="dMens">—</dd>
+          <dt>Coût total du crédit</dt><dd id="dCout2">—</dd>
+          <dd class="cap" id="dCap2"></dd>
+        </dl>
+        <details class="more">
+          <summary>Frais de dossier et remboursement anticipé</summary>
+          <div class="fields">
+            <div class="f"><label for="fraisDossier">Frais de dossier + garantie</label><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
+            <label class="check"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>L'exploitation</summary>
+      <div class="fields">
+        <div class="f"><label for="loyer">Loyer mensuel hors charges</label><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
+        <div class="f"><label for="vacance">Vacance locative + impayés</label><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+        <div class="f"><label for="tf">Taxe foncière</label><div class="wrap uw"><input id="tf" type="number" step="50" value="1200"><span class="unit">€/an</span></div></div>
+        <div class="f"><label for="copro">Charges de copro non récupérables</label><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>
+        <details class="more">
+          <summary>Assurances, gestion, entretien</summary>
+          <div class="fields">
+            <div class="f"><label for="pno">Assurance PNO + GLI</label><div class="wrap uw"><input id="pno" type="number" step="25" value="180"><span class="unit">€/an</span></div></div>
+            <div class="f"><label for="gestion">Gestion locative</label><div class="wrap"><input id="gestion" type="number" step="0.5" value="0"><span class="unit">%</span></div></div>
+            <div class="f"><label for="entretien">Provision entretien<span class="hint">% des loyers encaissés</span></label><div class="wrap"><input id="entretien" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Fiscalité</summary>
+      <div class="fields">
+        <div class="f stack"><label for="regime">Régime fiscal<span class="hint">le paramètre le plus décisif — comparez-les plus bas</span></label>
+          <select id="regime">
+            <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
+            <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
+            <option value="lmnp-micro">Meublé — micro-BIC (abattement 50 %)</option>
+            <option value="lmnp-reel" selected>Meublé — LMNP au réel (amortissement)</option>
+          </select>
+        </div>
+        <div class="f stack"><label for="tmi">Tranche marginale d'imposition</label>
+          <select id="tmi">
+            <option value="0">0 %</option><option value="11">11 %</option>
+            <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
+          </select>
+        </div>
+        <details class="more">
+          <summary>Prélèvements sociaux, CFE, amortissements</summary>
+          <div class="fields">
+            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
+            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
+            <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
+            <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
+            <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
+            <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
+            <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
+            <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+            <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Travaux &amp; dépréciation</summary>
+      <div class="fields">
+        <p class="grouphint">Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez. Une cuisine neuve fait grimper le prix aujourd'hui ; vingt ans plus tard, elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel : entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</p>
+        <div class="tvxlist" id="tvxList"></div>
+        <button type="button" class="addbtn" id="tvxAdd">+ Ajouter un poste</button>
+        <dl class="derived">
+          <dt>Total des travaux</dt><dd id="tvxTotal">—</dd>
+          <dt>Valeur restante à l'horizon</dt><dd id="tvxResid">—</dd>
+          <dt>Déductible au réel</dt><dd id="tvxDeduc">—</dd>
+          <dd class="cap" id="tvxCap"></dd>
+        </dl>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Projection &amp; revente</summary>
+      <div class="fields">
+        <div class="f"><label for="horizon">Horizon d'analyse</label><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
+        <div class="f"><label for="inflation">Inflation</label><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <label class="souscheck"><input id="prixSuitInflation" type="checkbox" checked> Prix, loyers et charges suivent l'inflation</label>
+        <div class="f" id="fIndexPrix"><label for="indexPrix">Revalorisation du bien</label><div class="wrap uw"><input id="indexPrix" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f" id="fIndexLoyer"><label for="indexLoyer">Indexation des loyers</label><div class="wrap uw"><input id="indexLoyer" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f" id="fIndexCharges"><label for="indexCharges">Inflation des charges</label><div class="wrap uw"><input id="indexCharges" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f"><label for="fraisVente">Frais d'agence à la revente</label><div class="wrap"><input id="fraisVente" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Placements comparés</summary>
+      <div class="fields">
+        <p class="grouphint">Taux <b>hors inflation</b> et <b>avant impôt</b>, comme le rendement réel du bien. La comparaison, elle, se fait nette d'impôt des deux côtés : le Livret A est exonéré, les deux autres supportent le taux que vous indiquez sur leurs gains.</p>
+        <div class="f"><label for="livretA">Livret A<span class="hint" id="hLivret"></span></label><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.3"><span class="unit">%/an</span></div></div>
+        <div class="f"><label for="fondsEuros">Fonds euros<span class="hint" id="hFonds"></span></label><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
+        <div class="f"><label for="bourse">Bourse<span class="hint" id="hBourse"></span></label><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
+        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">30 % en compte-titres (PFU) · 17,2 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+      </div>
+    </details>
+
+    <div class="railfoot">
+      <button type="button" class="btn sm" id="reset">Réinitialiser</button>
+      <button type="button" class="btn sm" id="share">Copier le lien</button>
+    </div>
+  </details>
+  </aside>
+
+  <main class="canvas">
+    <nav class="subnav" aria-label="Sections de la page">
+      <a href="#verdict">Verdict</a>
+      <a href="#indicateurs">Indicateurs</a>
+      <a href="#rendement">Rendement</a>
+      <a href="#regimes">Régimes</a>
+      <a href="#placements">Placements</a>
+      <a href="#tresorerie">Trésorerie</a>
+      <a href="#patrimoine">Patrimoine</a>
+      <a href="#sensibilite">Sensibilité</a>
+      <a href="#detail">Détail</a>
+      <a href="#suite">Pour aller plus loin</a>
+    </nav>
+
+    <section class="verdict" id="verdict">
+      <div>
+        <p class="eyebrow">Rendement annuel moyen si vous revendez à l'horizon</p>
+        <div class="hero"><span class="big num" id="heroTri">—</span><span class="per">par an, net de tout,<br>sur les fonds réellement engagés</span></div>
+        <p class="reel" id="heroReel"></p>
+        <p class="herosub" id="heroSub"></p>
+        <div class="bench"><span class="pill num" id="benchPill">—</span><span id="benchText"></span></div>
+      </div>
+      <div class="best">
+        <p class="eyebrow">Meilleur moment pour revendre</p>
+        <div class="yr" id="bestYear">—</div>
+        <p id="bestText"></p>
+        <dl id="bestList"></dl>
+      </div>
+    </section>
+
+    <section class="tiles" id="indicateurs" aria-label="Indicateurs clés"></section>
+
+    <section class="panel" id="rendement">
+      <div class="phead">
+        <div>
+          <h2>Rendement annualisé selon l'année de revente</h2>
+          <p>Chaque point répond à la même question : « si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? » La ligne de référence est le même argent, versé aux mêmes dates en bourse, une fois l'impôt sur les gains payé.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Échelle verticale">
+          <button type="button" id="echLisible" aria-pressed="true">Zone lisible</button>
+          <button type="button" id="echComplete" aria-pressed="false">Échelle complète</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Rendement du projet</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Bourse à mêmes versements, nette d'impôt, en euros courants</span></span>
+      </div>
+      <div class="plot" id="plotTri"><div class="tip" id="tipTri"></div></div>
+      <p class="axisnote" id="triNote"></p>
+    </section>
+
+    <section class="panel" id="regimes">
+      <div class="phead">
+        <div>
+          <h2>Le même projet sous les quatre régimes fiscaux</h2>
+          <p>Rendement annualisé à l'horizon, toutes hypothèses égales par ailleurs — seuls changent le régime et les réglages qui en découlent (prélèvements sociaux, CFE, abattement). Cliquez sur une barre pour adopter ce régime.</p>
+        </div>
+      </div>
+      <div class="plot" id="plotReg"><div class="tip" id="tipReg"></div></div>
+      <p class="axisnote" id="regNote"></p>
+    </section>
+
+    <section class="panel" id="placements">
+      <div class="phead">
+        <div>
+          <h2>Gagné ou perdu, selon l'année de revente</h2>
+          <p>Ce que vous avez réellement gagné : le capital détenu à cette date, net d'impôt, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Immobilier, revendu cette année-là</span></span>
+        <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Bourse</span></span>
+        <span style="color:var(--d3)"><i class="swatch tirets"></i><span style="color:var(--text-muted)">Fonds euros</span></span>
+        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Livret A</span></span>
+      </div>
+      <div class="plot" id="plotNet"><div class="tip" id="tipNet"></div></div>
+      <p class="axisnote" id="netNote"></p>
+    </section>
+
+    <section class="panel" id="cascade">
+      <div class="phead">
+        <div>
+          <h2>D'où vient le gain, à l'horizon</h2>
+          <p>Tout ce qui entre et tout ce qui sort sur la période, en euros courants, jusqu'au gain net si vous revendez à l'horizon. La plus-value est prise avant impôt et frais de revente, qui apparaissent séparément.</p>
+        </div>
+      </div>
+      <div class="plot" id="plotCasc"><div class="tip" id="tipCasc"></div></div>
+      <p class="axisnote" id="cascNote"></p>
+    </section>
+
+    <section class="panel" id="tresorerie">
+      <div class="phead">
+        <div>
+          <h2>Trésorerie annuelle après impôt</h2>
+          <p>Loyers encaissés moins charges, mensualités et impôt. En dessous de zéro, le projet vous coûte de l'argent chaque année — un effort d'épargne, pas nécessairement un mauvais placement.</p>
+        </div>
+      </div>
+      <div class="plot" id="plotCf"><div class="tip" id="tipCf"></div></div>
+    </section>
+
+    <section class="panel" id="patrimoine">
+      <div class="phead">
+        <div>
+          <h2>Patrimoine net et dette, année par année</h2>
+          <p>La valeur du bien monte, le capital restant dû descend : l'écart entre les deux est votre patrimoine net. Tant qu'il reste sous les sommes sorties de votre poche, la revente ne vous rembourserait pas.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Patrimoine net (valeur − dette)</span></span>
+        <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Valeur du bien</span></span>
+        <span style="color:var(--text-muted)"><i class="swatch"></i><span style="color:var(--text-muted)">Capital restant dû</span></span>
+        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Sorti de votre poche, cumulé</span></span>
+      </div>
+      <div class="plot" id="plotPat"><div class="tip" id="tipPat"></div></div>
+    </section>
+
+    <section class="panel" id="sensibilite">
+      <div class="phead">
+        <div>
+          <h2>Ce qui fait vraiment bouger le rendement</h2>
+          <p>Variation du rendement annualisé à l'horizon quand un seul paramètre change, les autres restant fixes. Les barres les plus longues désignent les hypothèses à vérifier en priorité avant de signer.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario favorable</span></span>
+        <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario défavorable</span></span>
+      </div>
+      <div class="plot" id="plotSens"><div class="tip" id="tipSens"></div></div>
+      <p class="axisnote" id="sensNote"></p>
+    </section>
+
+    <section class="panel" id="detail">
+      <div class="phead">
+        <div>
+          <h2>Détail annuel</h2>
+          <p>L'année surlignée est celle qui maximise le rendement annualisé.</p>
+        </div>
+        <div class="tools">
+          <button type="button" class="btn sm" id="copy">Copier</button>
+          <button type="button" class="btn sm" id="csv">Télécharger le CSV</button>
+        </div>
+      </div>
+      <div id="warnBox"></div>
+      <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="panel" id="suite">
+      <div class="phead">
+        <div>
+          <h2>Pour aller plus loin</h2>
+          <p>Ce que la simulation modélise, ce qu'elle laisse de côté, et les questions qui reviennent le plus.</p>
+        </div>
+      </div>
+      <ul class="liens">
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a> — la méthode complète : TRI sur fonds propres, fiscalité des quatre régimes, plus-value, inflation, placements comparés.</li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a> — quand revendre, rendement nominal ou réel, immobilier ou bourse, quel régime choisir.</li>
+        <li><a href="/guides/">Les six guides</a> — du rendement brut au TRI, LMNP au réel, déficit foncier, moment de la revente.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer-in">
+    <div>
+      <b>Mon rendement locatif</b>
+      <p>Calculateur indépendant et gratuit, sans compte, sans cookie ni traceur.</p>
+    </div>
+    <div>
+      <b>Guides</b>
+      <ul>
+        <li><a href="/guides/calcul-rendement-locatif/">Calculer un rendement locatif : brut, net, net-net, TRI</a></li>
+        <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué</a></li>
+        <li><a href="/guides/lmnp-reel-ou-micro-bic/">LMNP : réel ou micro-BIC ?</a></li>
+        <li><a href="/guides/micro-foncier-ou-reel/">Micro-foncier ou régime réel ?</a></li>
+        <li><a href="/guides/quand-revendre/">Quand revendre un bien locatif ?</a></li>
+        <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a></li>
+      </ul>
+    </div>
+    <div>
+      <b>À propos</b>
+      <ul>
+        <li><a href="/calculatrice/">La calculatrice</a></li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a></li>
+        <li><a href="/mentions-legales/">Mentions légales</a></li>
+        <li><a href="#" class="mail" data-u="contact" data-d="monrendementlocatif.fr">Nous écrire</a></li>
+      </ul>
+    </div>
+    <p class="fin">Outil d'aide à la décision : les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+<script src="/js/app.js"></script>
+</body>
+</html>

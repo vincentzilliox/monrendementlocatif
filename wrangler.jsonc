@@ -5,8 +5,8 @@
   "compatibility_date": "2026-08-27",
   "assets": {
     "directory": "./site/",
-    // Une seule page : toute URL inconnue renvoie le 404 par défaut plutôt que
-    // de rejouer index.html, ce qui éviterait de faire indexer des URL fantômes.
-    "not_found_handling": "none"
+    // Toute URL inconnue renvoie site/404.html, une vraie page 404 : rien ne
+    // rejoue index.html, donc aucune URL fantôme ne peut être indexée.
+    "not_found_handling": "404-page"
   }
 }

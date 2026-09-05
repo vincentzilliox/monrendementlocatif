@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <path fill="#E10FA6" fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6.0 20.0 H 8.0 V 22.0 H 6.0 Z M 9.0 20.0 H 11.0 V 22.0 H 9.0 Z M 6.0 23.0 H 8.0 V 25.0 H 6.0 Z M 9.0 23.0 H 11.0 V 25.0 H 9.0 Z"/>
-  <rect x="15.6" y="19.4" width="3.4" height="7.2" fill="#E10FA6"/>
-  <rect x="20.2" y="13.6" width="3.4" height="13.0" fill="#E10FA6"/>
-  <path d="M 1.6 16.4 L 8.6 9.2 L 15.0 15.8 L 23.6 6.4" fill="none" stroke="#E10FA6" stroke-width="2.4"
+  <style>path,rect{fill:#111111}.t{fill:none;stroke:#111111}@media (prefers-color-scheme:dark){path,rect{fill:#EDEDED}.t{stroke:#EDEDED}}</style>
+  <path fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6.0 20.0 H 8.0 V 22.0 H 6.0 Z M 9.0 20.0 H 11.0 V 22.0 H 9.0 Z M 6.0 23.0 H 8.0 V 25.0 H 6.0 Z M 9.0 23.0 H 11.0 V 25.0 H 9.0 Z"/>
+  <rect x="15.6" y="19.4" width="3.4" height="7.2"/>
+  <rect x="20.2" y="13.6" width="3.4" height="13.0"/>
+  <path class="t" d="M 1.6 16.4 L 8.6 9.2 L 15.0 15.8 L 23.6 6.4" fill="none" stroke-width="2.4"
         stroke-linecap="round" stroke-linejoin="round"/>
-  <path fill="#E10FA6" d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
+  <path d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
 </svg>

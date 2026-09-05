@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRI immobilier : le vrai rendement d'un bien locatif</title>
+<meta name="description" content="Le taux de rendement interne appliqué à un bien locatif : calcul sur les flux réels, lecture année par année, point mort et pic, limites.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://monrendementlocatif.fr/guides/tri-immobilier/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://monrendementlocatif.fr/guides/tri-immobilier/">
+<meta property="og:title" content="TRI immobilier : le vrai rendement d'un bien locatif">
+<meta property="og:description" content="Le taux de rendement interne appliqué à un bien locatif : calcul sur les flux réels, lecture année par année, point mort et pic, limites.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mon rendement locatif — calculateur de rendement locatif">
+<meta property="og:site_name" content="Mon rendement locatif">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TRI immobilier : le vrai rendement d'un bien locatif">
+<meta name="twitter:description" content="Le taux de rendement interne appliqué à un bien locatif : calcul sur les flux réels, lecture année par année, point mort et pic, limites.">
+<meta name="twitter:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"Le TRI immobilier : le rendement annualisé qui tient compte de tout","description":"Le taux de rendement interne appliqué à un bien locatif : calcul sur les flux réels, lecture année par année, point mort et pic, limites.","datePublished":"2026-09-04","dateModified":"2026-09-04","inLanguage":"fr-FR","mainEntityOfPage":"https://monrendementlocatif.fr/guides/tri-immobilier/","author":{"@type":"Organization","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/"},"publisher":{"@type":"Organization","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/","logo":{"@type":"ImageObject","url":"https://monrendementlocatif.fr/assets/apple-touch-icon.png"}},"image":"https://monrendementlocatif.fr/assets/og-image.png"},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"https://monrendementlocatif.fr/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://monrendementlocatif.fr/guides/"},{"@type":"ListItem","position":3,"name":"Le TRI immobilier, expliqué"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quelle différence entre TRI et rendement annualisé ?","acceptedAnswer":{"@type":"Answer","text":"Aucune dans ce contexte : le rendement annualisé d'une série de flux datés est, par définition, son taux de rendement interne. Le calculateur emploie les deux expressions pour désigner la même chose."}},{"@type":"Question","name":"Un TRI de 4 % en immobilier, est-ce bien ?","acceptedAnswer":{"@type":"Answer","text":"En euros courants, 4 % avec 2 % d'inflation font 2 % réels : c'est à peu près ce qu'un fonds euros a servi ces dernières années, sans travaux ni locataire. Au-dessus de 4 à 5 % réels, le projet rémunère correctement le risque et le travail. Le calculateur compare directement votre TRI à un portefeuille boursier alimenté par les mêmes versements, net d'impôt."}},{"@type":"Question","name":"Pourquoi mon TRI est-il négatif les premières années ?","acceptedAnswer":{"@type":"Answer","text":"Parce que revendre tôt fait supporter les frais d'acquisition (8 à 10 % du prix) et les frais de vente (environ 5 %) sans que les loyers ni la revalorisation aient eu le temps de les compenser. C'est normal et universel : un bien locatif se juge sur dix ans au moins."}}]}]</script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Mon rendement locatif — accueil">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6 20 H 8 V 22 H 6 Z M 9 20 H 11 V 22 H 9 Z M 6 23 H 8 V 25 H 6 Z M 9 23 H 11 V 25 H 9 Z"/>
+      <rect x="15.6" y="19.4" width="3.4" height="7.2" fill="currentColor"/>
+      <rect x="20.2" y="13.6" width="3.4" height="13" fill="currentColor"/>
+      <path d="M 1.6 16.4 L 8.6 9.2 L 15 15.8 L 23.6 6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path fill="currentColor" d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
+    </svg>
+    <span>Mon rendement locatif</span>
+  </a>
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="/calculatrice/">Calculatrice</a>
+    <a href="/guides/" aria-current="page">Guides</a>
+    <a href="/questions-frequentes/">Questions fréquentes</a>
+    <a href="/hypotheses-de-calcul/">Hypothèses de calcul</a>
+  </nav>
+  <span class="spacer"></span>
+  <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
+    <span class="knob"></span>
+    <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2"></circle>
+      <path d="M12 1.8v2.2M12 20v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M1.8 12h2.2M20 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"></path>
+    </svg>
+    <svg class="ico moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.6 8.6 0 1 0 11.3 11.3z"></path>
+    </svg>
+  </button>
+</header>
+<div class="page">
+<p class="crumbs"><a href="/">Accueil</a> › <a href="/guides/">Guides</a> › Le TRI immobilier, expliqué</p>
+<article class="prose">
+  <h1>Le TRI immobilier : le rendement annualisé qui tient compte de tout</h1>
+  <p class="chapo">Le taux de rendement interne est la mesure de référence des investisseurs professionnels, et le seul rendement qui puisse se comparer, sans tricher, à celui d'un placement financier. Il n'a rien de mystérieux : c'est un taux d'intérêt, reconstitué à partir des sommes que vous sortez et de celles que vous récupérez.</p>
+  <p class="meta">Publié le 4 septembre 2026 · 9 min de lecture</p>
+
+  <h2>L'idée en une phrase</h2>
+  <p>Imaginez que votre projet locatif soit un livret d'épargne. Vous y versez votre apport le premier jour, puis chaque mois la différence entre la mensualité et le loyer net quand elle est négative ; vous en retirez le cash-flow quand il devient positif, et enfin, le jour de la revente, le prix net de frais, d'impôt et de capital restant dû. Le TRI est le taux d'intérêt que ce livret imaginaire aurait dû servir pour produire exactement ces retraits à partir de ces versements.</p>
+  <p>Contrairement à une moyenne, il tient compte de <b>la date</b> de chaque flux : un euro sorti la première année pèse plus qu'un euro sorti la vingtième, et un gain touché tôt vaut plus qu'un gain touché tard.</p>
+
+  <h2>Les flux qui entrent dans le calcul</h2>
+  <p>Un TRI n'est jamais meilleur que les flux qu'on lui donne. Pour un bien locatif, la chronique complète comprend :</p>
+  <ul>
+    <li><b>À l'achat</b> : l'apport, c'est-à-dire tout ce qui n'est pas financé par le crédit — une partie du prix, les frais de notaire, les frais d'agence, les travaux, les frais de dossier et de garantie, le mobilier.</li>
+    <li><b>Chaque année</b> : loyers encaissés (après vacance) moins charges, taxe foncière, assurances, gestion, entretien, mensualités de crédit assurance comprise, et impôt sur les loyers selon votre régime. Ce solde, la trésorerie nette, est souvent négatif les premières années d'un crédit sur vingt ans : c'est l'effort d'épargne.</li>
+    <li><b>À la revente</b> : le prix de vente moins les frais d'agence, moins le capital restant dû et les éventuelles pénalités de remboursement anticipé, moins l'impôt sur la plus-value — et, en régime réel, la reprise du déficit foncier si vous vendez trop tôt.</li>
+  </ul>
+  <p>Le calculateur produit cette chronique année par année, avec un vrai tableau d'amortissement mensuel et les règles de chaque régime fiscal, puis résout l'équation du TRI par approximations successives.</p>
+
+  <h2>Un exemple complet</h2>
+  <p>Un appartement à 200 000 € dans l'ancien, 7,5 % de frais de notaire, 20 000 € de travaux, 35 000 € d'apport, le reste emprunté sur 20 ans à 3,4 % plus 0,34 % d'assurance. Loyer de 900 € hors charges, 5 % de vacance, 60 € de charges non récupérables par mois, 1 200 € de taxe foncière. LMNP au réel, tranche marginale à 30 %. Prix, loyers et charges suivent une inflation de 2 %.</p>
+  <table>
+    <thead><tr><th>Année</th><th class="r">Trésorerie nette</th><th class="r">Net si revente</th><th class="r">TRI si revente</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="r">−7 000 €</td><td class="r">13 600 €</td><td class="r">−81 %</td></tr>
+      <tr><td>5</td><td class="r">−6 800 €</td><td class="r">58 800 €</td><td class="r">−5,1 %</td></tr>
+      <tr><td>7</td><td class="r">−6 500 €</td><td class="r">83 300 €</td><td class="r">0,0 %</td></tr>
+      <tr><td>15</td><td class="r">−5 100 €</td><td class="r">183 400 €</td><td class="r">+3,6 %</td></tr>
+      <tr><td>25</td><td class="r">+11 700 €</td><td class="r">295 600 €</td><td class="r">+4,7 %</td></tr>
+    </tbody>
+  </table>
+  <p>Chiffres arrondis à la centaine d'euros. Trois lectures s'imposent. Revendre la première année est une catastrophe : les 8 % de frais d'acquisition et les 5 % de frais de vente sont perdus, rien ne les a encore compensés, et le capital restant dû absorbe presque tout le prix. Le <b>point mort</b> tombe la septième année : c'est le moment où revendre cesse de laisser une perte. Ensuite le TRI grimpe, tiré par le levier du crédit et le début des abattements sur la plus-value : 3,6 % à quinze ans, 4,7 % à vingt-cinq — et encore 5,1 % à trente ans, quand les prélèvements sociaux sur la plus-value disparaissent.</p>
+
+  <h2>Pourquoi le TRI varie avec l'année de revente</h2>
+  <p>C'est la propriété la plus utile, et la moins connue. Trois forces se succèdent :</p>
+  <ol>
+    <li><b>Les frais d'acquisition</b> pèsent sur les premières années. Il faut du temps pour les amortir : c'est ce qui rend le TRI négatif au début et explique le point mort.</li>
+    <li><b>L'effet de levier</b> travaille pour vous tant que le crédit court : vous vous enrichissez sur 200 000 € de pierre avec 35 000 € d'apport. La <a href="/guides/quand-revendre/">fiscalité de la plus-value</a> s'allège en parallèle, par paliers, à partir de la sixième année.</li>
+    <li><b>Une fois le crédit soldé</b>, le levier disparaît : votre capital immobilisé est devenu énorme (la valeur entière du bien) et il ne rapporte plus que les loyers nets, autour de 3 % réels. Le TRI cesse de monter, puis décline lentement, même si le gain en euros continue de croître.</li>
+  </ol>
+  <p>La courbe de rendement annualisé du calculateur montre ces trois phases, avec les seuils fiscaux repérés en bas du graphique. Le pic de TRI est l'année où votre argent aura été le plus efficace ; conserver au-delà maximise le montant final, pas le rendement.</p>
+
+  <h2>Nominal ou réel : exigez les deux</h2>
+  <p>Un TRI de 4,7 % en euros courants avec 2 % d'inflation vaut (1,047 ÷ 1,02) − 1 = <b>2,7 % en pouvoir d'achat</b>. C'est ce chiffre qui dit si vous vous enrichissez. La plupart des simulateurs affichent le nominal sans le préciser ; le calculateur affiche toujours les deux et laisse régler séparément la revalorisation du bien, l'indexation des loyers et l'inflation des charges si vous ne voulez pas qu'elles suivent toutes le même taux.</p>
+  <p>Détail contre-intuitif : à hypothèses réelles constantes, plus l'inflation est élevée, meilleur est le TRI réel d'un projet à crédit. Votre dette est fixe en euros courants ; l'inflation la rembourse en partie à votre place.</p>
+
+  <div class="cta">
+    <p><b>Votre TRI, année par année</b>Renseignez votre bien, votre crédit et votre régime : la courbe complète, le point mort et la meilleure année de revente s'affichent instantanément.</p>
+    <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
+  </div>
+
+  <h2>Les limites du TRI</h2>
+  <ul>
+    <li>Il suppose que les flux positifs sont réinvestis au même taux — une hypothèse théorique. Le calculateur contourne le problème dans la comparaison avec les placements en replaçant explicitement la trésorerie dégagée, et en la taxant.</li>
+    <li>Sans apport ni frais payés comptant, il n'est pas défini : on ne peut pas calculer le rendement de zéro euro. Un TRI « infini » n'est pas un exploit, c'est une division par zéro.</li>
+    <li>Il ne mesure pas le risque : vacance prolongée, impayé, gros travaux de copropriété, baisse des prix. Le graphique de sensibilité du calculateur montre quels paramètres feraient le plus bouger le résultat.</li>
+    <li>Il ne dit rien de la liquidité ni du temps passé. Un TRI de 5 % en immobilier n'équivaut pas à 5 % sur un fonds indiciel : le second ne vous appelle jamais un dimanche pour une fuite.</li>
+  </ul>
+
+  <section class="lire">
+    <h2>Lire aussi</h2>
+    <ul>
+      <li><a href="/guides/calcul-rendement-locatif/">Calculer un rendement locatif : brut, net, net-net<span>Les trois chiffres rapides, leurs formules et leurs angles morts.</span></a></li>
+      <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?<span>Comparer un TRI immobilier à un placement financier, à mise de fonds identique et net d'impôt.</span></a></li>
+    </ul>
+  </section>
+
+  <section class="faqg">
+    <h2>Questions fréquentes</h2>
+    <article>
+      <h3>Quelle différence entre TRI et rendement annualisé ?</h3>
+      <p>Aucune dans ce contexte : le rendement annualisé d'une série de flux datés est, par définition, son taux de rendement interne. Le calculateur emploie les deux expressions pour désigner la même chose.</p>
+    </article>
+    <article>
+      <h3>Un TRI de 4 % en immobilier, est-ce bien ?</h3>
+      <p>En euros courants, 4 % avec 2 % d'inflation font 2 % réels : c'est à peu près ce qu'un fonds euros a servi ces dernières années, sans travaux ni locataire. Au-dessus de 4 à 5 % réels, le projet rémunère correctement le risque et le travail. Le calculateur compare directement votre TRI à un portefeuille boursier alimenté par les mêmes versements, net d'impôt.</p>
+    </article>
+    <article>
+      <h3>Pourquoi mon TRI est-il négatif les premières années ?</h3>
+      <p>Parce que revendre tôt fait supporter les frais d'acquisition (8 à 10 % du prix) et les frais de vente (environ 5 %) sans que les loyers ni la revalorisation aient eu le temps de les compenser. C'est normal et universel : un bien locatif se juge sur dix ans au moins.</p>
+    </article>
+  </section>
+</article>
+</div>
+<footer class="footer">
+  <div class="footer-in">
+    <div>
+      <b>Mon rendement locatif</b>
+      <p>Calculateur indépendant et gratuit, sans compte, sans cookie ni traceur.</p>
+    </div>
+    <div>
+      <b>Guides</b>
+      <ul>
+        <li><a href="/guides/calcul-rendement-locatif/">Calculer un rendement locatif : brut, net, net-net, TRI</a></li>
+        <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué</a></li>
+        <li><a href="/guides/lmnp-reel-ou-micro-bic/">LMNP : réel ou micro-BIC ?</a></li>
+        <li><a href="/guides/micro-foncier-ou-reel/">Micro-foncier ou régime réel ?</a></li>
+        <li><a href="/guides/quand-revendre/">Quand revendre un bien locatif ?</a></li>
+        <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a></li>
+      </ul>
+    </div>
+    <div>
+      <b>À propos</b>
+      <ul>
+        <li><a href="/calculatrice/">La calculatrice</a></li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a></li>
+        <li><a href="/mentions-legales/">Mentions légales</a></li>
+        <li><a href="#" class="mail" data-u="contact" data-d="monrendementlocatif.fr">Nous écrire</a></li>
+      </ul>
+    </div>
+    <p class="fin">Outil d'aide à la décision : les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal.</p>
+  </div>
+</footer>
+<script src="/js/site.js"></script>
+</body>
+</html>

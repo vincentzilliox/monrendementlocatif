@@ -1,356 +1,462 @@
-<title>Rentabilité Locative</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<title>Mon rendement locatif</title>
 
 <style>
+/* =====================================================================
+   Deux couches strictement séparées :
+     1. Interface : monochrome (noir / blanc / gris). Jamais de couleur.
+     2. Données   : --up / --down pour gain et perte, --d1..--d4 pour les
+        séries. Réservées aux chiffres et aux graphiques.
+   Thème clair par défaut ; sombre via [data-theme="dark"] ou l'OS.
+   ===================================================================== */
 :root{
-  --ground:#EFEDF3; --surface:#F8F7FB; --raised:#FFFFFF;
-  --line:#DAD5E4; --line-soft:#E8E4EF;
-  --ink:#17131F; --ink-2:#574F66; --ink-3:#6F6880;
-  --accent:#5B2FBF; --accent-line:#7040D8; --accent-wash:#EBE4F8;
-  --c1:#7040D8; --c2:#7040D8; --c3:#91125C; --c4:#D006A7;
-  --c5:#BA3F7F; --c6:#E465A3;
-  --pos:#127E56; --neg:#D006A7;
-  --field:#FFFFFF; --field-line:#CFC8DC;
-  --shadow:0 1px 2px rgba(30,18,48,.05), 0 10px 30px -18px rgba(30,18,48,.40);
-  --grid:#E6E2EE;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --ground:#0D0A14; --surface:#15111E; --raised:#1C1729;
-    --line:#2E2740; --line-soft:#241E33;
-    --ink:#EDEAF4; --ink-2:#ADA4BF; --ink-3:#8E84A1;
-    --accent:#B79BFF; --accent-line:#9575E2; --accent-wash:#241A3C;
-    --c1:#9575E2; --c2:#9575E2; --c3:#B73C7C; --c4:#F04BB4;
-    --c5:#D95C9A; --c6:#FC7BB9;
-    --pos:#45CE99; --neg:#F04BB4;
-    --field:#110D1A; --field-line:#382F4C;
-    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -18px rgba(0,0,0,.85);
-    --grid:#262036;
-  }
+  color-scheme:light;
+  --bg:#ffffff; --surface:#fafafa; --surface-2:#f0f0f0; --border:#e5e5e5;
+  --text:#111111; --text-muted:#737373;
+  --accent:#111111; --accent-text:#ffffff; --link:#111111;
+  --btn-bg:#ffffff; --input-bg:#ffffff; --ring:rgba(0,0,0,.08);
+  --up:#00a878; --down:#e5254f; --up-bg:rgba(0,168,120,.14); --down-bg:rgba(229,37,79,.14);
+  --d1:#ff6a00; --d2:#0077ff; --d3:#8a2be2; --d4:#c9a800; --d-neutral:var(--text-muted);
+  --radius:6px; --radius-lg:8px;
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Helvetica,Arial,sans-serif;
 }
 :root[data-theme="dark"]{
-  --ground:#0D0A14; --surface:#15111E; --raised:#1C1729;
-  --line:#2E2740; --line-soft:#241E33;
-  --ink:#EDEAF4; --ink-2:#ADA4BF; --ink-3:#8E84A1;
-  --accent:#B79BFF; --accent-line:#9575E2; --accent-wash:#241A3C;
-  --c1:#9575E2; --c2:#9575E2; --c3:#B73C7C; --c4:#F04BB4;
-  --c5:#D95C9A; --c6:#FC7BB9;
-  --pos:#45CE99; --neg:#F04BB4;
-  --field:#110D1A; --field-line:#382F4C;
-  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -18px rgba(0,0,0,.85);
-  --grid:#262036;
+  color-scheme:dark;
+  --bg:#000000; --surface:#0a0a0a; --surface-2:#1a1a1a; --border:#262626;
+  --text:#ededed; --text-muted:#8a8a8a;
+  --accent:#ffffff; --accent-text:#000000; --link:#ededed;
+  --btn-bg:#111111; --input-bg:#0a0a0a; --ring:rgba(255,255,255,.12);
+  --up:#00e5a0; --down:#ff3b6b; --up-bg:rgba(0,229,160,.16); --down-bg:rgba(255,59,107,.16);
+  --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#000000; --surface:#0a0a0a; --surface-2:#1a1a1a; --border:#262626;
+    --text:#ededed; --text-muted:#8a8a8a;
+    --accent:#ffffff; --accent-text:#000000; --link:#ededed;
+    --btn-bg:#111111; --input-bg:#0a0a0a; --ring:rgba(255,255,255,.12);
+    --up:#00e5a0; --down:#ff3b6b; --up-bg:rgba(0,229,160,.16); --down-bg:rgba(255,59,107,.16);
+    --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a;
+  }
 }
 
-*{box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:64px}
 body{
-  margin:0; background:var(--ground); color:var(--ink);
-  font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
 }
-.num{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums}
+a{color:var(--link); text-decoration:none}
+a:hover{text-decoration:underline}
+svg{display:block}
+.num{font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+button,input,select{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+[hidden]{display:none !important}
+.visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 
-/* ---------- masthead ---------- */
-.masthead{
-  border-bottom:1px solid var(--line); background:var(--surface);
-  padding:18px clamp(16px,3vw,32px);
-  display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+/* ---------- boutons ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:34px; padding:0 14px; border:1px solid var(--border); border-radius:var(--radius);
+  background:var(--btn-bg); color:var(--text); font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap;
 }
-.wordmark{
-  font-family:Spectral,Georgia,serif; font-weight:600; font-size:22px;
-  letter-spacing:-.01em; margin:0; display:flex; align-items:baseline; gap:9px;
+.btn:hover{background:var(--surface-2); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-text)}
+.btn.primary:hover{opacity:.9}
+.btn.sm{height:30px; padding:0 12px; font-size:13px}
+.btn.pill{border-radius:999px}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+
+/* ---------- barre de navigation ---------- */
+.topbar{
+  display:flex; align-items:center; gap:18px; height:56px; padding:0 clamp(16px,3vw,32px);
+  background:var(--surface); border-bottom:1px solid var(--border);
 }
-.wordmark .mark{
-  width:9px; height:9px; border-radius:2px; background:var(--accent-line);
-  display:inline-block; transform:translateY(-1px);
-}
-.tagline{color:var(--ink-3); font-size:13.5px; margin:0; flex:1 1 260px}
+.brand{display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:var(--text)}
+.brand:hover{text-decoration:none}
+.brand .mark{width:26px; height:26px; color:var(--text); flex:none}
+@media (max-width:560px){ .brand span{display:none} .nav{margin-left:0} }
+.nav{display:flex; gap:2px; margin-left:8px; min-width:0; overflow-x:auto; scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:none; padding:6px 10px; border-radius:var(--radius); color:var(--text-muted); font-size:14px; white-space:nowrap}
+.nav a:hover{color:var(--text); text-decoration:none; background:var(--surface-2)}
+.nav a[aria-current]{color:var(--text); font-weight:500}
+.spacer{flex:1}
 /* interrupteur jour / nuit */
 .tsw{
-  position:relative; flex:none; align-self:center; width:62px; height:30px; padding:0;
-  cursor:pointer; border-radius:999px; border:1px solid var(--field-line);
-  background:var(--field); transition:border-color .2s ease;
+  position:relative; flex:none; width:58px; height:30px; padding:0; cursor:pointer;
+  border-radius:999px; border:1px solid var(--border); background:var(--btn-bg);
 }
-.tsw:hover{border-color:var(--ink-3)}
+.tsw:hover{border-color:var(--text-muted)}
 .tsw .knob{
   position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
-  background:var(--accent-line); transition:transform .22s cubic-bezier(.4,0,.2,1);
+  background:var(--accent); transition:transform .22s cubic-bezier(.4,0,.2,1);
 }
-.tsw[aria-checked="true"] .knob{transform:translateX(32px)}
-.tsw .ico{
-  position:absolute; top:6px; width:16px; height:16px;
-  fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
-  transition:stroke .2s ease;
-}
-.tsw .sun{left:6px; stroke:var(--ground)}
-.tsw .moon{right:6px; stroke:var(--ink-3)}
-.tsw[aria-checked="true"] .sun{stroke:var(--ink-3)}
-.tsw[aria-checked="true"] .moon{stroke:var(--ground)}
-.tsw:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{
-  outline:2px solid var(--accent-line); outline-offset:2px;
-}
+.tsw[aria-checked="true"] .knob{transform:translateX(28px)}
+.tsw .ico{position:absolute; top:6px; width:16px; height:16px; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+.tsw .sun{left:6px; stroke:var(--accent-text)}
+.tsw .moon{right:6px; stroke:var(--text-muted)}
+.tsw[aria-checked="true"] .sun{stroke:var(--text-muted)}
+.tsw[aria-checked="true"] .moon{stroke:var(--accent-text)}
 
-/* ---------- shell ---------- */
-.shell{display:grid; grid-template-columns:352px minmax(0,1fr); align-items:start; position:relative}
-.shell::before{
-  content:""; position:absolute; top:0; bottom:0; left:0; width:352px;
-  background:var(--surface); border-right:1px solid var(--line); pointer-events:none;
+/* ---------- titre de page ---------- */
+.pagehead{border-bottom:1px solid var(--border); padding:clamp(18px,2.4vw,26px) clamp(16px,3vw,32px)}
+.pagehead h1{font-size:clamp(20px,2.4vw,26px); font-weight:600; letter-spacing:-.02em; line-height:1.2; margin:0; text-wrap:balance}
+.pagehead p{margin:6px 0 0; font-size:14px; color:var(--text-muted); max-width:76ch; line-height:1.5}
+
+/* ---------- exemples de projets ---------- */
+.examples{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.exlabel{font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); width:100%}
+.chip{
+  height:32px; padding:0 14px; border-radius:999px; border:1px solid var(--border);
+  background:var(--btn-bg); color:var(--text); font-size:13px; font-weight:500; cursor:pointer;
 }
-.rail{padding:4px 0 40px; position:sticky; top:0; max-height:100vh; overflow-y:auto}
+.chip:hover{background:var(--surface-2)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-text)}
+.exnote{width:100%; font-size:12px; color:var(--text-muted); margin:2px 0 0}
+/* dans le panneau d'hypothèses, les exemples s'empilent sur toute la largeur */
+.rail .examples{padding:14px clamp(16px,2vw,22px) 16px; border-bottom:1px solid var(--border); gap:7px}
+.rail .examples .chip{width:100%; text-align:left; padding:0 12px}
+
+/* ---------- structure ---------- */
+.shell{display:grid; grid-template-columns:352px minmax(0,1fr); align-items:start}
+.rail{border-right:1px solid var(--border); background:var(--surface); position:sticky; top:0; max-height:100vh; overflow-y:auto}
+.railbox>summary{display:none}
+.canvas{padding:0 clamp(16px,3vw,34px) 64px; display:flex; flex-direction:column; gap:22px; min-width:0}
+
+.subnav{
+  position:sticky; top:0; z-index:8; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none;
+  margin:0 calc(-1*clamp(16px,3vw,34px)); padding:0 clamp(16px,3vw,34px);
+  background:var(--bg); border-bottom:1px solid var(--border);
+}
+.subnav::-webkit-scrollbar{display:none}
+.subnav a{
+  flex:none; padding:12px 10px 10px; font-size:13px; color:var(--text-muted);
+  border-bottom:2px solid transparent; margin-bottom:-1px;
+}
+.subnav a:hover{color:var(--text); text-decoration:none}
+.subnav a[aria-current]{color:var(--text); border-bottom-color:var(--text); font-weight:500}
+
 @media (max-width:1040px){
-  .shell{grid-template-columns:1fr}
-  .shell::before{display:none}
-  .rail{position:static; max-height:none; background:var(--surface); border-bottom:1px solid var(--line)}
+  .shell{display:flex; flex-direction:column; align-items:stretch}
+  .canvas{display:contents}
+  .canvas>*{order:4; margin-left:clamp(16px,3vw,24px); margin-right:clamp(16px,3vw,24px)}
+  .canvas>.subnav{order:0; margin:0; padding:0 clamp(16px,3vw,24px)}
+  .canvas>#verdict{order:1; margin-top:18px}
+  .canvas>#indicateurs{order:2}
+  .canvas>.notes{margin-bottom:48px}
+  .rail{order:3; position:static; max-height:none; border-right:0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-top:4px}
+  .railbox>summary{
+    display:flex; align-items:center; justify-content:space-between; list-style:none; cursor:pointer;
+    padding:14px clamp(16px,3vw,24px); font-weight:600; font-size:14px;
+  }
+  .railbox>summary::-webkit-details-marker{display:none}
+  .railbox>summary::after{content:"Ouvrir"; font-size:12px; font-weight:500; color:var(--text-muted); border:1px solid var(--border); border-radius:999px; padding:3px 10px}
+  .railbox[open]>summary::after{content:"Replier"}
 }
 
-details.group{border-bottom:1px solid var(--line-soft)}
+/* ---------- panneau de saisie ---------- */
+details.group{border-bottom:1px solid var(--border)}
 details.group>summary{
   list-style:none; cursor:pointer; padding:13px clamp(16px,2vw,22px);
   display:flex; align-items:center; gap:9px;
-  font-size:11.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
+  font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted);
 }
 details.group>summary::-webkit-details-marker{display:none}
 details.group>summary::before{
-  content:""; width:6px; height:6px; border-right:1.6px solid var(--ink-3); border-bottom:1.6px solid var(--ink-3);
+  content:""; width:6px; height:6px; border-right:1.6px solid var(--text-muted); border-bottom:1.6px solid var(--text-muted);
   transform:rotate(-45deg); transition:transform .18s ease; flex:none;
 }
 details.group[open]>summary::before{transform:rotate(45deg)}
-details.group>summary:hover{color:var(--ink)}
+details.group>summary:hover{color:var(--text)}
 .fields{padding:0 clamp(16px,2vw,22px) 18px; display:flex; flex-direction:column; gap:11px}
+details.more{border:1px dashed var(--border); border-radius:var(--radius); padding:0 10px}
+details.more>summary{list-style:none; cursor:pointer; font-size:12px; color:var(--text-muted); padding:8px 0}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"+ "}
+details.more[open]>summary::before{content:"− "}
+details.more>summary:hover{color:var(--text)}
+details.more>.fields{padding:2px 0 12px}
 
 .f{display:grid; grid-template-columns:1fr 118px; align-items:center; gap:10px}
-.f label{font-size:13.5px; color:var(--ink-2); line-height:1.3}
-.f .hint{display:block; font-size:11.5px; color:var(--ink-3); margin-top:1px}
+.f label{font-size:13px; color:var(--text); line-height:1.3}
+.f .hint{display:block; font-size:11.5px; color:var(--text-muted); margin-top:1px}
 .wrap{position:relative; display:flex; align-items:center}
-.wrap input{
-  width:100%; font:inherit; font-family:"IBM Plex Mono",monospace; font-size:13.5px;
-  font-variant-numeric:tabular-nums; text-align:right;
-  padding:7px 30px 7px 9px; border:1px solid var(--field-line); border-radius:7px;
-  background:var(--field); color:var(--ink);
+.wrap input,select{
+  width:100%; font:inherit; font-size:13.5px; font-variant-numeric:tabular-nums;
+  height:34px; padding:0 30px 0 9px; border:1px solid var(--border); border-radius:var(--radius);
+  background:var(--input-bg); color:var(--text);
 }
-.wrap .unit{
-  position:absolute; right:9px; font-size:12px; color:var(--ink-3); pointer-events:none;
-  font-family:"Public Sans",sans-serif;
-}
+.wrap input{text-align:right}
+select{padding-right:9px}
+.wrap input:focus,select:focus,.tgrid input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+.wrap .unit{position:absolute; right:9px; font-size:12px; color:var(--text-muted); pointer-events:none}
 .wrap.uw input{padding-right:48px}
 input:disabled{opacity:.5; cursor:not-allowed}
-[hidden]{display:none !important}   /* .f est en display:grid, qui l'emporterait sinon */
-.souscheck{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-3); margin:-4px 0 0}
-.souscheck input{width:14px; height:14px; accent-color:var(--accent-line)}
-.wrap.wide{grid-column:1/-1}
-select{
-  width:100%; font:inherit; font-size:13.5px; padding:7px 9px; border-radius:7px;
-  border:1px solid var(--field-line); background:var(--field); color:var(--ink);
-}
+.souscheck{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); margin:-4px 0 0}
+.souscheck input,.check input{accent-color:var(--accent)}
+.souscheck input{width:14px; height:14px}
 .f.stack{grid-template-columns:1fr; gap:5px}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
 /* petit calcul dérivé affiché dans le panneau de saisie */
 .derived{
-  margin:1px 0 2px; padding:11px 13px; border-radius:9px;
-  background:var(--accent-wash); border:1px solid transparent;
-  /* gouttière nulle : sans quoi le trait du total serait coupé entre les colonnes */
+  margin:1px 0 2px; padding:11px 13px; border-radius:var(--radius); background:var(--surface-2);
   display:grid; grid-template-columns:1fr auto; gap:5px 0; align-items:baseline;
 }
-.derived dt{font-size:12.5px; color:var(--ink-2); padding-right:12px}
-.derived dd{
-  margin:0; text-align:right; font-size:13px; color:var(--ink);
-  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
-}
-.derived .tot{padding-top:7px; border-top:1px solid var(--line); font-weight:600}
-.derived dt.tot{color:var(--ink)}
-.derived dd.tot{color:var(--accent); font-size:14.5px}
-.derived .cap{
-  grid-column:1/-1; margin:1px 0 0; text-align:left; font-size:11px; line-height:1.45;
-  color:var(--ink-3); font-family:"Public Sans",sans-serif;
-}
+.derived dt{font-size:12.5px; color:var(--text-muted); padding-right:12px}
+.derived dd{margin:0; text-align:right; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums}
+.derived .tot{padding-top:7px; border-top:1px solid var(--border); font-weight:600}
+.derived dt.tot{color:var(--text)}
+.derived dd.tot{font-size:14.5px}
+.derived .cap{grid-column:1/-1; margin:1px 0 0; text-align:left; font-size:11px; line-height:1.45; color:var(--text-muted)}
 /* postes de travaux dépréciables */
-.grouphint{margin:0 0 4px; font-size:11.5px; color:var(--ink-3); line-height:1.55}
+.grouphint{margin:0 0 4px; font-size:11.5px; color:var(--text-muted); line-height:1.55}
 .tvxlist{display:flex; flex-direction:column; gap:9px}
-.tvxrow{
-  border:1px solid var(--field-line); border-radius:9px; padding:9px 10px 10px;
-  background:var(--field); display:flex; flex-direction:column; gap:8px;
-}
+.tvxrow{border:1px solid var(--border); border-radius:var(--radius); padding:9px 10px 10px; background:var(--bg); display:flex; flex-direction:column; gap:8px}
 .tvxhead{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:center}
-.tvxhead input{
-  font:inherit; font-size:13px; font-weight:500; color:var(--ink); width:100%;
-  background:transparent; border:0; border-bottom:1px solid transparent; padding:2px 0;
-}
-.tvxhead input:hover{border-bottom-color:var(--line)}
-.tvxhead input:focus{outline:none; border-bottom-color:var(--accent-line)}
-.del{
-  background:transparent; border:0; color:var(--ink-3); cursor:pointer; font-size:16px;
-  line-height:1; padding:3px 6px; border-radius:5px;
-}
-.del:hover{color:var(--neg); background:var(--surface)}
+.tvxhead input{font:inherit; font-size:13px; font-weight:500; color:var(--text); width:100%; background:transparent; border:0; border-bottom:1px solid transparent; padding:2px 0}
+.tvxhead input:hover{border-bottom-color:var(--border)}
+.tvxhead input:focus{outline:none; border-bottom-color:var(--accent)}
+.del{background:transparent; border:0; color:var(--text-muted); cursor:pointer; font-size:16px; line-height:1; padding:3px 6px; border-radius:4px}
+.del:hover{color:var(--text); background:var(--surface-2)}
 .tgrid{display:grid; grid-template-columns:1fr 1fr; gap:7px 8px}
-.tgrid label{display:flex; flex-direction:column; gap:3px; font-size:10.5px; color:var(--ink-3)}
+.tgrid label{display:flex; flex-direction:column; gap:3px; font-size:10.5px; color:var(--text-muted)}
 .tw{position:relative; display:flex; align-items:center}
 .tgrid input{
-  width:100%; font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-variant-numeric:tabular-nums;
-  text-align:right; padding:6px 21px 6px 6px; border:1px solid var(--field-line); border-radius:6px;
-  background:var(--raised); color:var(--ink);
+  width:100%; font-size:12.5px; font-variant-numeric:tabular-nums; text-align:right; height:30px;
+  padding:0 21px 0 6px; border:1px solid var(--border); border-radius:var(--radius); background:var(--input-bg); color:var(--text);
 }
-.tw .u{position:absolute; right:6px; font-size:10px; color:var(--ink-3); pointer-events:none; font-family:"Public Sans",sans-serif}
-.tgrid input[data-f="duree"]{padding-right:28px} /* « ans » est plus large que « € » ou « % » */
-.addbtn{
-  font:inherit; font-size:12.5px; color:var(--ink-2); background:transparent; width:100%;
-  border:1px dashed var(--field-line); border-radius:8px; padding:8px; cursor:pointer;
-}
-.addbtn:hover{color:var(--accent); border-color:var(--accent-line)}
-.check{display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--ink-2)}
-.check input{width:15px; height:15px; accent-color:var(--accent-line)}
+.tw .u{position:absolute; right:6px; font-size:10px; color:var(--text-muted); pointer-events:none}
+.tgrid input[data-f="duree"]{padding-right:28px}
+.addbtn{font:inherit; font-size:12.5px; color:var(--text-muted); background:transparent; width:100%; border:1px dashed var(--border); border-radius:var(--radius); padding:8px; cursor:pointer}
+.addbtn:hover{color:var(--text); border-color:var(--text-muted)}
+.check{display:flex; align-items:center; gap:9px; font-size:13px; color:var(--text)}
+.check input{width:15px; height:15px}
 .railfoot{padding:16px clamp(16px,2vw,22px); display:flex; gap:8px}
-.railfoot button{
-  flex:1; font:inherit; font-size:13px; padding:8px; border-radius:7px; cursor:pointer;
-  border:1px solid var(--field-line); background:var(--raised); color:var(--ink-2);
-}
-.railfoot button:hover{color:var(--ink); border-color:var(--ink-3)}
+.railfoot .btn{flex:1}
 
-/* ---------- canvas ---------- */
-.canvas{padding:clamp(18px,2.4vw,30px) clamp(16px,3vw,34px) 64px; display:flex; flex-direction:column; gap:26px; min-width:0}
-
+/* ---------- verdict ---------- */
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:clamp(16px,2vw,22px); min-width:0}
 .verdict{
-  background:var(--raised); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);
-  padding:clamp(20px,2.4vw,28px); display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:clamp(20px,3vw,40px);
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:clamp(18px,2.4vw,26px); display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:clamp(20px,3vw,40px);
 }
 @media (max-width:760px){ .verdict{grid-template-columns:1fr} }
-.eyebrow{font-size:11px; font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3); margin:0 0 10px}
+.eyebrow{font-size:12px; color:var(--text-muted); margin:0 0 8px}
 .hero{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
-.hero .big{
-  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
-  font-size:clamp(46px,6.4vw,68px); font-weight:500; line-height:.95; letter-spacing:-.03em; color:var(--accent);
-}
-.hero .big.bad{color:var(--neg)}
-.hero .per{font-size:14px; color:var(--ink-3); font-family:"Public Sans",sans-serif}
-.reel{
-  margin:12px 0 0; padding:9px 12px; border-radius:9px; background:var(--accent-wash);
-  font-size:13.5px; color:var(--ink-2); line-height:1.45; max-width:46ch;
-}
-.reel b{
-  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
-  font-size:16px; font-weight:600; color:var(--accent);
-}
-.reel b.bad{color:var(--neg)}
-.herosub{margin:14px 0 0; font-size:14px; color:var(--ink-2); max-width:46ch}
-.herosub b{color:var(--ink); font-weight:600}
-.bench{
-  margin-top:16px; padding-top:14px; border-top:1px solid var(--line-soft);
-  font-size:13.5px; color:var(--ink-2); display:flex; align-items:center; gap:9px;
-}
-.pill{
-  font-size:11.5px; font-weight:600; letter-spacing:.04em; padding:3px 9px; border-radius:999px;
-  border:1px solid currentColor; flex:none;
-}
-.pill.win{color:var(--pos)} .pill.lose{color:var(--neg)} .pill.flat{color:var(--ink-3)}
-
-.best{
-  background:var(--accent-wash); border-radius:12px; padding:clamp(16px,2vw,20px);
-  display:flex; flex-direction:column; justify-content:center; gap:4px;
-}
-.best .yr{font-family:Spectral,Georgia,serif; font-size:clamp(28px,3.6vw,38px); font-weight:600; line-height:1.1; color:var(--accent)}
-.best p{margin:6px 0 0; font-size:13.5px; color:var(--ink-2); line-height:1.5}
+.hero .big{font-size:clamp(34px,4vw,44px); font-weight:600; line-height:1; letter-spacing:-.02em; color:var(--up)}
+.hero .big.bad{color:var(--down)}
+.hero .per{font-size:13px; color:var(--text-muted)}
+.reel{margin:12px 0 0; padding:9px 12px; border-radius:var(--radius); background:var(--surface-2); font-size:13px; color:var(--text-muted); line-height:1.45; max-width:48ch}
+.reel b{font-size:15px; font-weight:600; color:var(--up); font-variant-numeric:tabular-nums}
+.reel b.bad{color:var(--down)}
+.herosub{margin:14px 0 0; font-size:14px; color:var(--text-muted); max-width:48ch}
+.herosub b{color:var(--text); font-weight:600}
+.bench{margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+.pill{font-size:12px; font-weight:600; padding:2px 8px; border-radius:4px; flex:none; font-variant-numeric:tabular-nums}
+.pill.win{color:var(--up); background:var(--up-bg)}
+.pill.lose{color:var(--down); background:var(--down-bg)}
+.pill.flat{color:var(--text-muted); background:var(--surface-2)}
+.best{background:var(--surface-2); border-radius:var(--radius-lg); padding:clamp(16px,2vw,20px); display:flex; flex-direction:column; justify-content:center; gap:4px}
+.best .yr{font-size:26px; font-weight:600; line-height:1.1; letter-spacing:-.02em}
+.best p{margin:6px 0 0; font-size:13px; color:var(--text-muted); line-height:1.5}
 .best dl{margin:14px 0 0; display:grid; grid-template-columns:1fr auto; gap:6px 14px; font-size:13px}
-.best dt{color:var(--ink-2)} .best dd{margin:0; text-align:right; color:var(--ink); font-weight:500}
+.best dt{color:var(--text-muted)} .best dd{margin:0; text-align:right; font-weight:500; font-variant-numeric:tabular-nums}
 
-.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px}
-.tile{
-  background:var(--raised); border:1px solid var(--line); border-radius:12px; padding:15px 17px 16px;
-  display:flex; flex-direction:column; gap:3px; min-width:0;
-}
-.tile .k{font-size:11.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
-.tile .v{
-  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
-  font-size:25px; font-weight:500; letter-spacing:-.02em; margin-top:3px;
-}
-.tile .n{font-size:12.5px; color:var(--ink-3); line-height:1.4}
-.v.pos{color:var(--pos)} .v.neg{color:var(--neg)}
+/* ---------- indicateurs ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px}
+.tile{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px 15px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.tile .k{font-size:12px; color:var(--text-muted)}
+.tile .v{font-size:24px; font-weight:600; letter-spacing:-.02em; margin-top:2px}
+.tile .n{font-size:12px; color:var(--text-muted); line-height:1.4; margin-top:2px}
+.v.pos{color:var(--up)} .v.neg{color:var(--down)}
 
-.panel{background:var(--raised); border:1px solid var(--line); border-radius:14px; padding:clamp(16px,2vw,22px); min-width:0}
-.phead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:4px}
-.phead h2{font-family:Spectral,Georgia,serif; font-size:19px; font-weight:600; margin:0; letter-spacing:-.01em; text-wrap:balance}
-.phead p{margin:3px 0 0; font-size:13px; color:var(--ink-3); max-width:62ch}
-/* sélecteur d'échelle verticale */
-.seg{display:inline-flex; flex:none; border:1px solid var(--field-line); border-radius:8px; overflow:hidden}
-.seg button{
-  font:inherit; font-size:12px; padding:5px 11px; border:0; cursor:pointer;
-  background:transparent; color:var(--ink-2);
-}
-.seg button + button{border-left:1px solid var(--field-line)}
-.seg button[aria-pressed="true"]{background:var(--accent-wash); color:var(--accent); font-weight:600}
-.seg button:hover:not([aria-pressed="true"]){color:var(--ink)}
-.legend{display:flex; gap:15px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-2); margin:12px 0 2px}
+/* ---------- graphiques ---------- */
+.phead{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:4px}
+.phead h2{font-size:15px; font-weight:600; margin:0; letter-spacing:-.01em; text-wrap:balance}
+.phead p{margin:4px 0 0; font-size:13px; color:var(--text-muted); max-width:66ch}
+.phead .tools{display:flex; gap:8px; flex:none; align-items:center}
+.seg{display:inline-flex; flex:none; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden}
+.seg button{font:inherit; font-size:12px; padding:5px 11px; border:0; cursor:pointer; background:transparent; color:var(--text-muted)}
+.seg button + button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--text); color:var(--bg); font-weight:500}
+.seg button:hover:not([aria-pressed="true"]){color:var(--text)}
+.legend{display:flex; gap:15px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); margin:12px 0 2px}
 .legend span{display:flex; align-items:center; gap:6px}
-.axisnote{margin:10px 0 0; font-size:12.5px; color:var(--ink-3); max-width:70ch; line-height:1.5}
+.axisnote{margin:10px 0 0; font-size:12.5px; color:var(--text-muted); max-width:72ch; line-height:1.5}
 .axisnote:empty{display:none}
-.swatch{width:14px; height:3px; border-radius:2px; flex:none}
-.swatch.dash{background-image:linear-gradient(90deg,currentColor 55%,transparent 55%); background-size:6px 3px}
-.swatch.tirets{background-image:linear-gradient(90deg,currentColor 62%,transparent 62%); background-size:8px 3px}
-.swatch.points{background-image:linear-gradient(90deg,currentColor 42%,transparent 42%); background-size:5px 3px}
-
+.liens{list-style:none; margin:14px 0 0; padding:0; display:grid; gap:10px; font-size:13.5px; color:var(--text-muted); max-width:78ch}
+.liens a{font-weight:500; text-decoration:underline; text-underline-offset:2px}
+.swatch{width:14px; height:3px; border-radius:2px; flex:none; background:currentColor}
+.swatch.dash{background:linear-gradient(90deg,currentColor 55%,transparent 55%) 0 0/6px 3px}
+.swatch.tirets{background:linear-gradient(90deg,currentColor 62%,transparent 62%) 0 0/8px 3px}
+.swatch.points{background:linear-gradient(90deg,currentColor 42%,transparent 42%) 0 0/5px 3px}
+.swatch.sq{width:10px; height:10px; border-radius:2px}
 .plot{position:relative; margin-top:8px}
 .plot svg{display:block; width:100%; overflow:visible}
+.plot svg text{font-family:var(--font); font-variant-numeric:tabular-nums}
+.plot .clickable{cursor:pointer}
 .tip{
   position:absolute; pointer-events:none; opacity:0; transition:opacity .1s ease;
-  background:var(--raised); border:1px solid var(--line); border-radius:9px; box-shadow:var(--shadow);
+  background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
   padding:9px 11px; font-size:12.5px; min-width:150px; z-index:5;
 }
 .tip.on{opacity:1}
-.tip .th{font-weight:600; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px}
+.tip .th{font-weight:600; font-size:12px; color:var(--text-muted); margin-bottom:6px}
 .tip .tr{display:flex; align-items:center; gap:8px; justify-content:space-between; margin-top:3px}
-.tip .tl{display:flex; align-items:center; gap:7px; color:var(--ink-2)}
-.tip .tv{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-weight:500}
+.tip .tl{display:flex; align-items:center; gap:7px; color:var(--text-muted)}
+.tip .tv{font-variant-numeric:tabular-nums; font-weight:500}
 .dot{width:8px; height:8px; border-radius:50%; flex:none}
+.pending{color:var(--text-muted); font-size:12.5px; padding:24px 0; text-align:center}
 
-.tablewrap{overflow-x:auto; margin-top:14px; border:1px solid var(--line-soft); border-radius:10px}
+/* ---------- tableau ---------- */
+.tablewrap{overflow-x:auto; margin-top:14px; border:1px solid var(--border); border-radius:var(--radius)}
 table{border-collapse:collapse; width:100%; font-size:13px; white-space:nowrap}
 thead th{
-  position:sticky; top:0; background:var(--raised); z-index:2;
-  font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);
-  text-align:right; padding:10px 12px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:var(--surface); z-index:2;
+  font-size:12px; font-weight:500; color:var(--text-muted); text-align:right; padding:10px 12px; border-bottom:1px solid var(--border);
 }
 thead th:first-child{text-align:left}
-tbody td{
-  padding:8px 12px; text-align:right; border-bottom:1px solid var(--line-soft);
-  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
-}
-tbody td:first-child{text-align:left; font-family:"Public Sans",sans-serif; color:var(--ink-2)}
+tbody td{padding:8px 12px; text-align:right; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums}
+tbody td:first-child{text-align:left; color:var(--text-muted)}
 tbody tr:last-child td{border-bottom:0}
-tbody tr:hover td{background:var(--surface)}
-tbody tr.peak td{background:var(--accent-wash)}
-tbody tr.peak td:first-child{font-weight:600; color:var(--accent)}
-td.pos{color:var(--pos)} td.neg{color:var(--neg)}
+tbody tr:hover td{background:var(--surface-2)}
+tbody tr.peak td{background:var(--surface-2)}
+tbody tr.peak td:first-child{font-weight:600; color:var(--text)}
+td.pos{color:var(--up)} td.neg{color:var(--down)}
 
+/* ---------- questions, notes, alertes ---------- */
 .faq article{max-width:76ch}
-.faq article + article{margin-top:26px; padding-top:22px; border-top:1px solid var(--line-soft)}
-.faq h3{
-  font-family:Spectral,Georgia,serif; font-size:17px; font-weight:600; color:var(--ink);
-  margin:0 0 8px; letter-spacing:-.01em; text-wrap:balance;
-}
-.faq p{margin:0 0 10px; font-size:14px; color:var(--ink-2); line-height:1.65}
+.faq article + article{margin-top:26px; padding-top:22px; border-top:1px solid var(--border)}
+.faq h3{font-size:16px; font-weight:600; margin:0 0 8px; letter-spacing:-.01em; text-wrap:balance}
+.faq p{margin:0 0 10px; font-size:14px; color:var(--text-muted); line-height:1.65}
 .faq p:last-child{margin-bottom:0}
-.faq b{color:var(--ink); font-weight:600}
-.notes{font-size:12.5px; color:var(--ink-3); line-height:1.65; max-width:78ch}
-.notes h3{font-family:Spectral,Georgia,serif; font-size:15px; font-weight:600; color:var(--ink-2); margin:0 0 8px}
+.faq b{color:var(--text); font-weight:600}
+.faq a{text-decoration:underline; text-underline-offset:2px}
+.notes{font-size:12.5px; color:var(--text-muted); line-height:1.65; max-width:78ch}
+.notes h2{font-size:14px; font-weight:600; color:var(--text); margin:0 0 8px}
 .notes ul{margin:0; padding-left:18px} .notes li{margin-bottom:5px}
-.notes b{color:var(--ink-2); font-weight:600}
-.warn{
-  background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--c3);
-  border-radius:8px; padding:10px 13px; font-size:13px; color:var(--ink-2); margin-top:12px;
-}
+.notes b{color:var(--text); font-weight:600}
+.warn{background:var(--surface-2); border:1px solid var(--border); border-left:3px solid var(--text-muted); border-radius:var(--radius); padding:10px 13px; font-size:13px; color:var(--text); margin-top:12px}
 .toast{
   position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(10px);
-  background:var(--ink); color:var(--ground); padding:9px 16px; border-radius:999px;
+  background:var(--text); color:var(--bg); padding:9px 16px; border-radius:999px;
   font-size:13px; opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; z-index:20;
 }
 .toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+/* ---------- pied de page ---------- */
+.footer{border-top:1px solid var(--border); background:var(--surface); padding:36px clamp(16px,3vw,32px) 44px}
+.footer-in{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:28px; font-size:13px; color:var(--text-muted)}
+.footer b{display:block; color:var(--text); margin-bottom:8px; font-weight:600}
+.footer p{margin:0; line-height:1.55; max-width:40ch}
+.footer ul{list-style:none; margin:0; padding:0; display:grid; gap:6px}
+.footer a{color:var(--text-muted)} .footer a:hover{color:var(--text)}
+.footer .fin{grid-column:1/-1; max-width:none; margin-top:8px; padding-top:16px; border-top:1px solid var(--border); font-size:12px}
+
+/* ---------- page d'accueil ---------- */
+.accroche{border-bottom:1px solid var(--border); background:var(--surface); padding:clamp(40px,6vw,80px) clamp(16px,3vw,32px) clamp(32px,4vw,56px)}
+.accroche-in{max-width:1180px; margin:0 auto}
+.accroche .eyebrow{margin:0 0 14px}
+.accroche h1{font-size:clamp(30px,5vw,50px); font-weight:600; letter-spacing:-.03em; line-height:1.08; margin:0; max-width:19ch; text-wrap:balance}
+.pitch{font-size:clamp(15px,1.6vw,17px); color:var(--text-muted); max-width:62ch; margin:20px 0 0; line-height:1.6}
+.pitch b{color:var(--text); font-weight:600}
+.accroche-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px}
+.accroche-actions .btn{height:40px; padding:0 20px; font-size:15px}
+.trust{list-style:none; margin:24px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 22px; font-size:13px; color:var(--text-muted)}
+.trust li{display:flex; align-items:center; gap:7px}
+.trust li::before{content:""; width:5px; height:5px; border-radius:50%; background:var(--text-muted); flex:none}
+
+.vitrine{display:flex; flex-direction:column; gap:clamp(28px,4vw,52px)}
+.vitrine .phead{margin-bottom:14px}
+.vitrine .phead h2{font-size:clamp(18px,2.2vw,22px); letter-spacing:-.02em}
+.vitrine .phead p{font-size:14px; max-width:74ch}
+.apercu .verdict{background:var(--surface)}
+.apercu-note{margin:12px 0 0; font-size:12.5px; color:var(--text-muted)}
+.concept{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:clamp(16px,2vw,24px)}
+.concept article{border-top:2px solid var(--text); padding-top:16px}
+.concept h2{font-size:16px; font-weight:600; margin:0 0 8px; letter-spacing:-.01em}
+.concept p{margin:0; font-size:14px; color:var(--text-muted); line-height:1.6}
+.features ul{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px 28px}
+.features li{font-size:13.5px; color:var(--text-muted); line-height:1.55; padding-left:16px; position:relative}
+.features li::before{content:""; position:absolute; left:0; top:8px; width:6px; height:6px; border-radius:2px; background:var(--text)}
+.features li b{color:var(--text); font-weight:600}
+.features .cards{margin-top:0}
+.final{border-top:1px solid var(--border); padding-top:clamp(24px,3vw,36px); text-align:center}
+.final h2{font-size:clamp(20px,2.6vw,26px); font-weight:600; letter-spacing:-.02em; margin:0 0 10px; text-wrap:balance}
+.final p{margin:0 auto 20px; font-size:14.5px; color:var(--text-muted); max-width:56ch; line-height:1.6}
+.final .btn{height:40px; padding:0 22px; font-size:15px}
+
+/* ---------- pages de contenu (guides, mentions) ---------- */
+.page{max-width:1180px; margin:0 auto; padding:clamp(24px,4vw,48px) clamp(16px,3vw,32px) 64px}
+.crumbs{font-size:12.5px; color:var(--text-muted); margin:0 0 18px; display:flex; gap:8px; flex-wrap:wrap}
+.crumbs a{color:var(--text-muted)}
+.prose{max-width:72ch; font-size:15px; line-height:1.7}
+.prose h1{font-size:clamp(26px,3.2vw,34px); font-weight:600; letter-spacing:-.02em; line-height:1.15; margin:0 0 12px; text-wrap:balance}
+.prose .chapo{font-size:17px; color:var(--text-muted); margin:0 0 8px; line-height:1.55}
+.prose .meta{font-size:12.5px; color:var(--text-muted); margin:0 0 28px}
+.prose h2{font-size:20px; font-weight:600; letter-spacing:-.01em; margin:36px 0 10px}
+.prose h3{font-size:16px; font-weight:600; margin:24px 0 8px}
+.prose p,.prose li{color:var(--text)}
+.prose p{margin:0 0 14px}
+.prose ul,.prose ol{margin:0 0 14px; padding-left:22px}
+.prose li{margin-bottom:6px}
+.prose a{text-decoration:underline; text-underline-offset:2px}
+.prose table{font-size:13.5px; white-space:normal; margin:12px 0 18px}
+.prose th{text-align:left}
+.prose td{text-align:left; font-variant-numeric:tabular-nums}
+.prose td.r,.prose th.r{text-align:right}
+.prose .cta{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin:28px 0; display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+.prose .cta p{margin:0; color:var(--text-muted); font-size:14px; max-width:52ch}
+.prose .cta b{color:var(--text); display:block; font-size:15px; margin-bottom:2px}
+.prose .encadre{background:var(--surface-2); border-radius:var(--radius); padding:14px 16px; margin:18px 0; font-size:14px}
+.prose .encadre p:last-child{margin:0}
+.prose .lire{margin-top:40px; padding-top:22px; border-top:1px solid var(--border)}
+.prose .lire h2{margin-top:0; font-size:15px}
+.prose .lire ul{list-style:none; padding:0; display:grid; gap:8px}
+.prose .lire a{text-decoration:none; font-weight:500} .prose .lire a:hover{text-decoration:underline}
+.prose .lire span{display:block; font-size:13px; color:var(--text-muted); font-weight:400}
+.prose .faqg{margin-top:40px; padding-top:22px; border-top:1px solid var(--border)}
+.prose .faqg h2{margin-top:0}
+.prose .faqg article + article{margin-top:18px}
+/* la même liste, mais seule sur sa page : les questions passent au premier plan */
+.prose .faqg.principale{border-top:0; margin-top:26px; padding-top:0}
+.prose .faqg.principale article + article{margin-top:28px; padding-top:24px; border-top:1px solid var(--border)}
+.prose .faqg.principale h3{font-size:19px; margin-bottom:10px; letter-spacing:-.01em}
+.prose .faqg.principale p{font-size:15px; color:var(--text); margin-bottom:12px}
+.prose .faqg h3{margin:0 0 6px; font-size:15px}
+.prose .faqg p{color:var(--text-muted); font-size:14px; margin:0 0 6px}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-top:24px}
+.gcard{display:block; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; color:var(--text)}
+.gcard:hover{text-decoration:none; background:var(--surface-2)}
+.gcard b{display:block; font-size:16px; margin-bottom:6px; letter-spacing:-.01em}
+.gcard p{margin:0; font-size:13.5px; color:var(--text-muted); line-height:1.5}
+.gcard small{display:block; margin-top:10px; font-size:12px; color:var(--text-muted)}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 </style>
 
-<header class="masthead">
-  <h1 class="wordmark"><span class="mark"></span>Rentabilité Locative</h1>
-  <p class="tagline">Rendement annualisé, année par année — et le meilleur moment pour revendre.</p>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Mon rendement locatif — accueil">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6 20 H 8 V 22 H 6 Z M 9 20 H 11 V 22 H 9 Z M 6 23 H 8 V 25 H 6 Z M 9 23 H 11 V 25 H 9 Z"/>
+      <rect x="15.6" y="19.4" width="3.4" height="7.2" fill="currentColor"/>
+      <rect x="20.2" y="13.6" width="3.4" height="13" fill="currentColor"/>
+      <path d="M 1.6 16.4 L 8.6 9.2 L 15 15.8 L 23.6 6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path fill="currentColor" d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
+    </svg>
+    <span>Mon rendement locatif</span>
+  </a>
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="/calculatrice/" aria-current="page">Calculatrice</a>
+    <a href="/guides/">Guides</a>
+    <a href="/questions-frequentes/">Questions fréquentes</a>
+    <a href="/hypotheses-de-calcul/">Hypothèses de calcul</a>
+  </nav>
+  <span class="spacer"></span>
   <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
     <span class="knob"></span>
     <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -363,8 +469,22 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
   </button>
 </header>
 
+<div class="pagehead">
+  <h1>Calculatrice de rendement locatif</h1>
+  <p>Renseignez votre projet : le rendement annualisé net d'impôt, le meilleur moment pour revendre et la comparaison avec la bourse se recalculent à chaque frappe.</p>
+</div>
+
 <div class="shell">
-  <aside class="rail">
+  <aside class="rail" aria-label="Hypothèses de calcul">
+  <div class="examples" id="exemples">
+    <span class="exlabel">Partir d'un exemple :</span>
+    <button type="button" class="chip" data-ex="studio">Studio à Lyon</button>
+    <button type="button" class="chip" data-ex="t2">T2 à Nantes</button>
+    <button type="button" class="chip" data-ex="maison">Maison à Angers, en location nue</button>
+    <p class="exnote">Scénarios illustratifs : tous les champs restent modifiables ci-dessous.</p>
+  </div>
+  <details class="railbox" id="railbox" open>
+    <summary>Vos hypothèses</summary>
     <details class="group" open>
       <summary>Le bien</summary>
       <div class="fields">
@@ -372,21 +492,6 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
         <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 % ancien · 2,5 % neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="7.5"><span class="unit">%</span></div></div>
         <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
         <div class="f"><label for="mobilier">Mobilier<span class="hint">utile en meublé (LMNP)</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="0"><span class="unit">€</span></div></div>
-      </div>
-    </details>
-
-    <details class="group" open>
-      <summary>Travaux &amp; dépréciation</summary>
-      <div class="fields">
-        <p class="grouphint">Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez. Une cuisine neuve fait grimper le prix aujourd'hui ; vingt ans plus tard, elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel : entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</p>
-        <div class="tvxlist" id="tvxList"></div>
-        <button type="button" class="addbtn" id="tvxAdd">+ Ajouter un poste</button>
-        <dl class="derived">
-          <dt>Total des travaux</dt><dd id="tvxTotal">—</dd>
-          <dt>Valeur restante à l'horizon</dt><dd id="tvxResid">—</dd>
-          <dt>Déductible au réel</dt><dd id="tvxDeduc">—</dd>
-          <dd class="cap" id="tvxCap"></dd>
-        </dl>
       </div>
     </details>
 
@@ -408,8 +513,13 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
           <dt>Coût total du crédit</dt><dd id="dCout2">—</dd>
           <dd class="cap" id="dCap2"></dd>
         </dl>
-        <div class="f"><label for="fraisDossier">Frais de dossier + garantie</label><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
-        <label class="check"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
+        <details class="more">
+          <summary>Frais de dossier et remboursement anticipé</summary>
+          <div class="fields">
+            <div class="f"><label for="fraisDossier">Frais de dossier + garantie</label><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
+            <label class="check"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
+          </div>
+        </details>
       </div>
     </details>
 
@@ -418,18 +528,23 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
       <div class="fields">
         <div class="f"><label for="loyer">Loyer mensuel hors charges</label><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
         <div class="f"><label for="vacance">Vacance locative + impayés</label><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
-        <div class="f"><label for="copro">Charges de copro non récupérables</label><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>
         <div class="f"><label for="tf">Taxe foncière</label><div class="wrap uw"><input id="tf" type="number" step="50" value="1200"><span class="unit">€/an</span></div></div>
-        <div class="f"><label for="pno">Assurance PNO + GLI</label><div class="wrap uw"><input id="pno" type="number" step="25" value="180"><span class="unit">€/an</span></div></div>
-        <div class="f"><label for="gestion">Gestion locative</label><div class="wrap"><input id="gestion" type="number" step="0.5" value="0"><span class="unit">%</span></div></div>
-        <div class="f"><label for="entretien">Provision entretien<span class="hint">% des loyers encaissés</span></label><div class="wrap"><input id="entretien" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+        <div class="f"><label for="copro">Charges de copro non récupérables</label><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>
+        <details class="more">
+          <summary>Assurances, gestion, entretien</summary>
+          <div class="fields">
+            <div class="f"><label for="pno">Assurance PNO + GLI</label><div class="wrap uw"><input id="pno" type="number" step="25" value="180"><span class="unit">€/an</span></div></div>
+            <div class="f"><label for="gestion">Gestion locative</label><div class="wrap"><input id="gestion" type="number" step="0.5" value="0"><span class="unit">%</span></div></div>
+            <div class="f"><label for="entretien">Provision entretien<span class="hint">% des loyers encaissés</span></label><div class="wrap"><input id="entretien" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+          </div>
+        </details>
       </div>
     </details>
 
     <details class="group" open>
       <summary>Fiscalité</summary>
       <div class="fields">
-        <div class="f stack"><label for="regime">Régime fiscal</label>
+        <div class="f stack"><label for="regime">Régime fiscal<span class="hint">le paramètre le plus décisif — comparez-les plus bas</span></label>
           <select id="regime">
             <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
             <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
@@ -443,23 +558,39 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
             <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
           </select>
         </div>
-        <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
-        <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
-
-        <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 71 % en tourisme classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
-
-        <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
-
-        <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
-
-        <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
-        <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
-        <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
-        <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
+        <details class="more">
+          <summary>Prélèvements sociaux, CFE, amortissements</summary>
+          <div class="fields">
+            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
+            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
+            <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
+            <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
+            <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
+            <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
+            <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
+            <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+            <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
+          </div>
+        </details>
       </div>
     </details>
 
-    <details class="group" open>
+    <details class="group">
+      <summary>Travaux &amp; dépréciation</summary>
+      <div class="fields">
+        <p class="grouphint">Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez. Une cuisine neuve fait grimper le prix aujourd'hui ; vingt ans plus tard, elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel : entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</p>
+        <div class="tvxlist" id="tvxList"></div>
+        <button type="button" class="addbtn" id="tvxAdd">+ Ajouter un poste</button>
+        <dl class="derived">
+          <dt>Total des travaux</dt><dd id="tvxTotal">—</dd>
+          <dt>Valeur restante à l'horizon</dt><dd id="tvxResid">—</dd>
+          <dt>Déductible au réel</dt><dd id="tvxDeduc">—</dd>
+          <dd class="cap" id="tvxCap"></dd>
+        </dl>
+      </div>
+    </details>
+
+    <details class="group">
       <summary>Projection &amp; revente</summary>
       <div class="fields">
         <div class="f"><label for="horizon">Horizon d'analyse</label><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
@@ -472,30 +603,46 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
       </div>
     </details>
 
-    <details class="group" open>
+    <details class="group">
       <summary>Placements comparés</summary>
       <div class="fields">
-        <p class="grouphint">Taux <b>hors inflation</b>, comme le rendement réel du bien : ce sont des rendements en pouvoir d'achat, directement comparables entre eux.</p>
+        <p class="grouphint">Taux <b>hors inflation</b> et <b>avant impôt</b>, comme le rendement réel du bien. La comparaison, elle, se fait nette d'impôt des deux côtés : le Livret A est exonéré, les deux autres supportent le taux que vous indiquez sur leurs gains.</p>
         <div class="f"><label for="livretA">Livret A<span class="hint" id="hLivret"></span></label><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.3"><span class="unit">%/an</span></div></div>
         <div class="f"><label for="fondsEuros">Fonds euros<span class="hint" id="hFonds"></span></label><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
         <div class="f"><label for="bourse">Bourse<span class="hint" id="hBourse"></span></label><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
+        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">30 % en compte-titres (PFU) · 17,2 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
       </div>
     </details>
 
     <div class="railfoot">
-      <button type="button" id="reset">Réinitialiser</button>
-      <button type="button" id="copy">Copier le tableau</button>
+      <button type="button" class="btn sm" id="reset">Réinitialiser</button>
+      <button type="button" class="btn sm" id="share">Copier le lien</button>
     </div>
+  </details>
   </aside>
 
   <main class="canvas">
-    <section class="verdict">
+    <nav class="subnav" aria-label="Sections de la page">
+      <a href="#verdict">Verdict</a>
+      <a href="#indicateurs">Indicateurs</a>
+      <a href="#rendement">Rendement</a>
+      <a href="#regimes">Régimes</a>
+      <a href="#placements">Placements</a>
+      <a href="#tresorerie">Trésorerie</a>
+      <a href="#patrimoine">Patrimoine</a>
+      <a href="#sensibilite">Sensibilité</a>
+      <a href="#detail">Détail</a>
+      <a href="#suite">Pour aller plus loin</a>
+    </nav>
+
+    <section class="verdict" id="verdict">
       <div>
         <p class="eyebrow">Rendement annuel moyen si vous revendez à l'horizon</p>
         <div class="hero"><span class="big num" id="heroTri">—</span><span class="per">par an, net de tout,<br>sur les fonds réellement engagés</span></div>
         <p class="reel" id="heroReel"></p>
         <p class="herosub" id="heroSub"></p>
-        <div class="bench"><span class="pill" id="benchPill">—</span><span id="benchText"></span></div>
+        <div class="bench"><span class="pill num" id="benchPill">—</span><span id="benchText"></span></div>
       </div>
       <div class="best">
         <p class="eyebrow">Meilleur moment pour revendre</p>
@@ -505,13 +652,13 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
       </div>
     </section>
 
-    <section class="tiles" id="tiles"></section>
+    <section class="tiles" id="indicateurs" aria-label="Indicateurs clés"></section>
 
-    <section class="panel">
+    <section class="panel" id="rendement">
       <div class="phead">
         <div>
           <h2>Rendement annualisé selon l'année de revente</h2>
-          <p>Chaque point répond à la même question : « si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? » C'est la mesure directement comparable à un rendement boursier.</p>
+          <p>Chaque point répond à la même question : « si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? » La ligne de référence est le même argent, versé aux mêmes dates en bourse, une fois l'impôt sur les gains payé.</p>
         </div>
         <div class="seg" role="group" aria-label="Échelle verticale">
           <button type="button" id="echLisible" aria-pressed="true">Zone lisible</button>
@@ -519,31 +666,53 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
         </div>
       </div>
       <div class="legend">
-        <span><i class="swatch" style="background:var(--c1)"></i>Rendement du projet</span>
-        <span style="color:var(--c3)"><i class="swatch dash"></i><span style="color:var(--ink-2)">Référence boursière, en euros courants</span></span>
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Rendement du projet</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Bourse à mêmes versements, nette d'impôt, en euros courants</span></span>
       </div>
       <div class="plot" id="plotTri"><div class="tip" id="tipTri"></div></div>
       <p class="axisnote" id="triNote"></p>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="regimes">
+      <div class="phead">
+        <div>
+          <h2>Le même projet sous les quatre régimes fiscaux</h2>
+          <p>Rendement annualisé à l'horizon, toutes hypothèses égales par ailleurs — seuls changent le régime et les réglages qui en découlent (prélèvements sociaux, CFE, abattement). Cliquez sur une barre pour adopter ce régime.</p>
+        </div>
+      </div>
+      <div class="plot" id="plotReg"><div class="tip" id="tipReg"></div></div>
+      <p class="axisnote" id="regNote"></p>
+    </section>
+
+    <section class="panel" id="placements">
       <div class="phead">
         <div>
           <h2>Gagné ou perdu, selon l'année de revente</h2>
-          <p>Ce que vous avez réellement gagné : le capital détenu à cette date, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</p>
+          <p>Ce que vous avez réellement gagné : le capital détenu à cette date, net d'impôt, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</p>
         </div>
       </div>
       <div class="legend">
-        <span><i class="swatch" style="background:var(--c2)"></i>Immobilier, revendu cette année-là</span>
-        <span><i class="swatch" style="background:var(--c3)"></i>Bourse</span>
-        <span style="color:var(--c5)"><i class="swatch tirets"></i><span style="color:var(--ink-2)">Fonds euros</span></span>
-        <span style="color:var(--c6)"><i class="swatch points"></i><span style="color:var(--ink-2)">Livret A</span></span>
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Immobilier, revendu cette année-là</span></span>
+        <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Bourse</span></span>
+        <span style="color:var(--d3)"><i class="swatch tirets"></i><span style="color:var(--text-muted)">Fonds euros</span></span>
+        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Livret A</span></span>
       </div>
       <div class="plot" id="plotNet"><div class="tip" id="tipNet"></div></div>
       <p class="axisnote" id="netNote"></p>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="cascade">
+      <div class="phead">
+        <div>
+          <h2>D'où vient le gain, à l'horizon</h2>
+          <p>Tout ce qui entre et tout ce qui sort sur la période, en euros courants, jusqu'au gain net si vous revendez à l'horizon. La plus-value est prise avant impôt et frais de revente, qui apparaissent séparément.</p>
+        </div>
+      </div>
+      <div class="plot" id="plotCasc"><div class="tip" id="tipCasc"></div></div>
+      <p class="axisnote" id="cascNote"></p>
+    </section>
+
+    <section class="panel" id="tresorerie">
       <div class="phead">
         <div>
           <h2>Trésorerie annuelle après impôt</h2>
@@ -553,70 +722,108 @@ td.pos{color:var(--pos)} td.neg{color:var(--neg)}
       <div class="plot" id="plotCf"><div class="tip" id="tipCf"></div></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="patrimoine">
+      <div class="phead">
+        <div>
+          <h2>Patrimoine net et dette, année par année</h2>
+          <p>La valeur du bien monte, le capital restant dû descend : l'écart entre les deux est votre patrimoine net. Tant qu'il reste sous les sommes sorties de votre poche, la revente ne vous rembourserait pas.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Patrimoine net (valeur − dette)</span></span>
+        <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Valeur du bien</span></span>
+        <span style="color:var(--text-muted)"><i class="swatch"></i><span style="color:var(--text-muted)">Capital restant dû</span></span>
+        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Sorti de votre poche, cumulé</span></span>
+      </div>
+      <div class="plot" id="plotPat"><div class="tip" id="tipPat"></div></div>
+    </section>
+
+    <section class="panel" id="sensibilite">
+      <div class="phead">
+        <div>
+          <h2>Ce qui fait vraiment bouger le rendement</h2>
+          <p>Variation du rendement annualisé à l'horizon quand un seul paramètre change, les autres restant fixes. Les barres les plus longues désignent les hypothèses à vérifier en priorité avant de signer.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario favorable</span></span>
+        <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario défavorable</span></span>
+      </div>
+      <div class="plot" id="plotSens"><div class="tip" id="tipSens"></div></div>
+      <p class="axisnote" id="sensNote"></p>
+    </section>
+
+    <section class="panel" id="detail">
       <div class="phead">
         <div>
           <h2>Détail annuel</h2>
           <p>L'année surlignée est celle qui maximise le rendement annualisé.</p>
+        </div>
+        <div class="tools">
+          <button type="button" class="btn sm" id="copy">Copier</button>
+          <button type="button" class="btn sm" id="csv">Télécharger le CSV</button>
         </div>
       </div>
       <div id="warnBox"></div>
       <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
     </section>
 
-    <section class="panel faq">
-      <div class="phead"><div><h2>Questions fréquentes</h2></div></div>
-
-      <article>
-        <h3>Quand faut-il revendre un bien locatif&nbsp;?</h3>
-        <p>Il n'existe pas de durée optimale universelle&nbsp;: la bonne date dépend de votre financement et de votre fiscalité, et elle se lit sur la courbe de rendement annualisé. Trois forces s'y opposent. Les <b>frais d'acquisition</b> — notaire, agence, garantie — représentent 8 à 10&nbsp;% du prix et sont perdus le jour de la signature&nbsp;: il faut plusieurs années de loyers et de revalorisation pour les absorber. C'est le point mort, souvent situé entre la 7<sup>e</sup> et la 12<sup>e</sup> année. Ensuite, les <b>abattements sur la plus-value</b> ne démarrent qu'après cinq ans révolus et ne deviennent vraiment intéressants qu'à partir de la 23<sup>e</sup> année, quand l'abattement social passe à 9&nbsp;% par an. Enfin, l'<b>effet de levier s'éteint</b> avec le crédit&nbsp;: une fois le prêt soldé, votre capital immobilisé grossit alors que les loyers, eux, ne suivent que l'inflation — le rendement annualisé se met à décliner.</p>
-        <p>Conséquence contre-intuitive&nbsp;: le pic de rendement et le pic de patrimoine ne tombent pas la même année. Sur un horizon de 40&nbsp;ans, le rendement culmine souvent vers la 30<sup>e</sup> année tandis que le gain en euros continue de croître jusqu'au bout. Revendre au pic de rendement maximise l'efficacité de votre argent&nbsp;; conserver maximise le montant final. Le calculateur affiche les deux.</p>
-      </article>
-
-      <article>
-        <h3>Rendement nominal ou rendement réel&nbsp;: quelle différence&nbsp;?</h3>
-        <p>Le rendement nominal compte les euros&nbsp;; le rendement réel compte ce qu'ils permettent d'acheter. Avec 2&nbsp;% d'inflation, un placement à 4&nbsp;% nominal ne vous enrichit que de 2&nbsp;% en pouvoir d'achat. Sur vingt-cinq ans, l'écart devient vertigineux&nbsp;: 100&nbsp;000&nbsp;€ de gain affiché n'en valent plus que 61&nbsp;000 en euros d'aujourd'hui.</p>
-        <p>La quasi-totalité des simulateurs raisonnent en euros courants sans le préciser, ce qui flatte mécaniquement tous les résultats. Deux effets se compensent d'ailleurs partiellement. D'un côté l'inflation ronge vos loyers futurs et votre prix de revente. De l'autre elle <b>érode votre dette</b>, qui est à taux fixe&nbsp;: vous remboursez en monnaie dévaluée. C'est pourquoi le rendement réel d'un projet à crédit monte légèrement quand l'inflation augmente — un phénomène que seul un calcul en pouvoir d'achat rend visible.</p>
-      </article>
-
-      <article>
-        <h3>Immobilier locatif ou bourse&nbsp;: lequel rapporte le plus&nbsp;?</h3>
-        <p>La comparaison n'a de sens qu'à <b>mise de fonds identique</b>. Opposer un apport de 35&nbsp;000&nbsp;€ placé en bourse à un bien de 200&nbsp;000&nbsp;€ acheté à crédit ne compare rien&nbsp;: le second mobilise, mois après mois, un effort d'épargne que le premier n'exige pas. La méthode correcte consiste à investir en bourse exactement les mêmes sommes aux mêmes dates — l'apport, puis chaque euro de cash-flow négatif.</p>
-        <p>Ainsi posée, la question se déplace. L'immobilier a pour lui le <b>levier du crédit</b>&nbsp;: personne ne vous prête 200&nbsp;000&nbsp;€ à 3,4&nbsp;% pour acheter des actions. La bourse a pour elle un rendement réel historiquement supérieur, l'absence de frais d'entrée à 8&nbsp;%, la liquidité et zéro gestion. Sur nos hypothèses par défaut — 4&nbsp;% réels en bourse contre une pierre qui suit l'inflation — la bourse l'emporte. L'immobilier reprend l'avantage si vous achetez sous le prix du marché, si le rendement locatif dépasse 7&nbsp;%, ou si vous croyez à une hausse réelle des prix. Ces trois leviers sont modifiables ci-dessus&nbsp;: c'est le seul moyen honnête de trancher pour <i>votre</i> projet.</p>
-      </article>
-
-      <article>
-        <h3>Quel régime fiscal choisir&nbsp;?</h3>
-        <p>C'est le paramètre le plus décisif de la page, et de loin. À situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept entre le micro-foncier et le LMNP au réel. Le <b>LMNP au réel</b> l'emporte presque toujours en meublé&nbsp;: l'amortissement du bâti, des travaux et du mobilier annule l'imposition des loyers pendant une à deux décennies. Sa contrepartie, depuis la loi de finances 2025, est la réintégration des amortissements déduits dans le calcul de la plus-value à la revente.</p>
-        <p>En location nue, le <b>régime réel</b> devient intéressant dès que vos charges et intérêts dépassent 30&nbsp;% des loyers — ce qui est courant les premières années d'un crédit, ou après de gros travaux, le déficit foncier s'imputant alors sur votre revenu global à hauteur de 10&nbsp;700&nbsp;€ par an. Le micro-foncier ne se justifie que pour un bien sans crédit, sans travaux et à faibles charges. Changez le régime dans le panneau de gauche&nbsp;: toutes les courbes se recalculent instantanément.</p>
-      </article>
-    </section>
-
-    <section class="notes">
-      <h3>Hypothèses de calcul</h3>
-      <ul>
-        <li><b>Rendement annualisé</b> — c'est un TRI : le taux qui, appliqué chaque année à l'argent que vous avez réellement sorti de votre poche, reproduit exactement la chronique de vos flux. Il tient compte du moment où chaque euro entre et sort, contrairement à une simple moyenne.</li>
-        <li><b>Effet de levier</b> — le rendement porte sur l'apport et les mensualités payées de votre poche, pas sur le prix du bien. Un apport faible amplifie le résultat dans les deux sens.</li>
-        <li><b>Placements comparés</b> — à mise de fonds identique. Les quatre scénarios démarrent sur le même apport et exigent les mêmes versements : chaque euro d'effort d'épargne réclamé par le bien est, ailleurs, investi au taux du placement. Sans quoi on comparerait un capital qui travaille à un capital qui dort. Les taux sont saisis <b>hors inflation</b>, comme le rendement réel du bien ; ils sont reconvertis en euros courants pour capitaliser dans la même monnaie que les flux du bien, et l'équivalent nominal s'affiche sous chaque champ. Les valeurs par défaut retiennent 4 % réels pour la bourse, un fonds euros qui suit l'inflation, et un Livret A légèrement en dessous — à 2 % d'inflation, cela redonne 1,7 % nominal, soit précisément son taux actuel. Deux réserves : la trésorerie dégagée par le bien une fois le crédit soldé est replacée au taux de la bourse, si bien que relever cette référence déplace légèrement la courbe immobilière ; et la courbe immobilière est nette de toute fiscalité, alors que le fonds euros et la bourse sont saisis avant prélèvements sociaux — seul le Livret A est réellement exonéré.</li>
-        <li><b>Rendement réel</b> — tous les montants de la page sont en euros courants. Le rendement en pouvoir d'achat retire l'inflation du rendement annualisé : à 2 % d'inflation, 4 % nominal ne valent que 2 % réels. Par défaut, prix du bien, loyers et charges sont supposés suivre l'inflation : la pierre conserve sa valeur sans en créer, et le rendement vient alors du levier du crédit et des loyers, pas d'une plus-value réelle. Décocher la case fait réapparaître les trois taux et permet de les régler séparément — utile pour tenir compte de l'IRL, qui plafonne l'indexation des loyers et suit l'inflation avec un peu de retard, ou de charges de copropriété qui dérivent plus vite que les prix. Les taux des placements comparés sont eux aussi nominaux, la comparaison reste donc cohérente.</li>
-        <li><b>CFE</b> — due dès la deuxième année d'activité en location meublée, entre 100 et 700 € selon la commune, avec une base minimale de 247 à 589 € pour des recettes inférieures à 10 000 €. Exonérée la première année et si les recettes ne dépassent pas 5 000 €. Elle ne concerne pas la location nue : le champ se met à zéro si vous choisissez un régime foncier.</li>
-        <li><b>Deux taux de prélèvements sociaux</b> — depuis la hausse de CSG de 9,2 % à 10,6 %, les revenus de location meublée supportent 18,6 % (rétroactivement sur les revenus 2025), tandis que la location nue reste à 17,2 %. Les plus-values de cession immobilière sont explicitement exclues de la hausse et demeurent à 17,2 %. Le taux sur les loyers s'ajuste automatiquement quand vous changez de régime ; les deux restent modifiables.</li>
-        <li><b>Plus-value</b> — abattements pour durée de détention appliqués : exonération d'impôt sur le revenu à 22 ans, de prélèvements sociaux à 30 ans. Prix d'acquisition majoré du forfait travaux de 15 % au-delà de 5 ans de détention lorsqu'il est plus favorable. Surtaxe au-delà de 50 000 € de plus-value imposable.</li>
-        <li><b>Les ruptures de pente sont réelles</b> — la fiscalité française avance par seuils, pas continûment, et les courbes le montrent. Le décrochage de l'année 6 en cumule deux : les abattements pour durée de détention démarrent, et le forfait travaux de 15 % devient accessible. Viennent ensuite l'accélération de l'abattement social à partir de la 23<sup>e</sup> année (9 % par an contre 1,65 %), puis les deux exonérations. Au régime réel foncier s'ajoute l'année 4, fin de la période où revendre ferait reprendre le déficit imputé. Ces dates sont repérées en bas des graphiques : ce sont des moments de décision, pas des artefacts.</li>
-        <li><b>LMNP au réel</b> — amortissement du bâti sur 30 ans (85 % du prix et des frais), des travaux sur 15 ans, du mobilier sur 7 ans, sans création de déficit ; l'excédent est reporté. Depuis la loi de finances 2025, les amortissements déduits sont réintégrés dans le calcul de la plus-value : c'est pris en compte.</li>
-        <li><b>Dépréciation des travaux</b> — chaque poste ajoute son montant à la valeur du bien au départ, puis en perd le pourcentage indiqué chaque année, pendant la durée indiquée. Au-delà, la valeur restante ne bouge plus : un poste à 3 %/an pendant 10 ans conserve 70 % de son apport indéfiniment. Ce qui subsiste suit ensuite la revalorisation du marché. C'est une hypothèse d'usure, distincte de l'amortissement comptable du LMNP : elle ne change pas votre impôt, seulement le prix auquel vous revendrez. Les travaux restent en revanche intégralement comptés dans le coût d'acquisition et dans le prix de revient retenu pour la plus-value — vous les avez payés en entier.</li>
-        <li><b>Travaux au réel foncier</b> — déduits en totalité l'année de leur paiement, et non étalés. Seuls l'entretien, la réparation et l'amélioration ouvrent droit à déduction : la construction, la reconstruction et l'agrandissement en sont exclus. La part déductible se règle poste par poste, une peinture et une extension n'ayant pas le même traitement. Des travaux déduits ne peuvent plus majorer le prix d'acquisition au moment de la plus-value ; seule la fraction non déduite y contribue.</li>
-        <li><b>Déficit foncier</b> — la part hors intérêts d'emprunt s'impute sur le revenu global à hauteur de 10 700 € par an ; l'excédent et la part liée aux intérêts sont reportables sur les revenus fonciers des <b>10 années suivantes</b>, après quoi ils sont perdus. Revendre avant le 31 décembre de la 3<sup>e</sup> année qui suit une imputation la fait reprendre : le calcul en tient compte. Le plafond monte à 21 400 € pour la rénovation énergétique d'une passoire thermique jusqu'à fin 2027 — non modélisé ici.</li>
-        <li><b>Ce qui n'est pas modélisé</b> — IFI, changements de législation, gros travaux ponctuels, revente en cours de mois, régimes Pinel/Denormandie/Malraux, plafond de 15 000 € du micro-foncier au-delà duquel le réel devient obligatoire.</li>
+    <section class="panel" id="suite">
+      <div class="phead">
+        <div>
+          <h2>Pour aller plus loin</h2>
+          <p>Ce que la simulation modélise, ce qu'elle laisse de côté, et les questions qui reviennent le plus.</p>
+        </div>
+      </div>
+      <ul class="liens">
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a> — la méthode complète : TRI sur fonds propres, fiscalité des quatre régimes, plus-value, inflation, placements comparés.</li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a> — quand revendre, rendement nominal ou réel, immobilier ou bourse, quel régime choisir.</li>
+        <li><a href="/guides/">Les six guides</a> — du rendement brut au TRI, LMNP au réel, déficit foncier, moment de la revente.</li>
       </ul>
-      <p style="margin-top:14px">Outil d'aide à la décision. Les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal.</p>
     </section>
   </main>
 </div>
 
+<footer class="footer">
+  <div class="footer-in">
+    <div>
+      <b>Mon rendement locatif</b>
+      <p>Calculateur indépendant et gratuit, sans compte, sans cookie ni traceur.</p>
+    </div>
+    <div>
+      <b>Guides</b>
+      <ul>
+        <li><a href="/guides/calcul-rendement-locatif/">Calculer un rendement locatif : brut, net, net-net, TRI</a></li>
+        <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué</a></li>
+        <li><a href="/guides/lmnp-reel-ou-micro-bic/">LMNP : réel ou micro-BIC ?</a></li>
+        <li><a href="/guides/micro-foncier-ou-reel/">Micro-foncier ou régime réel ?</a></li>
+        <li><a href="/guides/quand-revendre/">Quand revendre un bien locatif ?</a></li>
+        <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a></li>
+      </ul>
+    </div>
+    <div>
+      <b>À propos</b>
+      <ul>
+        <li><a href="/calculatrice/">La calculatrice</a></li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a></li>
+        <li><a href="/mentions-legales/">Mentions légales</a></li>
+        <li><a href="#" class="mail" data-u="contact" data-d="monrendementlocatif.fr">Nous écrire</a></li>
+      </ul>
+    </div>
+    <p class="fin">Outil d'aide à la décision : les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal.</p>
+  </div>
+</footer>
+
 <div class="toast" id="toast"></div>
 
 <script>
+/* ═════════ modèle et dessin — bloc partagé avec la vitrine ═════════
+   Tout ce qui calcule ou dessine, et rien qui touche au formulaire :
+   build.py en fait aussi js/vitrine.js, le script de la page d'accueil.
+   Ne rien ajouter ici qui lise le DOM de la calculatrice.
+   ══════════════════════════════════════════════════════════════════ */
+
 "use strict";
 const $ = id => document.getElementById(id);
 const eur = new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0});
@@ -627,19 +834,8 @@ const sEur = v => Math.abs(v)<0.5 ? eur.format(0) : (v>0?"+":"−")+eur.format(M
 /* un coût : positif = sortie d'argent, affichée en négatif */
 const cost = v => Math.abs(v)<0.5 ? eur.format(0) : (v>0?"−":"+")+eur.format(Math.abs(v));
 
-const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
-  "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
-  "ps","psPV","cfe","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
-  "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA"];
-const SELECTS = ["regime","tmi"];
-const DEFAULTS = {};
-FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
-DEFAULTS.ira = true;
-DEFAULTS.prixSuitInflation = true;
-
 /* ---------- postes de travaux ---------- */
 const TVX_DEFAUT = [{nom:"Rénovation", montant:20000, taux:5, duree:20, deduc:100}];
-let items = TVX_DEFAUT.map(o => ({...o}));
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const nombre = (v, def, min, max) => {
@@ -664,22 +860,6 @@ function residuTravaux(list, y){
     const perte = Math.min(1, (it.taux/100) * Math.min(y, it.duree));
     return s + it.montant*(1 - perte);
   }, 0);
-}
-
-function renderItems(){
-  $("tvxList").innerHTML = items.map((it, i) => `
-    <div class="tvxrow">
-      <div class="tvxhead">
-        <input type="text" data-i="${i}" data-f="nom" value="${esc(it.nom)}" aria-label="Nom du poste">
-        <button type="button" class="del" data-i="${i}" aria-label="Supprimer ${esc(it.nom)}">&times;</button>
-      </div>
-      <div class="tgrid">
-        <label>Montant<span class="tw"><input type="number" step="500" min="0" data-i="${i}" data-f="montant" value="${it.montant}"><span class="u">€</span></span></label>
-        <label>Perte / an<span class="tw"><input type="number" step="0.5" min="0" max="100" data-i="${i}" data-f="taux" value="${it.taux}"><span class="u">%</span></span></label>
-        <label>Pendant<span class="tw"><input type="number" step="1" min="0" max="60" data-i="${i}" data-f="duree" value="${it.duree}"><span class="u">ans</span></span></label>
-        <label>Déductible<span class="tw"><input type="number" step="5" min="0" max="100" data-i="${i}" data-f="deduc" value="${it.deduc}"><span class="u">%</span></span></label>
-      </div>
-    </div>`).join("");
 }
 
 /* ---------- finance ---------- */
@@ -732,24 +912,12 @@ function surtaxePV(base){
   return base*t;
 }
 
-function read(){
-  const p = {};
-  FIELDS.forEach(k => { const v = parseFloat($(k).value); p[k] = isFinite(v) ? v : 0; });
-  p.regime = $("regime").value;
-  p.tmi = parseFloat($("tmi").value);
-  p.ira = $("ira").checked;
-  // Par défaut prix, loyers et charges suivent l'inflation : pas de gain réel sur
-  // la pierre, seuls le levier et les loyers créent de la valeur.
-  if($("prixSuitInflation").checked){
-    p.indexPrix = p.inflation;
-    p.indexLoyer = p.inflation;
-    p.indexCharges = p.inflation;
-  }
-  p.horizon = Math.max(1, Math.min(40, Math.round(p.horizon)));
-  p.items = items;
-  p.travaux = items.reduce((s, it) => s + it.montant, 0);
-  return p;
-}
+// Réglages propres à chaque régime, partagés par le formulaire et le comparatif.
+// Le meublé subit la CSG à 10,6 %, le nu reste à 9,2 % : le taux suit le régime.
+const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
+// La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
+const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
+const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
   const notaire = p.prix * p.notairePct/100;
@@ -775,19 +943,34 @@ function compute(p){
   // Imputations sur le revenu global : reprises si le bien est vendu avant le
   // 31 décembre de la 3e année qui suit.
   let deficits = [], imputations = [];
+  // LMNP au réel : un déficit hors amortissement (charges et intérêts supérieurs
+  // aux loyers) se reporte dix ans sur les BIC non professionnels ; il s'impute
+  // avant l'amortissement, qui lui se reporte sans limite.
+  let deficitsBIC = [];
+  // Deux stocks d'amortissement : le bâti et les travaux sont réintégrés dans
+  // la plus-value depuis la loi de finances 2025, le mobilier non — il n'entre
+  // pas dans la cession immobilière.
+  let stockImm = 0, stockMob = 0, amortCumul = 0, amortReintegre = 0;
   // Comparaison à mise de fonds identique. Les deux scénarios partent du même
   // apport et exigent exactement les mêmes versements : chaque euro d'effort
   // d'épargne que le bien réclame est, côté bourse, investi au taux de référence.
   // Symétriquement, chaque euro de trésorerie dégagé par le bien est replacé au
-  // même taux. Les deux courbes sont donc bien deux capitaux comparables.
-  let stockAmort=0, amortCumul=0, cumulCF=0, cumulLoyers=0, portefeuille=cash0, potImmo=0;
+  // même taux. Les deux courbes sont donc bien deux capitaux comparables — et,
+  // comme le bien, ils sont pris nets de l'impôt dû sur leurs gains à la sortie.
+  let cumulCF=0, cumulLoyers=0, cumulCharges=0, cumulCredit=0, cumulImpot=0;
+  let portefeuille=cash0, potImmo=0, surplusCumul=0;
   let pFonds = cash0, pLivret = cash0;   // mêmes versements, placés ailleurs
   let miseTotale = cash0; // apport, puis chaque euro d'effort d'épargne versé ensuite
+  const efforts = [];
   const rows=[], cfHist=[];
   // Les taux de placement sont saisis hors inflation ; on les repasse en nominal
   // pour capitaliser dans la même monnaie que les flux du bien.
   const nominal = r => (1 + r/100)*(1 + p.inflation/100) - 1;
   const bourse = nominal(p.bourse), rFonds = nominal(p.fondsEuros), rLivret = nominal(p.livretA);
+  const part = v => Math.max(0, Math.min(1, (Number(v) || 0)/100));
+  const fiscB = part(p.fiscBourse), fiscF = part(p.fiscFonds);
+  // Capital net de l'impôt sur le gain, le gain étant ce qui dépasse les versements.
+  const netDe = (capital, verse, fisc) => capital - Math.max(0, capital - verse)*fisc;
 
   for(let y=1; y<=p.horizon; y++){
     const loyers = p.loyer*12*Math.pow(1+p.indexLoyer/100, y-1)*(1-p.vacance/100);
@@ -827,19 +1010,35 @@ function compute(p){
         impot = -impute*(p.tmi/100);
       }
     } else {
-      amortAn = (y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0) + (y<=p.amortMobAns?amortMob:0);
-      const base = loyers - charges - fraisEmprunt;
-      const dispo = amortAn + stockAmort;
-      const used = Math.max(0, Math.min(dispo, base));
-      stockAmort = dispo - used;
+      const dotImm = (y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0);
+      const dotMob = y<=p.amortMobAns ? amortMob : 0;
+      amortAn = dotImm + dotMob;
+      let base = loyers - charges - fraisEmprunt;
+      deficitsBIC = deficitsBIC.filter(d => y - d.y <= 10);
+      if(base < 0){
+        deficitsBIC.push({y, amt:-base});
+        base = 0;
+      } else {
+        deficitsBIC.forEach(d => { const u = Math.min(d.amt, base); d.amt -= u; base -= u; });
+        deficitsBIC = deficitsBIC.filter(d => d.amt > 0.01);
+      }
+      const dispoImm = dotImm + stockImm, dispoMob = dotMob + stockMob, dispo = dispoImm + dispoMob;
+      const used = Math.min(dispo, base);
+      const usedImm = dispo > 0 ? used*dispoImm/dispo : 0;
+      stockImm = dispoImm - usedImm;
+      stockMob = dispoMob - (used - usedImm);
       amortCumul += used;
-      impot = Math.max(0, base - used)*tauxImpot;
+      amortReintegre += usedImm;
+      impot = (base - used)*tauxImpot;
     }
 
     const cfAvant = loyers - charges - annuite;
     const cfNet = cfAvant - impot;
     cumulCF += cfNet;
     cumulLoyers += loyers;
+    cumulCharges += charges;
+    cumulCredit += fraisEmprunt;
+    cumulImpot += impot;
     cfHist.push(cfNet);
 
     // Le prix du marché progresse, mais les travaux s'usent : seule leur valeur
@@ -854,8 +1053,9 @@ function compute(p){
     // seconde fois le prix d'acquisition.
     const travauxPV = p.regime === "reel-foncier" ? travauxNonDeduits : p.travaux;
     let prixAcq = p.prix + notaireRetenu + Math.max(travauxPV, forfaitTvx);
-    if(p.regime === "lmnp-reel") prixAcq -= amortCumul;
-    const pvBrute = Math.max(0, valeur - prixAcq);
+    if(p.regime === "lmnp-reel") prixAcq -= amortReintegre;
+    // Les frais supportés par le vendeur viennent en moins du prix de cession.
+    const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
     const baseIR = pvBrute*(1-abattementIR(y));
     const basePS = pvBrute*(1-abattementPS(y));
     const impotPV = baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
@@ -872,19 +1072,30 @@ function compute(p){
     pFonds = pFonds*(1+rFonds) + effort;
     pLivret = pLivret*(1+rLivret) + effort;
     potImmo = potImmo*(1+bourse) + surplus;
+    surplusCumul += surplus;
     miseTotale += effort;
+    efforts.push(effort);
+
+    const portefeuilleNet = netDe(portefeuille, miseTotale, fiscB);
+    const fondsNet = netDe(pFonds, miseTotale, fiscF);
+    const potImmoNet = netDe(potImmo, surplusCumul, fiscB);
 
     const flows = [-cash0].concat(cfHist.slice(0,-1)).concat([cfNet + netVente]);
     const tri = cash0 > 1 ? irr(flows) : null;
+    // Même chronique de versements, placée en bourse : le rendement annualisé
+    // net d'impôt directement opposable au TRI du bien.
+    const flowsBourse = [-cash0].concat(efforts.slice(0,-1).map(e => -e)).concat([portefeuilleNet - effort]);
+    const triBourse = cash0 > 1 ? irr(flowsBourse) : null;
     const gain = cumulCF + netVente - cash0;
 
     rows.push({y, loyers, charges, interets:L.int, assurance:L.ass, principal:L.pri, annuite,
-      impot, cfNet, cumulCF, valeur, crd:L.crd, impotPV, repriseDF, netVente, tri, gain,
-      patrimoine: valeur - L.crd, recupere: netVente + potImmo, potImmo, portefeuille, amortCumul,
-      mise: miseTotale, pFonds, pLivret,
-      gainImmo: netVente + potImmo - miseTotale,
-      gainBourse: portefeuille - miseTotale,
-      gainFonds: pFonds - miseTotale,
+      impot, cfNet, cumulCF, valeur, crd:L.crd, fraisVente, ira, impotPV, repriseDF, netVente, tri, triBourse, gain,
+      cumulLoyers, cumulCharges, cumulCredit, cumulImpot,
+      patrimoine: valeur - L.crd, recupere: netVente + potImmoNet, potImmo: potImmoNet, portefeuille: portefeuilleNet,
+      amortCumul, amortReintegre, mise: miseTotale, pFonds: fondsNet, pLivret,
+      gainImmo: netVente + potImmoNet - miseTotale,
+      gainBourse: portefeuilleNet - miseTotale,
+      gainFonds: fondsNet - miseTotale,
       gainLivret: pLivret - miseTotale});
   }
 
@@ -897,12 +1108,14 @@ function compute(p){
   const reel = t => t === null ? null : (1 + t)/(1 + p.inflation/100) - 1;
   rows.forEach(r => {
     r.triReel = reel(r.tri);
+    r.triBourseReel = reel(r.triBourse);
     r.gainConstant = r.gainImmo/Math.pow(1 + p.inflation/100, r.y);
   });
   return {
     p, rows, best, notaire, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
-    brute: loyerBrutAn/besoin,
+    brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
+    bruteCout: loyerBrutAn/besoin,
     nette: (r1.loyers - r1.charges)/besoin,
     netteNette: (r1.loyers - r1.charges - r1.impot)/besoin,
     cfMensuel1: r1.cfNet/12,
@@ -973,12 +1186,12 @@ function drawChart(host, tip, cfg){
     ? M.l + iw*(i+0.5)/n
     : M.l + (n>1 ? iw*i/(n-1) : iw/2);
 
-  const gridC = css("--grid"), ink3 = css("--ink-3"), lineC = css("--line");
+  const gridC = css("--border"), ink3 = css("--text-muted"), lineC = css("--text-muted");
 
   const scaleRef = Math.max(Math.abs(yMin), Math.abs(yMax));
   ticks.forEach(t => {
     svg.appendChild(svgEl("line",{x1:M.l,x2:W-M.r,y1:Y(t),y2:Y(t),stroke:Math.abs(t)<1e-9?lineC:gridC,"stroke-width":Math.abs(t)<1e-9?1.2:1}));
-    const lb = svgEl("text",{x:M.l-9,y:Y(t)+4,"text-anchor":"end",fill:ink3,"font-size":"11","font-family":'"IBM Plex Mono",monospace'});
+    const lb = svgEl("text",{x:M.l-9,y:Y(t)+4,"text-anchor":"end",fill:ink3,"font-size":"11"});
     lb.textContent = cfg.fmtAxis(t, scaleRef);
     svg.appendChild(lb);
   });
@@ -986,7 +1199,7 @@ function drawChart(host, tip, cfg){
   const every = n>26 ? 5 : n>14 ? 2 : 1;
   cfg.x.forEach((lab,i) => {
     if(i % every !== 0 && i !== n-1) return;
-    const tx = svgEl("text",{x:X(i), y:H-8, "text-anchor":"middle", fill:ink3, "font-size":"11","font-family":'"IBM Plex Mono",monospace'});
+    const tx = svgEl("text",{x:X(i), y:H-8, "text-anchor":"middle", fill:ink3, "font-size":"11"});
     tx.textContent = lab;
     svg.appendChild(tx);
   });
@@ -1004,7 +1217,7 @@ function drawChart(host, tip, cfg){
     cfg.series[0].values.forEach((v,i) => {
       if(v===null||!isFinite(v)) return;
       // Barres de trésorerie : vert / rouge sémantiques, pas la couleur d'accent.
-      const c = v>=0 ? css("--pos") : css("--neg");
+      const c = v>=0 ? css("--up") : css("--down");
       plot.appendChild(svgEl("path",{d:roundedBar(X(i)-bw/2, Y(0), Y(v), bw, 4), fill:c}));
     });
   } else {
@@ -1025,7 +1238,7 @@ function drawChart(host, tip, cfg){
         plot.appendChild(svgEl("path",a));
       }
       const last = pts[pts.length-1];
-      plot.appendChild(svgEl("circle",{cx:last[0],cy:last[1],r:4.5,fill:col,stroke:css("--raised"),"stroke-width":2}));
+      plot.appendChild(svgEl("circle",{cx:last[0],cy:last[1],r:4.5,fill:col,stroke:css("--surface"),"stroke-width":2}));
     });
   }
 
@@ -1044,8 +1257,7 @@ function drawChart(host, tip, cfg){
     const lvl = left < rowRight[0] + 8 ? 1 : 0;
     rowRight[lvl] = left + w;
     const lb = svgEl("text",{x:tx, y:M.t+ih-7-lvl*12,
-      "text-anchor":atRight?"end":"start", fill:ink3, "font-size":"10",
-      "font-family":'"Public Sans",sans-serif', opacity:.85});
+      "text-anchor":atRight?"end":"start", fill:ink3, "font-size":"10", opacity:.85});
     lb.textContent = ms.text;
     svg.appendChild(lb);
   });
@@ -1056,8 +1268,7 @@ function drawChart(host, tip, cfg){
       stroke:ink3, "stroke-width":1, "stroke-dasharray":"2 4"}));
     const atRight = cfg.mark.i > n*0.6;
     const lab = svgEl("text",{x:mx + (atRight?-8:8), y:M.t+10,
-      "text-anchor":atRight?"end":"start", fill:ink3, "font-size":"11.5",
-      "font-family":'"Public Sans",sans-serif'});
+      "text-anchor":atRight?"end":"start", fill:ink3, "font-size":"11.5"});
     lab.textContent = cfg.mark.text;
     svg.appendChild(lab);
   }
@@ -1066,7 +1277,7 @@ function drawChart(host, tip, cfg){
   const vline = svgEl("line",{y1:M.t,y2:M.t+ih,stroke:css("--ink-3"),"stroke-width":1,"stroke-dasharray":"3 3"});
   focus.appendChild(vline);
   const knobs = cfg.series.map(s => {
-    const c = svgEl("circle",{r:5,fill:css(s.color||"--c1"),stroke:css("--raised"),"stroke-width":2});
+    const c = svgEl("circle",{r:5,fill:css(s.color||"--d1"),stroke:css("--surface"),"stroke-width":2});
     focus.appendChild(c); return c;
   });
   svg.appendChild(focus);
@@ -1100,6 +1311,239 @@ function drawChart(host, tip, cfg){
   svg.addEventListener("mouseleave", () => { focus.setAttribute("opacity","0"); tip.classList.remove("on"); });
 }
 
+/* ---------- colonnes : régimes et cascade ---------- */
+// Barres catégorielles, chacune allant de `from` à `to` : sert au comparatif des
+// régimes (base zéro) comme à la cascade du gain (chaque marche part du niveau
+// où la précédente s'arrête).
+function drawColumns(host, tip, cfg){
+  const W = Math.max(320, host.clientWidth);
+  const items = cfg.items, n = items.length;
+  const lignes = Math.max(...items.map(it => String(it.label).split("\n").length));
+  const M = {t:26, r:14, b:16 + lignes*13, l:cfg.padLeft||62};
+  const H = (cfg.height || 240) + lignes*13;
+  host.querySelectorAll("svg").forEach(el=>el.remove());
+  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":cfg.label||""});
+  const vals = items.flatMap(it => [it.from, it.to]).filter(v => isFinite(v));
+  if(!vals.length){ host.appendChild(svg); return; }
+  const ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 4);
+  const yMin = ticks[0], yMax = ticks[ticks.length-1];
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  const Y = v => M.t + ih*(1 - (v-yMin)/(yMax-yMin || 1));
+  const slot = iw/n, bw = Math.min(cfg.maxBar || 76, slot*0.62);
+  const X = i => M.l + slot*(i+0.5);
+  const gridC = css("--border"), ink3 = css("--text-muted");
+  const scaleRef = Math.max(Math.abs(yMin), Math.abs(yMax));
+  ticks.forEach(t => {
+    const zero = Math.abs(t) < 1e-9;
+    svg.appendChild(svgEl("line",{x1:M.l,x2:W-M.r,y1:Y(t),y2:Y(t),stroke:zero?ink3:gridC,"stroke-width":zero?1.2:1}));
+    const lb = svgEl("text",{x:M.l-9,y:Y(t)+4,"text-anchor":"end",fill:ink3,"font-size":"11"});
+    lb.textContent = cfg.fmtAxis(t, scaleRef);
+    svg.appendChild(lb);
+  });
+  items.forEach((it,i) => {
+    const y0 = Y(it.from), y1 = Y(it.to);
+    const bar = svgEl("path",{d:roundedBar(X(i)-bw/2, y0, y1, bw, 3), fill:css(it.color), opacity:it.opacity||1});
+    svg.appendChild(bar);
+    if(cfg.connect && i < n-1){
+      svg.appendChild(svgEl("line",{x1:X(i)+bw/2, x2:X(i+1)-bw/2, y1:y1, y2:y1, stroke:ink3, "stroke-width":1, "stroke-dasharray":"2 3", opacity:.7}));
+    }
+    const monte = it.to >= it.from;
+    const ty = monte ? Math.min(y0,y1) - 7 : Math.max(y0,y1) + 14;
+    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || it.color), "font-size":"11.5", "font-weight":"600"});
+    tv.textContent = it.text;
+    svg.appendChild(tv);
+    String(it.label).split("\n").forEach((l,k) => {
+      const tl = svgEl("text",{x:X(i), y:H-M.b+15+k*13, "text-anchor":"middle", fill:it.strong?css("--text"):ink3, "font-size":"11", "font-weight":it.strong?"600":"400"});
+      tl.textContent = l;
+      svg.appendChild(tl);
+    });
+  });
+  items.forEach((it,i) => {
+    const hit = svgEl("rect",{x:M.l+slot*i, y:M.t, width:slot, height:ih+M.b, fill:"transparent"});
+    if(cfg.onClick){ hit.classList.add("clickable"); hit.addEventListener("click", () => cfg.onClick(i)); }
+    hit.addEventListener("mousemove", () => {
+      tip.innerHTML = cfg.tip(i); tip.classList.add("on");
+      const tw = tip.offsetWidth, hw = host.clientWidth, cx = X(i)*(hw/W);
+      tip.style.left = Math.max(4, Math.min(hw-tw-4, cx - tw/2)) + "px";
+      tip.style.top = "6px";
+    });
+    hit.addEventListener("mouseleave", () => tip.classList.remove("on"));
+    svg.appendChild(hit);
+  });
+  host.appendChild(svg);
+}
+
+/* ---------- tornade : sensibilité ---------- */
+// Une ligne par paramètre, une barre vers la gauche pour le scénario défavorable
+// et une vers la droite pour le favorable, en points de rendement annualisé.
+function drawTornado(host, tip, cfg){
+  const rows = cfg.rows, n = rows.length;
+  const W = Math.max(320, host.clientWidth), rh = 32;
+  const M = {t:8, r:64, b:30, l:Math.min(170, Math.max(120, W*0.28))};
+  const H = M.t + n*rh + M.b;
+  host.querySelectorAll("svg").forEach(el=>el.remove());
+  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":cfg.label||""});
+  if(!n){ host.appendChild(svg); return; }
+  const ext = Math.max(0.0025, ...rows.flatMap(r => [Math.abs(r.lo), Math.abs(r.hi)]));
+  const ticks = niceTicks(-ext, ext, 4);
+  const xMin = ticks[0], xMax = ticks[ticks.length-1];
+  const iw = W - M.l - M.r;
+  const X = v => M.l + iw*(v-xMin)/(xMax-xMin || 1);
+  const gridC = css("--border"), ink3 = css("--text-muted"), up = css("--up"), down = css("--down");
+  ticks.forEach(t => {
+    const zero = Math.abs(t) < 1e-9;
+    svg.appendChild(svgEl("line",{x1:X(t),x2:X(t),y1:M.t,y2:H-M.b,stroke:zero?ink3:gridC,"stroke-width":zero?1.2:1}));
+    const lb = svgEl("text",{x:X(t), y:H-10, "text-anchor":"middle", fill:ink3, "font-size":"11"});
+    lb.textContent = cfg.fmtAxis(t);
+    svg.appendChild(lb);
+  });
+  rows.forEach((r,i) => {
+    const yc = M.t + rh*i + rh/2, h = rh*0.5;
+    [[r.lo, down, r.loText], [r.hi, up, r.hiText]].forEach(([v, col, txt]) => {
+      const x0 = X(0), x1 = X(v);
+      const w = Math.abs(x1-x0);
+      if(w > 0.5) svg.appendChild(svgEl("rect",{x:Math.min(x0,x1), y:yc-h/2, width:w, height:h, rx:2, fill:col}));
+      const droite = v >= 0;
+      const tv = svgEl("text",{x:droite ? x1+5 : x1-5, y:yc+4, "text-anchor":droite?"start":"end", fill:col, "font-size":"11", "font-weight":"600"});
+      tv.textContent = txt;
+      svg.appendChild(tv);
+    });
+    const lb = svgEl("text",{x:M.l-10, y:yc+4, "text-anchor":"end", fill:css("--text"), "font-size":"12"});
+    lb.textContent = r.label;
+    svg.appendChild(lb);
+    const hit = svgEl("rect",{x:0, y:yc-rh/2, width:W, height:rh, fill:"transparent"});
+    hit.addEventListener("mousemove", () => {
+      tip.innerHTML = cfg.tip(i); tip.classList.add("on");
+      const tw = tip.offsetWidth, hw = host.clientWidth;
+      tip.style.left = Math.max(4, Math.min(hw-tw-4, X(0)*(hw/W) - tw/2)) + "px";
+      tip.style.top = Math.max(0, (yc - rh/2 - 4)*(hw/W) - 40) + "px";
+    });
+    hit.addEventListener("mouseleave", () => tip.classList.remove("on"));
+    svg.appendChild(hit);
+  });
+  host.appendChild(svg);
+}
+
+function tipRow(color, label, value){
+  return `<div class="tr"><span class="tl"><i class="dot" style="background:${color}"></i>${label}</span><span class="tv">${value}</span></div>`;
+}
+
+/* ---------- comparatif des régimes ---------- */
+const REGIMES = [
+  ["micro-foncier", "Nu\nmicro-foncier"],
+  ["reel-foncier",  "Nu\nau réel"],
+  ["lmnp-micro",    "Meublé\nmicro-BIC"],
+  ["lmnp-reel",     "Meublé\nLMNP au réel"]
+];
+// Chaque régime emporte ses réglages par défaut (prélèvements sociaux, CFE,
+// abattement) ; le régime en cours garde les valeurs saisies, pour coller au verdict.
+function comparerRegimes(p, courant){
+  return REGIMES.map(([rg, label]) => {
+    let r;
+    if(rg === p.regime) r = courant;
+    else {
+      const q = Object.assign({}, p, {regime:rg, ps:parseFloat(PS_LOYERS[rg]), cfe:parseFloat(CFE_DEFAUT[rg])});
+      if(ABATT_DEFAUT[rg]) q.abattement = parseFloat(ABATT_DEFAUT[rg]);
+      r = compute(q);
+    }
+    const f = r.final;
+    return {rg, label, tri:f.tri, triReel:f.triReel, gain:f.gain,
+      impots: r.rows.reduce((s,x) => s + x.impot, 0) + f.impotPV + f.repriseDF};
+  });
+}
+
+/* ---------- sensibilité ---------- */
+const SENS = [
+  {k:"prix",      nom:"Prix d'achat",            pas:v => v*0.10, txt:"10 %"},
+  {k:"loyer",     nom:"Loyer",                   pas:v => v*0.10, txt:"10 %"},
+  {k:"taux",      nom:"Taux du crédit",          pas:() => 1,     txt:"1 pt"},
+  {k:"vacance",   nom:"Vacance locative",        pas:() => 5,     txt:"5 pts"},
+  {k:"indexPrix", nom:"Revalorisation du bien",  pas:() => 1,     txt:"1 pt/an"},
+  {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"}
+];
+function sensibilite(p, triRef){
+  const essai = (s, signe) => {
+    const q = Object.assign({}, p);
+    if(s.k === "travaux"){
+      q.items = p.items.map(it => Object.assign({}, it, {montant: it.montant*(1 + signe*0.2)}));
+      q.travaux = q.items.reduce((a,it) => a + it.montant, 0);
+    } else {
+      const v = p[s.k] + signe*s.pas(p[s.k]);
+      q[s.k] = s.k === "indexPrix" ? v : Math.max(0, v);
+    }
+    const t = compute(q).final.tri;
+    return t === null ? null : t;
+  };
+  return SENS.map(s => {
+    const moins = essai(s, -1), plus = essai(s, 1);
+    if(moins === null || plus === null) return null;
+    const dm = moins - triRef, dp = plus - triRef;
+    const fav = dp >= dm ? {d:dp, tri:plus, s:"+"} : {d:dm, tri:moins, s:"−"};
+    const def = dp >= dm ? {d:dm, tri:moins, s:"−"} : {d:dp, tri:plus, s:"+"};
+    return {nom:s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
+      amplitude: Math.max(Math.abs(dp), Math.abs(dm))};
+  }).filter(r => r && r.amplitude > 1e-6).sort((a,b) => b.amplitude - a.amplitude);
+}
+let sensTimer = null;
+function planifier(fn){
+  if(sensTimer !== null){ (window.cancelIdleCallback || clearTimeout)(sensTimer); }
+  sensTimer = window.requestIdleCallback
+    ? requestIdleCallback(() => { sensTimer = null; fn(); }, {timeout:400})
+    : setTimeout(() => { sensTimer = null; fn(); }, 60);
+}
+
+const pts = v => (v>=0?"+":"−") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt" + (Math.abs(v*100) >= 1.95 ? "s" : "");
+const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €";
+
+/* ═════════ fin du bloc partagé — l'interface commence ici ═════════ */
+
+/* ---------- formulaire ---------- */
+const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
+  "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
+  "ps","psPV","cfe","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
+  "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds"];
+const SELECTS = ["regime","tmi"];
+const DEFAULTS = {};
+FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
+DEFAULTS.ira = true;
+DEFAULTS.prixSuitInflation = true;
+
+let items = TVX_DEFAUT.map(o => ({...o}));
+function renderItems(){
+  $("tvxList").innerHTML = items.map((it, i) => `
+    <div class="tvxrow">
+      <div class="tvxhead">
+        <input type="text" data-i="${i}" data-f="nom" value="${esc(it.nom)}" aria-label="Nom du poste">
+        <button type="button" class="del" data-i="${i}" aria-label="Supprimer ${esc(it.nom)}">&times;</button>
+      </div>
+      <div class="tgrid">
+        <label>Montant<span class="tw"><input type="number" step="500" min="0" data-i="${i}" data-f="montant" value="${it.montant}"><span class="u">€</span></span></label>
+        <label>Perte / an<span class="tw"><input type="number" step="0.5" min="0" max="100" data-i="${i}" data-f="taux" value="${it.taux}"><span class="u">%</span></span></label>
+        <label>Pendant<span class="tw"><input type="number" step="1" min="0" max="60" data-i="${i}" data-f="duree" value="${it.duree}"><span class="u">ans</span></span></label>
+        <label>Déductible<span class="tw"><input type="number" step="5" min="0" max="100" data-i="${i}" data-f="deduc" value="${it.deduc}"><span class="u">%</span></span></label>
+      </div>
+    </div>`).join("");
+}
+
+function read(){
+  const p = {};
+  FIELDS.forEach(k => { const v = parseFloat($(k).value); p[k] = isFinite(v) ? v : 0; });
+  p.regime = $("regime").value;
+  p.tmi = parseFloat($("tmi").value);
+  p.ira = $("ira").checked;
+  // Par défaut prix, loyers et charges suivent l'inflation : pas de gain réel sur
+  // la pierre, seuls le levier et les loyers créent de la valeur.
+  if($("prixSuitInflation").checked){
+    p.indexPrix = p.inflation;
+    p.indexLoyer = p.inflation;
+    p.indexCharges = p.inflation;
+  }
+  p.horizon = Math.max(1, Math.min(40, Math.round(p.horizon)));
+  p.items = items;
+  p.travaux = items.reduce((s, it) => s + it.montant, 0);
+  return p;
+}
+
 /* ---------- render ---------- */
 let R = null;
 let echelleTri = "lisible";   // « lisible » borne le bas du graphe, « complete » montre tout
@@ -1107,10 +1551,6 @@ try{
   const e = localStorage.getItem("rentaloc.echelle");
   if(e === "lisible" || e === "complete") echelleTri = e;
 }catch(e){}
-
-function tipRow(color, label, value){
-  return `<div class="tr"><span class="tl"><i class="dot" style="background:${color}"></i>${label}</span><span class="tv">${value}</span></div>`;
-}
 
 function render(){
   // Tant que la case est cochée, prix, loyers et charges recopient l'inflation
@@ -1152,20 +1592,22 @@ function render(){
   const enNominal = r => (1 + r/100)*(1 + p.inflation/100) - 1;
   const bourseReelle = p.bourse/100;
   const bourse = enNominal(p.bourse);
-  $("hLivret").textContent = `soit ${pct(enNominal(p.livretA))} en euros courants`;
-  $("hFonds").textContent = `soit ${pct(enNominal(p.fondsEuros))} en euros courants`;
-  $("hBourse").textContent = `soit ${pct(bourse)} en euros courants`;
+  $("hLivret").textContent = `soit ${pct(enNominal(p.livretA))} en euros courants, exonéré`;
+  $("hFonds").textContent = `soit ${pct(enNominal(p.fondsEuros))} en euros courants, avant impôt`;
+  $("hBourse").textContent = `soit ${pct(bourse)} en euros courants, avant impôt`;
 
   const pill = $("benchPill");
   if(triF===null){ pill.textContent="n/a"; pill.className="pill flat"; $("benchText").textContent=""; }
   else {
-    const d = triReel - bourseReelle;
-    pill.textContent = (d>=0?"+":"−") + Math.abs(d*100).toFixed(1).replace(".",",") + " pts";
+    const bNet = final.triBourseReel === null ? bourseReelle : final.triBourseReel;
+    const d = triReel - bNet;
+    pill.textContent = pts(d);
     pill.className = "pill " + (Math.abs(d)<0.002 ? "flat" : d>0 ? "win" : "lose");
+    const bourseTxt = `la bourse, qui rend ${pct(bNet)} par an hors inflation une fois l'impôt payé (${pct(bourseReelle)} avant)`;
     $("benchText").innerHTML = d>0
-      ? `de mieux qu'une bourse à ${pct(bourseReelle)} par an hors inflation.`
-      : Math.abs(d)<0.002 ? `— équivalent à une bourse à ${pct(bourseReelle)} par an hors inflation.`
-      : `de moins qu'une bourse à ${pct(bourseReelle)} par an hors inflation.`;
+      ? `de mieux que ${bourseTxt}.`
+      : Math.abs(d)<0.002 ? `— équivalent à ${bourseTxt}.`
+      : `de moins que ${bourseTxt}.`;
   }
 
   if(best){
@@ -1214,9 +1656,9 @@ function render(){
   const impotsLoyers = rows.reduce((s,x) => s + x.impot, 0);
   const impotsTotal = impotsLoyers + final.impotPV + final.repriseDF;
 
-  $("tiles").innerHTML = [
+  $("indicateurs").innerHTML = [
     ["Rentabilité brute", pct(R.brute),
-      "Loyers annuels ÷ coût total. C'est le chiffre affiché dans les annonces.", ""],
+      `Loyers annuels ÷ prix d'achat, comme dans les annonces. Sur le coût total, frais et travaux compris : ${pct(R.bruteCout)}.`, ""],
     ["Rentabilité nette-nette", pct(R.netteNette),
       r1.impot < -0.5
         ? `Après charges et impôt, année 1. La déduction des travaux crée une économie d'impôt, d'où un chiffre supérieur aux ${pct(R.nette)} d'avant impôt.`
@@ -1286,15 +1728,15 @@ function render(){
     fmtAxis: v => (v*100).toFixed(0)+" %",
     zero:true, floor, milestones: jalons,
     series: [
-      {color:"--c1", values: rows.map(r=>r.tri), fill:true},
-      {color:"--c3", values: rows.map(()=>bourse), dash:true}
+      {color:"--d1", values: rows.map(r=>r.tri), fill:true},
+      {color:"--d2", values: rows.map(r=>r.triBourse), dash:true}
     ],
     tip: i => {
       const r = rows[i];
       return `<div class="th">Revente année ${r.y}</div>` +
-        tipRow(css("--c1"),"Rendement du projet", r.tri===null?"—":sPct(r.tri)) +
+        tipRow(css("--d1"),"Rendement du projet", r.tri===null?"—":sPct(r.tri)) +
         tipRow("transparent","dont pouvoir d'achat", r.triReel===null?"—":sPct(r.triReel)) +
-        tipRow(css("--c3"),"Référence boursière", pct(bourse)) +
+        tipRow(css("--d2"),"Bourse, nette d'impôt", r.triBourse===null?"—":pct(r.triBourse)) +
         tipRow("transparent","Gain net cumulé", sEur(r.gain));
     }
   });
@@ -1332,20 +1774,20 @@ function render(){
     // forment une rampe ordonnée du plus risqué au plus sûr, doublée d'un
     // motif de trait distinct : l'identité ne repose jamais sur la seule couleur.
     series: [
-      {color:"--c2", values: rows.map(r=>r.gainImmo), width:2.4},
-      {color:"--c3", values: rows.map(r=>r.gainBourse)},
-      {color:"--c5", values: rows.map(r=>r.gainFonds), dash:"7 4"},
-      {color:"--c6", values: rows.map(r=>r.gainLivret), dash:"2 3"}
+      {color:"--d1", values: rows.map(r=>r.gainImmo), width:2.4},
+      {color:"--d2", values: rows.map(r=>r.gainBourse)},
+      {color:"--d3", values: rows.map(r=>r.gainFonds), dash:"7 4"},
+      {color:"--d4", values: rows.map(r=>r.gainLivret), dash:"2 3"}
     ],
     tip: i => {
       const r = rows[i];
       const meilleur = Math.max(r.gainBourse, r.gainFonds, r.gainLivret);
       return `<div class="th">Revente fin d'année ${r.y}</div>` +
-        tipRow(css("--c2"),"Immobilier", sEur(r.gainImmo)) +
-        tipRow(css("--c3"),"Bourse", sEur(r.gainBourse)) +
-        tipRow(css("--c5"),"Fonds euros", sEur(r.gainFonds)) +
-        tipRow(css("--c6"),"Livret A", sEur(r.gainLivret)) +
-        `<div class="tr" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--line-soft)">` +
+        tipRow(css("--d1"),"Immobilier", sEur(r.gainImmo)) +
+        tipRow(css("--d2"),"Bourse", sEur(r.gainBourse)) +
+        tipRow(css("--d3"),"Fonds euros", sEur(r.gainFonds)) +
+        tipRow(css("--d4"),"Livret A", sEur(r.gainLivret)) +
+        `<div class="tr" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">` +
         `<span class="tl">${r.gainImmo>=meilleur?"Avance sur le meilleur placement":"Retard sur le meilleur placement"}</span>` +
         `<span class="tv">${eur.format(Math.abs(r.gainImmo-meilleur))}</span></div>` +
         tipRow("transparent","sorti de votre poche", eur.format(r.mise)) +
@@ -1356,11 +1798,11 @@ function render(){
   drawChart($("plotCf"), $("tipCf"), {
     x: xs, height: 200, padLeft: 78, band:true, zero:true, label:"Trésorerie annuelle après impôt",
     fmtAxis: (v,ref) => ref>=10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €",
-    series: [{color:"--c1", values: rows.map(r=>r.cfNet)}],
+    series: [{color:"--d1", values: rows.map(r=>r.cfNet)}],
     tip: i => {
       const r = rows[i];
       return `<div class="th">Année ${r.y}</div>` +
-        tipRow(r.cfNet>=0?css("--pos"):css("--neg"),"Trésorerie nette", sEur(r.cfNet)) +
+        tipRow(r.cfNet>=0?css("--up"):css("--down"),"Trésorerie nette", sEur(r.cfNet)) +
         tipRow("transparent","Loyers encaissés", eur.format(r.loyers)) +
         tipRow("transparent","Charges", cost(r.charges)) +
         tipRow("transparent","Mensualités", cost(r.annuite)) +
@@ -1384,13 +1826,128 @@ function render(){
   const warns = [];
   if(p.regime==="micro-foncier" && rows[0].loyers>15000)
     warns.push("Vos loyers dépassent 15 000 € par an : le micro-foncier n'est pas accessible, le régime réel s'applique d'office.");
+  if(p.regime==="lmnp-micro" && rows[0].loyers>77700)
+    warns.push("Vos recettes dépassent 77 700 € par an : le micro-BIC n'est pas accessible, le LMNP au réel s'applique d'office.");
   if(R.cash0 < 1)
     warns.push("Sans apport ni frais payés comptant, le rendement sur fonds propres n'a pas de sens mathématique. Ajoutez au moins les frais de dossier.");
   if(p.duree > 0 && R.emprunt > 0 && p.horizon < p.duree)
     warns.push(`Votre horizon (${p.horizon} ans) est plus court que le prêt (${p.duree} ans) : chaque revente simulée solde le capital restant dû.`);
   $("warnBox").innerHTML = warns.map(w=>`<div class="warn">${w}</div>`).join("");
 
+  renderComplements(p);
   save();
+  planifierHash();
+}
+
+function renderComplements(p){
+  const {rows, final} = R;
+  // Les quatre régimes, mêmes hypothèses.
+  const regs = comparerRegimes(p, R);
+  const meilleur = regs.reduce((m,r) => r.tri !== null && (m===null || r.tri > m.tri) ? r : m, null);
+  drawColumns($("plotReg"), $("tipReg"), {
+    height:230, label:"Rendement annualisé à l'horizon selon le régime fiscal",
+    fmtAxis: v => (v*100).toFixed(0)+" %",
+    items: regs.map(r => ({
+      label: r.label, from:0, to: r.tri === null ? 0 : r.tri,
+      color: r.rg === p.regime ? "--d1" : "--text-muted", opacity: r.rg === p.regime ? 1 : .55,
+      text: r.tri === null ? "—" : sPct(r.tri), textColor: r.tri === null ? "--text-muted" : r.tri >= 0 ? "--up" : "--down",
+      strong: r.rg === p.regime
+    })),
+    tip: i => {
+      const r = regs[i];
+      return `<div class="th">${r.label.replace("\n"," · ")}${r.rg===p.regime?" · en cours":""}</div>` +
+        tipRow("transparent","Rendement annualisé", r.tri===null?"—":sPct(r.tri)) +
+        tipRow("transparent","En pouvoir d'achat", r.triReel===null?"—":sPct(r.triReel)) +
+        tipRow("transparent","Gain net à l'horizon", sEur(r.gain)) +
+        tipRow("transparent","Impôts cumulés", r.impots >= 0 ? cost(r.impots) : "+"+eur.format(-r.impots)) +
+        (r.rg===p.regime ? "" : `<div class="tr" style="margin-top:6px;color:var(--text-muted)">Cliquer pour adopter ce régime</div>`);
+    },
+    onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); marquerExemple(null); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
+  });
+  const enCours = regs.find(r => r.rg === p.regime);
+  $("regNote").textContent = !meilleur || meilleur.tri === null ? "" :
+    meilleur.rg === p.regime
+      ? `Sur vos hypothèses, votre régime est déjà le plus favorable des quatre.`
+      : `Sur vos hypothèses, ${meilleur.label.replace("\n"," ").toLowerCase()} ferait mieux : ${sPct(meilleur.tri)} contre ${sPct(enCours.tri)} par an, soit ${sEur(meilleur.gain - enCours.gain)} de gain sur ${p.horizon} ans. Vérifiez que vous y êtes éligible.`;
+
+  // D'où vient le gain : une cascade dont la somme des marches est exactement le gain.
+  const f = final;
+  const marches = [
+    {label:"Loyers\nencaissés",        v: f.cumulLoyers},
+    {label:"Charges",                  v: -f.cumulCharges},
+    {label:"Intérêts et\nassurance",   v: -f.cumulCredit},
+    {label:"Impôt sur\nles loyers",    v: -f.cumulImpot},
+    {label:"Plus-value\nbrute",        v: f.valeur - R.besoin},
+    {label:"Frais de\nrevente",        v: -(f.fraisVente + f.ira)},
+    {label:"Impôt sur la\nplus-value", v: -(f.impotPV + f.repriseDF)}
+  ];
+  let acc = 0;
+  const items = marches.map(m => {
+    const it = {label:m.label, from:acc, to:acc+m.v, color: m.v >= 0 ? "--up" : "--down", text: sEur(m.v)};
+    acc += m.v; return it;
+  });
+  items.push({label:"Gain net", from:0, to:f.gain, color:"--text", text:sEur(f.gain), textColor:"--text", strong:true});
+  drawColumns($("plotCasc"), $("tipCasc"), {
+    height:250, padLeft:78, connect:true, label:"Décomposition du gain à l'horizon",
+    fmtAxis: kEur,
+    items,
+    tip: i => {
+      const it = items[i];
+      return `<div class="th">${it.label.replace("\n"," ")} · ${p.horizon} ans</div>` +
+        tipRow("transparent", i < items.length-1 ? "Montant" : "Total", it.text) +
+        (i < items.length-1 ? tipRow("transparent","Cumul à cette étape", sEur(it.to)) : "");
+    }
+  });
+  const plusValue = f.valeur - R.besoin;
+  $("cascNote").textContent = plusValue >= 0
+    ? `Sur ${p.horizon} ans, les loyers apportent ${eur.format(f.cumulLoyers)} et la revalorisation ${eur.format(plusValue)} au-dessus du coût total de l'opération ; le crédit en absorbe ${eur.format(f.cumulCredit)}, la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`
+    : `Sur ${p.horizon} ans, le bien se revend ${eur.format(-plusValue)} sous le coût total de l'opération : le gain, s'il existe, vient des loyers.`;
+
+  // Patrimoine net et dette.
+  const xs = rows.map(r => String(r.y));
+  drawChart($("plotPat"), $("tipPat"), {
+    x: xs, height:250, padLeft:78, zero:true, label:"Valeur du bien, capital restant dû et patrimoine net",
+    fmtAxis: kEur,
+    series: [
+      {color:"--d1", values: rows.map(r => r.patrimoine), fill:true, width:2.4},
+      {color:"--d2", values: rows.map(r => r.valeur)},
+      {color:"--text-muted", values: rows.map(r => r.crd)},
+      {color:"--d4", values: rows.map(r => r.mise), dash:"2 3"}
+    ],
+    tip: i => {
+      const r = rows[i];
+      return `<div class="th">Fin d'année ${r.y}</div>` +
+        tipRow(css("--d1"),"Patrimoine net", eur.format(r.patrimoine)) +
+        tipRow(css("--d2"),"Valeur du bien", eur.format(r.valeur)) +
+        tipRow(css("--text-muted"),"Capital restant dû", eur.format(r.crd)) +
+        tipRow(css("--d4"),"Sorti de votre poche", eur.format(r.mise)) +
+        tipRow("transparent","Net si revente", eur.format(r.netVente));
+    }
+  });
+
+  // Sensibilité : douze calculs de plus, différés pour ne pas freiner la saisie.
+  const host = $("plotSens");
+  if(!host.querySelector("svg")) host.insertAdjacentHTML("beforeend", '<p class="pending">Calcul…</p>');
+  planifier(() => {
+    host.querySelectorAll(".pending").forEach(el => el.remove());
+    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; return; }
+    const sens = sensibilite(p, f.tri);
+    drawTornado(host, $("tipSens"), {
+      label:"Sensibilité du rendement annualisé",
+      fmtAxis: v => (v>0?"+":v<0?"−":"") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt",
+      rows: sens.map(s => ({label:s.nom, lo:s.lo, hi:s.hi, loText:pts(s.lo), hiText:pts(s.hi)})),
+      tip: i => {
+        const s = sens[i];
+        return `<div class="th">${s.nom} · ±${s.txt}</div>` +
+          tipRow(css("--up"), `${s.nom} ${s.fav.s}${s.txt}`, sPct(s.fav.tri)) +
+          tipRow(css("--down"), `${s.nom} ${s.def.s}${s.txt}`, sPct(s.def.tri)) +
+          tipRow("transparent","Aujourd'hui", sPct(f.tri));
+      }
+    });
+    $("sensNote").textContent = sens.length
+      ? `Le paramètre le plus sensible est ${sens[0].nom.toLowerCase()} : ${sens[0].txt} d'écart déplace le rendement de ${pts(sens[0].lo)} à ${pts(sens[0].hi)} par an.`
+      : "";
+  });
 }
 
 /* ---------- persistence & chrome ---------- */
@@ -1432,11 +1989,6 @@ function toast(msg){
   setTimeout(()=>t.classList.remove("on"), 2200);
 }
 
-// Le meublé subit la CSG à 10,6 %, le nu reste à 9,2 % : le taux suit le régime.
-const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};
-// La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
-const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
-const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 // Chaque régime n'expose que les réglages qui le concernent : afficher un plafond
 // de déficit foncier à quelqu'un qui a choisi le micro-BIC n'a aucun sens.
@@ -1456,13 +2008,7 @@ FIELDS.concat(SELECTS).forEach(k => {
   $(k).addEventListener("input", render);
   $(k).addEventListener("change", render);
 });
-$("regime").addEventListener("change", () => {
-  const rg = $("regime").value;
-  $("ps").value = PS_LOYERS[rg] || "17.2";
-  $("cfe").value = CFE_DEFAUT[rg] || "0";
-  if(ABATT_DEFAUT[rg]) $("abattement").value = ABATT_DEFAUT[rg];
-  render();
-});
+$("regime").addEventListener("change", () => { appliquerRegime($("regime").value); render(); });
 $("prixSuitInflation").addEventListener("change", render);
 $("ira").addEventListener("change", render);
 
@@ -1499,22 +2045,13 @@ $("tvxAdd").addEventListener("click", () => {
 });
 
 $("reset").addEventListener("click", () => {
-  Object.keys(DEFAULTS).forEach(k => {
-    if(typeof DEFAULTS[k] === "boolean") $(k).checked = DEFAULTS[k];
-    else $(k).value = DEFAULTS[k];
-  });
-  items = TVX_DEFAUT.map(o => ({...o}));
+  retablirDefauts(); marquerExemple(null);
   renderItems(); render(); toast("Hypothèses réinitialisées");
 });
 
 $("copy").addEventListener("click", async () => {
   if(!R) return;
-  const head = ["Annee","Loyers","Charges","Interets","Mensualites","Impot","Tresorerie","Tresorerie cumulee","Valeur","Capital du","Impot plus-value","Net si revente","Rendement annualise"];
-  const lines = [head.join(";")].concat(R.rows.map(r => [
-    r.y, r.loyers, r.charges, r.interets, r.annuite, r.impot, r.cfNet, r.cumulCF,
-    r.valeur, r.crd, r.impotPV, r.netVente, r.tri===null?"":(r.tri*100)
-  ].map(v => typeof v==="number" ? v.toFixed(2).replace(".",",") : v).join(";")));
-  try{ await navigator.clipboard.writeText(lines.join("\n")); toast("Tableau copié — collez-le dans un tableur"); }
+  try{ await navigator.clipboard.writeText(csvTexte()); toast("Tableau copié — collez-le dans un tableur"); }
   catch(e){ toast("Copie impossible dans ce contexte"); }
 });
 
@@ -1545,10 +2082,156 @@ let rid;
 addEventListener("resize", () => { clearTimeout(rid); rid = setTimeout(render, 140); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncTheme(); render(); });
 
+/* ---------- exemples, régime, lien, export ---------- */
+function appliquerRegime(rg){
+  $("regime").value = rg;
+  $("ps").value = PS_LOYERS[rg] || "17.2";
+  $("cfe").value = CFE_DEFAUT[rg] || "0";
+  if(ABATT_DEFAUT[rg]) $("abattement").value = ABATT_DEFAUT[rg];
+}
+function retablirDefauts(){
+  Object.keys(DEFAULTS).forEach(k => {
+    if(typeof DEFAULTS[k] === "boolean") $(k).checked = DEFAULTS[k];
+    else $(k).value = DEFAULTS[k];
+  });
+  items = TVX_DEFAUT.map(o => ({...o}));
+}
+// Trois projets plausibles, pour partir de chiffres concrets plutôt que d'un formulaire vide.
+const EXEMPLES = {
+  studio: {nom:"Studio à Lyon", regime:"lmnp-reel",
+    champs:{prix:135000, mobilier:4000, apport:20000, duree:20, taux:3.4, loyer:640, vacance:6, copro:40, tf:650, pno:160, horizon:20},
+    items:[{nom:"Rafraîchissement", montant:6000, taux:5, duree:15, deduc:100}]},
+  t2: {nom:"T2 à Nantes", regime:"lmnp-reel",
+    champs:{prix:195000, mobilier:6000, apport:30000, duree:25, taux:3.5, loyer:800, vacance:5, copro:70, tf:1050, pno:180, horizon:25},
+    items:[{nom:"Cuisine et salle de bain", montant:15000, taux:5, duree:20, deduc:100}]},
+  maison: {nom:"Maison à Angers, en location nue", regime:"reel-foncier",
+    champs:{prix:245000, mobilier:0, apport:45000, duree:20, taux:3.4, loyer:980, vacance:4, copro:0, tf:1400, pno:220, horizon:25},
+    items:[{nom:"Rénovation énergétique", montant:30000, taux:3, duree:25, deduc:100}]}
+};
+function marquerExemple(cle){
+  document.querySelectorAll("#exemples .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.ex === cle ? "true" : "false"));
+}
+function appliquerExemple(cle){
+  const ex = EXEMPLES[cle]; if(!ex) return;
+  retablirDefauts();
+  Object.keys(ex.champs).forEach(k => { if($(k)) $(k).value = ex.champs[k]; });
+  appliquerRegime(ex.regime);
+  items = ex.items.map(o => ({...o}));
+  renderItems(); render();
+  marquerExemple(cle);
+  toast(ex.nom + " : hypothèses chargées");
+  $("verdict").scrollIntoView({behavior:"smooth", block:"start"});
+}
+$("exemples").addEventListener("click", e => { const b = e.target.closest(".chip"); if(b) appliquerExemple(b.dataset.ex); });
+document.querySelector(".rail").addEventListener("input", () => marquerExemple(null));
+
+// L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
+// un guide peut ouvrir le calculateur pré-réglé (/#regime=reel-foncier).
+const BOOLS = ["ira","prixSuitInflation"];
+const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
+  .map(v => encodeURIComponent(String(v).replace(/[|:]/g, " "))).join(":");
+function versHash(){
+  const q = [];
+  FIELDS.concat(SELECTS).forEach(k => { const v = $(k).value; if(String(v) !== String(DEFAULTS[k])) q.push(k + "=" + encodeURIComponent(v)); });
+  BOOLS.forEach(k => { if($(k).checked !== DEFAULTS[k]) q.push(k + "=" + ($(k).checked ? 1 : 0)); });
+  const tvx = items.map(codeItem).join("|");
+  if(tvx !== TVX_DEFAUT.map(codeItem).join("|")) q.push("tvx=" + tvx);
+  const h = q.length ? "#" + q.join("&") : "";
+  const actuel = location.hash.indexOf("=") >= 0 ? location.hash : "";
+  if(h !== actuel) history.replaceState(null, "", location.pathname + location.search + h);
+}
+function depuisHash(){
+  const h = location.hash.slice(1);
+  if(!h || h.indexOf("=") < 0) return false;
+  const vus = new Set();
+  let regime = null;
+  h.split("&").forEach(part => {
+    const i = part.indexOf("="); if(i < 0) return;
+    const k = part.slice(0, i), v = decodeURIComponent(part.slice(i+1));
+    if(k === "tvx"){
+      items = assainir(v.split("|").filter(Boolean).map(t => {
+        const f = t.split(":").map(x => { try{ return decodeURIComponent(x); }catch(e){ return ""; } });
+        return {nom:f[0], montant:f[1], taux:f[2], duree:f[3], deduc:f[4]};
+      }));
+    } else if(BOOLS.includes(k)){
+      $(k).checked = v === "1";
+    } else if(SELECTS.includes(k)){
+      if(![...$(k).options].some(o => o.value === v)) return;
+      $(k).value = v; vus.add(k);
+      if(k === "regime") regime = v;
+    } else if(FIELDS.includes(k)){
+      if(!isFinite(parseFloat(v))) return;
+      $(k).value = v; vus.add(k);
+    }
+  });
+  // Un lien qui ne fixe que le régime emporte les réglages qui en découlent.
+  if(regime){
+    if(!vus.has("ps")) $("ps").value = PS_LOYERS[regime] || "17.2";
+    if(!vus.has("cfe")) $("cfe").value = CFE_DEFAUT[regime] || "0";
+    if(!vus.has("abattement") && ABATT_DEFAUT[regime]) $("abattement").value = ABATT_DEFAUT[regime];
+  }
+  return true;
+}
+let hashTimer;
+function planifierHash(){ clearTimeout(hashTimer); hashTimer = setTimeout(versHash, 250); }
+
+$("share").addEventListener("click", async () => {
+  versHash();
+  try{ await navigator.clipboard.writeText(location.href); toast("Lien copié — il contient toutes vos hypothèses"); }
+  catch(e){ toast("Copie impossible dans ce contexte : copiez l'adresse de la page"); }
+});
+
+function csvTexte(){
+  const head = ["Annee","Loyers","Charges","Interets","Mensualites","Impot","Tresorerie","Tresorerie cumulee","Valeur","Capital du","Impot plus-value","Net si revente","Rendement annualise"];
+  return [head.join(";")].concat(R.rows.map(r => [
+    r.y, r.loyers, r.charges, r.interets, r.annuite, r.impot, r.cfNet, r.cumulCF,
+    r.valeur, r.crd, r.impotPV, r.netVente, r.tri===null?"":(r.tri*100)
+  ].map(v => typeof v==="number" ? v.toFixed(2).replace(".",",") : v).join(";"))).join("\n");
+}
+$("csv").addEventListener("click", () => {
+  if(!R) return;
+  const blob = new Blob(["﻿" + csvTexte()], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "rendement-locatif.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast("CSV téléchargé — ouvrez-le dans un tableur");
+});
+
+/* ---------- navigation de page ---------- */
+const liensSections = [...document.querySelectorAll(".subnav a")];
+const sections = liensSections.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+liensSections.forEach(a => a.addEventListener("click", e => {
+  const cible = document.querySelector(a.getAttribute("href"));
+  if(!cible) return;
+  e.preventDefault();
+  cible.scrollIntoView({behavior:"smooth", block:"start"});
+}));
+if("IntersectionObserver" in window){
+  const visibles = new Map();
+  const io = new IntersectionObserver(entrees => {
+    entrees.forEach(en => visibles.set(en.target.id, en.isIntersecting));
+    const haut = sections.find(s => visibles.get(s.id));
+    liensSections.forEach(a => {
+      if(haut && a.getAttribute("href") === "#" + haut.id) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+  }, {rootMargin:"-48px 0px -55% 0px", threshold:[0, .05]});
+  sections.forEach(s => io.observe(s));
+}
+// Sur petit écran le panneau d'hypothèses se replie sous le verdict ; sur grand
+// écran il est toujours déployé.
+const mqEtroit = matchMedia("(max-width:1040px)");
+$("railbox").open = !mqEtroit.matches;
+mqEtroit.addEventListener("change", () => { if(!mqEtroit.matches) $("railbox").open = true; });
+document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
+
 load();
+if(depuisHash()) marquerExemple(null);
 renderItems();
 syncTheme();
 $("echLisible").setAttribute("aria-pressed", echelleTri === "lisible" ? "true" : "false");
 $("echComplete").setAttribute("aria-pressed", echelleTri === "complete" ? "true" : "false");
 render();
+
 </script>

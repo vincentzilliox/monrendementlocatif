@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calcul du rendement locatif : brut, net, net-net et TRI</title>
+<meta name="description" content="Formules du rendement brut, net et net-net avec un exemple chiffré, leurs angles morts, et pourquoi le TRI est le seul chiffre complet.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://monrendementlocatif.fr/guides/calcul-rendement-locatif/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://monrendementlocatif.fr/guides/calcul-rendement-locatif/">
+<meta property="og:title" content="Calcul du rendement locatif : brut, net, net-net et TRI">
+<meta property="og:description" content="Formules du rendement brut, net et net-net avec un exemple chiffré, leurs angles morts, et pourquoi le TRI est le seul chiffre complet.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mon rendement locatif — calculateur de rendement locatif">
+<meta property="og:site_name" content="Mon rendement locatif">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Calcul du rendement locatif : brut, net, net-net et TRI">
+<meta name="twitter:description" content="Formules du rendement brut, net et net-net avec un exemple chiffré, leurs angles morts, et pourquoi le TRI est le seul chiffre complet.">
+<meta name="twitter:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"Calculer le rendement locatif : brut, net, net-net… et le seul qui compte","description":"Formules du rendement brut, net et net-net avec un exemple chiffré, leurs angles morts, et pourquoi le TRI est le seul chiffre complet.","datePublished":"2026-09-04","dateModified":"2026-09-04","inLanguage":"fr-FR","mainEntityOfPage":"https://monrendementlocatif.fr/guides/calcul-rendement-locatif/","author":{"@type":"Organization","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/"},"publisher":{"@type":"Organization","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/","logo":{"@type":"ImageObject","url":"https://monrendementlocatif.fr/assets/apple-touch-icon.png"}},"image":"https://monrendementlocatif.fr/assets/og-image.png"},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"https://monrendementlocatif.fr/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://monrendementlocatif.fr/guides/"},{"@type":"ListItem","position":3,"name":"Calculer un rendement locatif"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quel est un bon rendement locatif ?","acceptedAnswer":{"@type":"Answer","text":"En brut, on parle de « bon » au-delà de 6 à 7 % dans les villes moyennes et de 4 à 5 % dans les grandes métropoles, où la revalorisation est censée compenser. Mais le chiffre pertinent est le TRI net d'impôt et d'inflation sur vos fonds propres : au-dessus de 4 à 5 % réels, un bien fait mieux qu'un portefeuille boursier diversifié après impôt, pour un risque et un travail supérieurs."}},{"@type":"Question","name":"Faut-il calculer le rendement sur le prix ou sur le coût total ?","acceptedAnswer":{"@type":"Answer","text":"Sur le prix pour comparer des annonces, parce que tout le monde le fait ainsi. Sur le coût total (prix, notaire, agence, travaux, frais de dossier) dès qu'il s'agit de savoir ce que le projet rapporte, parce que chaque euro dépensé doit être rémunéré. Le calculateur affiche les deux."}},{"@type":"Question","name":"Le rendement net-net suffit-il pour décider ?","acceptedAnswer":{"@type":"Answer","text":"Non. Il photographie une année, en général la première, alors que le crédit, la fiscalité et la valeur du bien évoluent chaque année. Un projet à 2 % net-net financé à crédit peut afficher un TRI de 6 % sur fonds propres ; un projet à 4 % net-net acheté comptant avec de gros frais peut rester sous 3 %. Seul le TRI tranche."}}]}]</script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Mon rendement locatif — accueil">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6 20 H 8 V 22 H 6 Z M 9 20 H 11 V 22 H 9 Z M 6 23 H 8 V 25 H 6 Z M 9 23 H 11 V 25 H 9 Z"/>
+      <rect x="15.6" y="19.4" width="3.4" height="7.2" fill="currentColor"/>
+      <rect x="20.2" y="13.6" width="3.4" height="13" fill="currentColor"/>
+      <path d="M 1.6 16.4 L 8.6 9.2 L 15 15.8 L 23.6 6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path fill="currentColor" d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
+    </svg>
+    <span>Mon rendement locatif</span>
+  </a>
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="/calculatrice/">Calculatrice</a>
+    <a href="/guides/" aria-current="page">Guides</a>
+    <a href="/questions-frequentes/">Questions fréquentes</a>
+    <a href="/hypotheses-de-calcul/">Hypothèses de calcul</a>
+  </nav>
+  <span class="spacer"></span>
+  <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
+    <span class="knob"></span>
+    <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2"></circle>
+      <path d="M12 1.8v2.2M12 20v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M1.8 12h2.2M20 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"></path>
+    </svg>
+    <svg class="ico moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.6 8.6 0 1 0 11.3 11.3z"></path>
+    </svg>
+  </button>
+</header>
+<div class="page">
+<p class="crumbs"><a href="/">Accueil</a> › <a href="/guides/">Guides</a> › Calculer un rendement locatif</p>
+<article class="prose">
+  <h1>Calculer le rendement locatif : brut, net, net-net… et le seul qui compte</h1>
+  <p class="chapo">Le « rendement locatif » désigne quatre chiffres différents selon qui parle. Trois d'entre eux se calculent sur un coin de table et servent à trier des annonces. Le quatrième demande un vrai calcul et répond à la seule question utile : combien cet argent va-t-il rapporter, chaque année, une fois tout payé ?</p>
+  <p class="meta">Publié le 4 septembre 2026 · 8 min de lecture</p>
+
+  <h2>Le rendement brut : le chiffre des annonces</h2>
+  <p>C'est le plus simple et le plus répandu : les loyers d'une année divisés par le prix d'achat.</p>
+  <div class="encadre"><p><b>Rendement brut</b> = loyer mensuel × 12 ÷ prix d'achat</p><p>Exemple : 900 € × 12 ÷ 200 000 € = <b>5,4 %</b></p></div>
+  <p>Il sert à comparer des biens entre eux et des villes entre elles, rien de plus. Il ignore les frais de notaire, les travaux, les charges, la taxe foncière, la vacance, l'impôt et le crédit. Deux biens à 5,4 % brut peuvent rapporter 4 % ou 1 % une fois tout compté.</p>
+  <p>Certains simulateurs divisent par le coût total (prix + notaire + travaux) plutôt que par le prix : le chiffre baisse mécaniquement, ici à 4,5 %. Les deux conventions se défendent ; sachez simplement laquelle vous lisez.</p>
+
+  <h2>Le rendement net : après les charges</h2>
+  <p>On retire des loyers ce que le bien coûte à faire tourner : charges de copropriété non récupérables, taxe foncière, assurance propriétaire non occupant, gestion locative, une provision d'entretien et une provision pour vacance. On divise par le coût total de l'opération, frais d'acquisition compris.</p>
+  <div class="encadre"><p><b>Rendement net</b> = (loyers − vacance − charges − taxe foncière − assurances − gestion − entretien) ÷ coût total</p><p>Sur notre exemple avec 5 % de vacance, 720 € de copropriété, 1 200 € de taxe foncière, 180 € d'assurance et 5 % d'entretien : 10 260 € − 2 613 € = 7 647 €, soit 7 647 ÷ 237 500 = <b>3,2 %</b> avant impôt.</p></div>
+  <p>C'est déjà plus honnête. Les charges mangent typiquement 20 à 30 % des loyers dans l'ancien ; les ignorer, c'est surestimer le rendement d'un quart.</p>
+
+  <h2>Le rendement net-net : après l'impôt</h2>
+  <p>On retire ensuite l'impôt sur les loyers. Et là, tout dépend du régime fiscal : sur le même bien, la première année d'impôt va de zéro en LMNP au réel (l'amortissement efface le résultat) à plus de 3 000 € en micro-foncier pour un contribuable à 30 %.</p>
+  <div class="encadre"><p><b>Rendement net-net</b> = (loyers − charges − impôt de l'année) ÷ coût total</p><p>Notre exemple en LMNP au réel : impôt nul la première année, le net-net reste à <b>3,2 %</b>. En micro-foncier à 30 % de tranche marginale : impôt de 10 260 × 70 % × 47,2 % = 3 390 €, net-net de <b>1,8 %</b>.</p></div>
+  <p>Le rendement net-net est le meilleur des trois chiffres « rapides ». Il a pourtant deux angles morts sérieux.</p>
+
+  <h2>Ce que ces trois chiffres ne voient pas</h2>
+  <ul>
+    <li><b>Le crédit.</b> Un rendement se calcule sur le capital que <i>vous</i> avez engagé, pas sur le prix du bien. Avec 35 000 € d'apport pour un bien de 200 000 €, ce sont 35 000 € qui travaillent, plus l'effort d'épargne mensuel. Le levier peut doubler le rendement de vos fonds propres — ou le faire plonger si les loyers ne couvrent pas la mensualité.</li>
+    <li><b>La revente.</b> Frais de notaire perdus à l'achat, frais d'agence à la vente, impôt sur la plus-value avec ses abattements par palier, remboursement du capital restant dû : la revente décide d'une grande partie du résultat, et aucun rendement « annuel » n'en tient compte.</li>
+    <li><b>Le temps.</b> Un euro touché dans vingt ans ne vaut pas un euro touché demain. Les rendements simples additionnent des années qui ne se ressemblent pas : le premier cash-flow est négatif, le dernier positif, la plus-value tombe à la fin.</li>
+    <li><b>L'inflation.</b> À 2 % par an, 100 000 € de gain dans vingt-cinq ans n'en valent que 61 000 aujourd'hui. Mais l'inflation érode aussi votre dette à taux fixe : les deux effets ne se compensent pas exactement, et seul un calcul en pouvoir d'achat le montre.</li>
+  </ul>
+
+  <h2>Le TRI : le seul rendement complet</h2>
+  <p>Le taux de rendement interne (TRI) est le taux annuel qui, appliqué à chaque euro que vous avez réellement sorti de votre poche, à la date où vous l'avez sorti, reproduit exactement les sommes que vous récupérez : les cash-flows positifs, puis le produit net de la revente. C'est la mesure qu'utilisent les professionnels, et c'est la seule qui soit directement comparable au rendement d'un placement financier.</p>
+  <p>Sur notre exemple — 200 000 €, 35 000 € d'apport, crédit sur 20 ans à 3,4 %, LMNP au réel, revente au bout de 25 ans avec des prix et des loyers qui suivent 2 % d'inflation — le TRI ressort à <b>4,7 % par an</b>, soit 2,7 % en pouvoir d'achat. Le rendement net-net disait 3,2 % : il sous-estimait l'effet du levier et ignorait la plus-value. Sur d'autres hypothèses, il aurait surestimé.</p>
+  <table>
+    <thead><tr><th>Mesure</th><th class="r">Exemple</th><th>Ce qu'elle voit</th><th>Ce qu'elle ignore</th></tr></thead>
+    <tbody>
+      <tr><td>Brut</td><td class="r">5,4 %</td><td>Loyers, prix</td><td>Tout le reste</td></tr>
+      <tr><td>Net</td><td class="r">3,2 %</td><td>+ charges, vacance, frais d'achat</td><td>Impôt, crédit, revente, temps</td></tr>
+      <tr><td>Net-net</td><td class="r">3,2 % ou 1,8 %</td><td>+ impôt de l'année</td><td>Crédit, revente, temps</td></tr>
+      <tr><td>TRI</td><td class="r">4,7 %</td><td>Tout, année par année</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p>Le TRI a une propriété précieuse : il change selon l'année où vous revendez. Tracé année par année, il montre le point mort (la première année où revendre ne perd plus d'argent) et le pic au-delà duquel garder le bien fait baisser le rendement de votre capital. <a href="/guides/tri-immobilier/">Le guide sur le TRI</a> explique comment le lire.</p>
+
+  <div class="cta">
+    <p><b>Calculez les quatre chiffres pour votre projet</b>Brut, net, net-net et TRI année par année, avec votre régime fiscal et votre crédit. Gratuit, sans inscription.</p>
+    <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
+  </div>
+
+  <h2>Les erreurs les plus fréquentes</h2>
+  <ul>
+    <li><b>Oublier la vacance.</b> Un logement change de locataire tous les deux à quatre ans, avec quelques semaines vides à chaque fois. 4 à 8 % des loyers selon la tension du marché.</li>
+    <li><b>Compter les charges récupérables.</b> Seule la part non récupérable des charges de copropriété (gros travaux, gestion, assurance de l'immeuble) pèse sur vous.</li>
+    <li><b>Prendre la taxe foncière de l'annonce.</b> Elle augmente plus vite que l'inflation dans beaucoup de communes ; vérifiez le dernier avis.</li>
+    <li><b>Négliger l'assurance emprunteur.</b> 0,3 à 0,4 % du capital par an sur vingt ans, c'est 6 à 8 % du prêt.</li>
+    <li><b>Raisonner en euros courants.</b> Un rendement de 4 % avec 2 % d'inflation, c'est 2 % de pouvoir d'achat. Exigez toujours le chiffre réel.</li>
+  </ul>
+
+  <section class="lire">
+    <h2>Lire aussi</h2>
+    <ul>
+      <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué<span>Comment le calculateur obtient un rendement annualisé, et comment le lire année par année.</span></a></li>
+      <li><a href="/guides/lmnp-reel-ou-micro-bic/">LMNP : réel ou micro-BIC ?<span>Le régime qui fait le plus varier le rendement net-net d'un meublé.</span></a></li>
+    </ul>
+  </section>
+
+  <section class="faqg">
+    <h2>Questions fréquentes</h2>
+    <article>
+      <h3>Quel est un bon rendement locatif ?</h3>
+      <p>En brut, on parle de « bon » au-delà de 6 à 7 % dans les villes moyennes et de 4 à 5 % dans les grandes métropoles, où la revalorisation est censée compenser. Mais le chiffre pertinent est le TRI net d'impôt et d'inflation sur vos fonds propres : au-dessus de 4 à 5 % réels, un bien fait mieux qu'un portefeuille boursier diversifié après impôt, pour un risque et un travail supérieurs.</p>
+    </article>
+    <article>
+      <h3>Faut-il calculer le rendement sur le prix ou sur le coût total ?</h3>
+      <p>Sur le prix pour comparer des annonces, parce que tout le monde le fait ainsi. Sur le coût total (prix, notaire, agence, travaux, frais de dossier) dès qu'il s'agit de savoir ce que le projet rapporte, parce que chaque euro dépensé doit être rémunéré. Le calculateur affiche les deux.</p>
+    </article>
+    <article>
+      <h3>Le rendement net-net suffit-il pour décider ?</h3>
+      <p>Non. Il photographie une année, en général la première, alors que le crédit, la fiscalité et la valeur du bien évoluent chaque année. Un projet à 2 % net-net financé à crédit peut afficher un TRI de 6 % sur fonds propres ; un projet à 4 % net-net acheté comptant avec de gros frais peut rester sous 3 %. Seul le TRI tranche.</p>
+    </article>
+  </section>
+</article>
+</div>
+<footer class="footer">
+  <div class="footer-in">
+    <div>
+      <b>Mon rendement locatif</b>
+      <p>Calculateur indépendant et gratuit, sans compte, sans cookie ni traceur.</p>
+    </div>
+    <div>
+      <b>Guides</b>
+      <ul>
+        <li><a href="/guides/calcul-rendement-locatif/">Calculer un rendement locatif : brut, net, net-net, TRI</a></li>
+        <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué</a></li>
+        <li><a href="/guides/lmnp-reel-ou-micro-bic/">LMNP : réel ou micro-BIC ?</a></li>
+        <li><a href="/guides/micro-foncier-ou-reel/">Micro-foncier ou régime réel ?</a></li>
+        <li><a href="/guides/quand-revendre/">Quand revendre un bien locatif ?</a></li>
+        <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a></li>
+      </ul>
+    </div>
+    <div>
+      <b>À propos</b>
+      <ul>
+        <li><a href="/calculatrice/">La calculatrice</a></li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a></li>
+        <li><a href="/mentions-legales/">Mentions légales</a></li>
+        <li><a href="#" class="mail" data-u="contact" data-d="monrendementlocatif.fr">Nous écrire</a></li>
+      </ul>
+    </div>
+    <p class="fin">Outil d'aide à la décision : les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal.</p>
+  </div>
+</footer>
+<script src="/js/site.js"></script>
+</body>
+</html>
