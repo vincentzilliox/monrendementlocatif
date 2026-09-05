@@ -47,6 +47,10 @@ function residuTravaux(list, y){
 function schedule(capital, tauxPct, dureeAns, assurPct){
   const n = Math.max(0, Math.round(dureeAns*12));
   const r = tauxPct/100/12;
+  // Une durée nulle n'est pas un prêt : sans cette garde, le capital restait dû
+  // pour toujours, jamais amorti ni facturé d'intérêts, mais retranché du prix
+  // de vente à chaque année — une dette fantôme, gratuite et éternelle.
+  if(n<=0) capital = 0;
   const assurM = capital>0 ? capital*(assurPct/100)/12 : 0;
   let m = 0;
   if(capital>0 && n>0) m = r>1e-12 ? capital*r/(1-Math.pow(1+r,-n)) : capital/n;
@@ -87,10 +91,27 @@ function abattementPS(h){
   if(h<30) return 0.28+0.09*(h-22);
   return 1;
 }
+// Surtaxe des plus-values immobilières (art. 1609 nonies G du CGI). Le taux
+// monte par tranche de 50 000 €, mais chaque palier s'ouvre par une bande de
+// 10 000 € où une décote lisse la marche : sans elle, passer de 50 000 € à
+// 50 001 € coûterait 1 000 € d'impôt d'un coup.
+const SURTAXE_PV = [
+  [ 60000, 0.02, 1/20],
+  [100000, 0.02, 0],
+  [110000, 0.03, 1/10],
+  [150000, 0.03, 0],
+  [160000, 0.04, 15/100],
+  [200000, 0.04, 0],
+  [210000, 0.05, 20/100],
+  [250000, 0.05, 0],
+  [260000, 0.06, 25/100],
+];
 function surtaxePV(base){
   if(base<=50000) return 0;
-  const t = base<=100000?0.02 : base<=150000?0.03 : base<=200000?0.04 : base<=250000?0.05 : 0.06;
-  return base*t;
+  for(const [plafond, taux, decote] of SURTAXE_PV){
+    if(base<=plafond) return base*taux - (plafond-base)*decote;
+  }
+  return base*0.06;
 }
 
 // Réglages propres à chaque régime, partagés par le formulaire et le comparatif.
@@ -301,9 +322,9 @@ function compute(p){
     p, rows, best, notaire, mobilier, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
-    bruteCout: loyerBrutAn/besoin,
-    nette: (r1.loyers - r1.charges)/besoin,
-    netteNette: (r1.loyers - r1.charges - r1.impot)/besoin,
+    bruteCout: besoin > 0 ? loyerBrutAn/besoin : 0,
+    nette: besoin > 0 ? (r1.loyers - r1.charges)/besoin : 0,
+    netteNette: besoin > 0 ? (r1.loyers - r1.charges - r1.impot)/besoin : 0,
     cfMensuel1: r1.cfNet/12,
     final: rows[rows.length-1],
     cumulEffort: rows.reduce((s,r)=> s + Math.min(0, r.cfNet), 0)
@@ -340,6 +361,10 @@ function niceTicks(min, max, count){
 let CLIP_N = 0;
 const svgEl = (n,a) => { const e=document.createElementNS("http://www.w3.org/2000/svg",n); for(const k in a) e.setAttribute(k,a[k]); return e; };
 const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+// Une barre verte se lit à 2,9:1 en thème clair : suffisant pour un tracé,
+// pas pour le chiffre posé à côté. --up-ink / --down-ink sont les mêmes teintes
+// assombries au seuil AA ; tout ce qui est texte y passe.
+const encre = n => n === "--up" ? "--up-ink" : n === "--down" ? "--down-ink" : n;
 
 function roundedBar(x, y0, y1, w, r){
   const up = y1 <= y0;
@@ -351,12 +376,38 @@ function roundedBar(x, y0, y1, w, r){
     : `M${x},${y0} L${x},${y1-rr} Q${x},${y1} ${x+rr},${y1} L${x+w-rr},${y1} Q${x+w},${y1} ${x+w},${y1-rr} L${x+w},${y0} Z`;
 }
 
+// Un SVG n'expose que son aria-label : sans équivalent textuel, un lecteur
+// d'écran annonce le titre du graphique et pas une seule de ses valeurs.
+// Le tableau est posé dans le même conteneur, invisible à l'écran.
+function resumeTexte(host, titre, entetes, lignes){
+  host.querySelectorAll("table.visually-hidden").forEach(el => el.remove());
+  if(!lignes.length) return;
+  const t = document.createElement("table");
+  t.className = "visually-hidden";
+  t.innerHTML = `<caption>${esc(titre)}</caption><thead><tr>`
+    + entetes.map(h => `<th scope="col">${esc(h)}</th>`).join("")
+    + `</tr></thead><tbody>`
+    + lignes.map(l => `<tr><th scope="row">${esc(l[0])}</th>`
+        + l.slice(1).map(c => `<td>${esc(c)}</td>`).join("") + `</tr>`).join("")
+    + `</tbody></table>`;
+  host.appendChild(t);
+}
+
+// Même placement pour les trois graphiques : centrée sur le point, jamais
+// débordante du cadre.
+function placerInfobulle(tip, host, cx, top){
+  const tw = tip.offsetWidth, hw = host.clientWidth;
+  tip.style.left = Math.max(4, Math.min(hw-tw-4, cx - tw/2)) + "px";
+  tip.style.top = (top === undefined ? 6 : top) + "px";
+}
+
 function drawChart(host, tip, cfg){
   const W = Math.max(320, host.clientWidth);
   const H = cfg.height || 260;
   const M = {t:14, r:cfg.padRight||14, b:28, l:cfg.padLeft||62};
   host.querySelectorAll("svg").forEach(n=>n.remove());
-  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":cfg.label||""});
+  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
+    tabindex:"0", "aria-label":cfg.label||""});
 
   const all = cfg.series.flatMap(s => s.values.filter(v => v!==null && isFinite(v)));
   if(!all.length){ host.appendChild(svg); return; }
@@ -460,7 +511,7 @@ function drawChart(host, tip, cfg){
   }
 
   const focus = svgEl("g",{opacity:"0"});
-  const vline = svgEl("line",{y1:M.t,y2:M.t+ih,stroke:css("--ink-3"),"stroke-width":1,"stroke-dasharray":"3 3"});
+  const vline = svgEl("line",{y1:M.t,y2:M.t+ih,stroke:css("--text-muted"),"stroke-width":1,"stroke-dasharray":"3 3"});
   focus.appendChild(vline);
   const knobs = cfg.series.map(s => {
     const c = svgEl("circle",{r:5,fill:css(s.color||"--d1"),stroke:css("--surface"),"stroke-width":2});
@@ -472,29 +523,57 @@ function drawChart(host, tip, cfg){
   svg.appendChild(hit);
   host.appendChild(svg);
 
-  const move = ev => {
+  const fmtVal = cfg.fmtVal || (v => cfg.fmtAxis(v, scaleRef));
+  resumeTexte(host, cfg.label || "",
+    [cfg.xLabel || "Année"].concat(cfg.series.map((s,si) => s.nom || `Série ${si+1}`)),
+    cfg.x.map((lab,i) => [String(lab)].concat(cfg.series.map(s => {
+      const v = s.values[i];
+      return (v===null||!isFinite(v)) ? "non calculable" : fmtVal(v);
+    }))));
+
+  let courant = -1;
+  const montrer = i => {
+    courant = Math.max(0, Math.min(n-1, i));
+    focus.setAttribute("opacity","1");
+    vline.setAttribute("x1",X(courant)); vline.setAttribute("x2",X(courant));
+    knobs.forEach((c,si) => {
+      const v = cfg.series[si].values[courant];
+      if(v===null||!isFinite(v)||cfg.band||v<yMin||v>yMax){ c.setAttribute("opacity","0"); return; }
+      c.setAttribute("opacity","1"); c.setAttribute("cx",X(courant)); c.setAttribute("cy",Y(v));
+    });
+    tip.innerHTML = cfg.tip(courant);
+    tip.classList.add("on");
+    placerInfobulle(tip, host, X(courant)*(host.clientWidth/W));
+  };
+  const cacher = () => { focus.setAttribute("opacity","0"); tip.classList.remove("on"); };
+
+  // pointer* couvre souris, tactile et stylet d'un seul jeu d'événements ;
+  // focus et flèches ouvrent le même chemin au clavier, sans quoi l'infobulle
+  // resterait hors d'atteinte de qui n'a pas de souris.
+  svg.addEventListener("pointermove", ev => {
     const box = svg.getBoundingClientRect();
     const px = (ev.clientX - box.left) * (W/box.width);
-    let i = cfg.band
+    montrer(cfg.band
       ? Math.floor((px - M.l)/(iw/n))
-      : Math.round((px - M.l)/(iw/Math.max(1,n-1)));
-    i = Math.max(0, Math.min(n-1, i));
-    focus.setAttribute("opacity","1");
-    vline.setAttribute("x1",X(i)); vline.setAttribute("x2",X(i));
-    knobs.forEach((c,si) => {
-      const v = cfg.series[si].values[i];
-      if(v===null||!isFinite(v)||cfg.band||v<yMin||v>yMax){ c.setAttribute("opacity","0"); return; }
-      c.setAttribute("opacity","1"); c.setAttribute("cx",X(i)); c.setAttribute("cy",Y(v));
-    });
-    tip.innerHTML = cfg.tip(i);
-    tip.classList.add("on");
-    const tw = tip.offsetWidth, hw = host.clientWidth;
-    const cx = X(i)*(hw/W);
-    tip.style.left = Math.max(4, Math.min(hw-tw-4, cx - tw/2)) + "px";
-    tip.style.top = "6px";
-  };
-  svg.addEventListener("mousemove", move);
-  svg.addEventListener("mouseleave", () => { focus.setAttribute("opacity","0"); tip.classList.remove("on"); });
+      : Math.round((px - M.l)/(iw/Math.max(1,n-1))));
+  });
+  svg.addEventListener("pointerleave", cacher);
+  svg.addEventListener("focus", () => montrer(courant < 0 ? n-1 : courant));
+  svg.addEventListener("blur", cacher);
+  svg.addEventListener("keydown", ev => auClavier(ev, n, courant, montrer, cacher));
+}
+
+// Déplacement au clavier, commun aux trois graphiques : flèches, Début, Fin,
+// Échap. Retourne sans rien faire pour toute autre touche, pour ne pas
+// confisquer la navigation du navigateur.
+function auClavier(ev, n, courant, montrer, cacher){
+  const pas = {ArrowRight:1, ArrowUp:1, ArrowLeft:-1, ArrowDown:-1}[ev.key];
+  if(pas !== undefined) montrer((courant < 0 ? (pas > 0 ? -1 : n) : courant) + pas);
+  else if(ev.key === "Home") montrer(0);
+  else if(ev.key === "End") montrer(n-1);
+  else if(ev.key === "Escape") cacher();
+  else return;
+  ev.preventDefault();
 }
 
 /* ---------- colonnes : régimes et cascade ---------- */
@@ -508,7 +587,8 @@ function drawColumns(host, tip, cfg){
   const M = {t:26, r:14, b:16 + lignes*13, l:cfg.padLeft||62};
   const H = (cfg.height || 240) + lignes*13;
   host.querySelectorAll("svg").forEach(el=>el.remove());
-  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":cfg.label||""});
+  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
+    tabindex:"0", "aria-label":cfg.label||""});
   const vals = items.flatMap(it => [it.from, it.to]).filter(v => isFinite(v));
   if(!vals.length){ host.appendChild(svg); return; }
   const ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 4);
@@ -535,7 +615,7 @@ function drawColumns(host, tip, cfg){
     }
     const monte = it.to >= it.from;
     const ty = monte ? Math.min(y0,y1) - 7 : Math.max(y0,y1) + 14;
-    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || it.color), "font-size":"11.5", "font-weight":"600", class:"valeur"});
+    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || encre(it.color)), "font-size":"11.5", "font-weight":"600", class:"valeur"});
     tv.textContent = it.text;
     svg.appendChild(tv);
     String(it.label).split("\n").forEach((l,k) => {
@@ -544,19 +624,34 @@ function drawColumns(host, tip, cfg){
       svg.appendChild(tl);
     });
   });
+  let courant = -1;
+  const montrer = i => {
+    courant = Math.max(0, Math.min(n-1, i));
+    tip.innerHTML = cfg.tip(courant); tip.classList.add("on");
+    placerInfobulle(tip, host, X(courant)*(host.clientWidth/W));
+  };
+  const cacher = () => { courant = -1; tip.classList.remove("on"); };
   items.forEach((it,i) => {
     const hit = svgEl("rect",{x:M.l+slot*i, y:M.t, width:slot, height:ih+M.b, fill:"transparent"});
     if(cfg.onClick){ hit.classList.add("clickable"); hit.addEventListener("click", () => cfg.onClick(i)); }
-    hit.addEventListener("mousemove", () => {
-      tip.innerHTML = cfg.tip(i); tip.classList.add("on");
-      const tw = tip.offsetWidth, hw = host.clientWidth, cx = X(i)*(hw/W);
-      tip.style.left = Math.max(4, Math.min(hw-tw-4, cx - tw/2)) + "px";
-      tip.style.top = "6px";
-    });
-    hit.addEventListener("mouseleave", () => tip.classList.remove("on"));
+    hit.addEventListener("pointermove", () => montrer(i));
+    hit.addEventListener("pointerleave", cacher);
     svg.appendChild(hit);
   });
+  // Le SVG entier est un seul arrêt de tabulation : les flèches parcourent les
+  // colonnes, Entrée active celle qui est sous le curseur quand elle est
+  // cliquable. Dix colonnes ne font ainsi pas dix arrêts de plus.
+  svg.addEventListener("focus", () => montrer(courant < 0 ? 0 : courant));
+  svg.addEventListener("blur", cacher);
+  svg.addEventListener("keydown", ev => {
+    if(cfg.onClick && courant >= 0 && (ev.key === "Enter" || ev.key === " ")){
+      ev.preventDefault(); cfg.onClick(courant); return;
+    }
+    auClavier(ev, n, courant, montrer, cacher);
+  });
   host.appendChild(svg);
+  resumeTexte(host, cfg.label || "", [cfg.colLabel || "Poste", "Montant"],
+    items.map(it => [String(it.label).replace(/\n/g, " "), it.text]));
 }
 
 /* ---------- tornade : sensibilité ---------- */
@@ -568,7 +663,8 @@ function drawTornado(host, tip, cfg){
   const M = {t:8, r:64, b:30, l:Math.min(170, Math.max(120, W*0.28))};
   const H = M.t + n*rh + M.b;
   host.querySelectorAll("svg").forEach(el=>el.remove());
-  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":cfg.label||""});
+  const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
+    tabindex:"0", "aria-label":cfg.label||""});
   if(!n){ host.appendChild(svg); return; }
   const ext = Math.max(0.0025, ...rows.flatMap(r => [Math.abs(r.lo), Math.abs(r.hi)]));
   const ticks = niceTicks(-ext, ext, 4);
@@ -583,14 +679,24 @@ function drawTornado(host, tip, cfg){
     lb.textContent = cfg.fmtAxis(t);
     svg.appendChild(lb);
   });
+  let courant = -1;
+  const montrer = i => {
+    courant = Math.max(0, Math.min(n-1, i));
+    tip.innerHTML = cfg.tip(courant); tip.classList.add("on");
+    const yc = M.t + rh*courant + rh/2;
+    placerInfobulle(tip, host, X(0)*(host.clientWidth/W),
+      Math.max(0, (yc - rh/2 - 4)*(host.clientWidth/W) - 40));
+  };
+  const cacher = () => { courant = -1; tip.classList.remove("on"); };
   rows.forEach((r,i) => {
     const yc = M.t + rh*i + rh/2, h = rh*0.5;
     [[r.lo, down, r.loText], [r.hi, up, r.hiText]].forEach(([v, col, txt]) => {
+      const enc = css(col === up ? "--up-ink" : "--down-ink");
       const x0 = X(0), x1 = X(v);
       const w = Math.abs(x1-x0);
       if(w > 0.5) svg.appendChild(svgEl("rect",{x:Math.min(x0,x1), y:yc-h/2, width:w, height:h, rx:2, fill:col}));
       const droite = v >= 0;
-      const tv = svgEl("text",{x:droite ? x1+5 : x1-5, y:yc+4, "text-anchor":droite?"start":"end", fill:col, "font-size":"11", "font-weight":"600"});
+      const tv = svgEl("text",{x:droite ? x1+5 : x1-5, y:yc+4, "text-anchor":droite?"start":"end", fill:enc, "font-size":"11", "font-weight":"600"});
       tv.textContent = txt;
       svg.appendChild(tv);
     });
@@ -598,16 +704,16 @@ function drawTornado(host, tip, cfg){
     lb.textContent = r.label;
     svg.appendChild(lb);
     const hit = svgEl("rect",{x:0, y:yc-rh/2, width:W, height:rh, fill:"transparent"});
-    hit.addEventListener("mousemove", () => {
-      tip.innerHTML = cfg.tip(i); tip.classList.add("on");
-      const tw = tip.offsetWidth, hw = host.clientWidth;
-      tip.style.left = Math.max(4, Math.min(hw-tw-4, X(0)*(hw/W) - tw/2)) + "px";
-      tip.style.top = Math.max(0, (yc - rh/2 - 4)*(hw/W) - 40) + "px";
-    });
-    hit.addEventListener("mouseleave", () => tip.classList.remove("on"));
+    hit.addEventListener("pointermove", () => montrer(i));
+    hit.addEventListener("pointerleave", cacher);
     svg.appendChild(hit);
   });
+  svg.addEventListener("focus", () => montrer(courant < 0 ? 0 : courant));
+  svg.addEventListener("blur", cacher);
+  svg.addEventListener("keydown", ev => auClavier(ev, n, courant, montrer, cacher));
   host.appendChild(svg);
+  resumeTexte(host, cfg.label || "", ["Paramètre", "Scénario défavorable", "Scénario favorable"],
+    rows.map(r => [r.label, r.loText, r.hiText]));
 }
 
 function tipRow(color, label, value){

@@ -36,6 +36,71 @@ DOMAINE = "https://monrendementlocatif.fr"
 resultats = []
 
 
+def _luminance(rgb):
+    def c(v):
+        v /= 255
+        return v/12.92 if v <= 0.04045 else ((v + 0.055)/1.055) ** 2.4
+    return 0.2126*c(rgb[0]) + 0.7152*c(rgb[1]) + 0.0722*c(rgb[2])
+
+
+def _rgb(valeur):
+    """#rrggbb, #rgb ou rgba(r,g,b,a) -> (r, g, b, alpha)."""
+    valeur = valeur.strip()
+    m = re.fullmatch(r"rgba?\(([^)]*)\)", valeur)
+    if m:
+        parts = [x.strip() for x in m.group(1).split(",")]
+        return (*[float(x) for x in parts[:3]], float(parts[3]) if len(parts) > 3 else 1.0)
+    h = valeur.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c*2 for c in h)
+    return (*[int(h[i:i+2], 16) for i in (0, 2, 4)], 1.0)
+
+
+def contraste(encre, fond, sur=None):
+    """Rapport WCAG. `fond` peut être translucide : il est alors fondu sur `sur`."""
+    e, f = _rgb(encre), _rgb(fond)
+    if f[3] < 1 and sur is not None:
+        b = _rgb(sur)
+        f = tuple(f[i]*f[3] + b[i]*(1 - f[3]) for i in range(3)) + (1.0,)
+    a, b = _luminance(e[:3]), _luminance(f[:3])
+    return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+
+
+def encre_de(css, selecteur):
+    """Le token que cette règle pose en `color:`. None si elle n'en pose pas.
+
+    Lire la règle plutôt que de nommer le token attendu : sinon un composant
+    peut repasser à une couleur illisible sans qu'aucun contrôle ne bronche.
+    """
+    m = re.search(re.escape(selecteur) + r"\s*\{([^}]*)\}", css)
+    if not m:
+        return None
+    c = re.search(r"(?<![-\w])color\s*:\s*var\((--[a-z0-9-]+)\)", m.group(1))
+    return c.group(1) if c else None
+
+
+def tokens_du_theme(css, selecteur):
+    """Les variables déclarées par un bloc, repérées sur son sélecteur."""
+    m = re.search(re.escape(selecteur) + r"\s*\{(.*?)\}", css, re.S)
+    if not m:
+        return {}
+    return dict(re.findall(r"(--[a-z0-9-]+)\s*:\s*([^;]+);", m.group(1)))
+
+
+def resoudre(tokens):
+    """Aplatit les `var(--x)` : un token peut en aliaser un autre du même thème."""
+    plat = {}
+    for cle in tokens:
+        valeur, vus = tokens[cle], set()
+        while (m := re.fullmatch(r"var\((--[a-z0-9-]+)\)", valeur.strip())):
+            if m.group(1) in vus or m.group(1) not in tokens:
+                break
+            vus.add(m.group(1))
+            valeur = tokens[m.group(1)]
+        plat[cle] = valeur.strip()
+    return plat
+
+
 def controle(nom, ok, detail=""):
     resultats.append(ok)
     print("  %s  %-46s %s" % ("OK  " if ok else "ECHEC", nom, detail))
@@ -96,10 +161,28 @@ setTimeout(function(){
   // Sous 500 px la fenetre reste plus large que la page : on mesure les elements,
   // en ignorant ceux qu'un ancetre a defilement horizontal contient volontairement.
   var defile = function(e){ for(var a=e.parentElement; a && a!==document.body; a=a.parentElement){ var o=getComputedStyle(a).overflowX; if(o==="auto"||o==="scroll") return true; } return false; };
+  // Les equivalents textuels des graphiques sont hors ecran par construction :
+  // leur boite deborde, mais rien ne s'affiche. Les compter serait un faux positif.
+  var cache = function(e){ return !!(e.closest && e.closest(".visually-hidden")); };
   r.deborde   = largeur < 500
-    ? Array.prototype.some.call(document.body.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e); })
+    ? Array.prototype.some.call(document.body.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e) && !cache(e); })
     : d.scrollWidth > d.clientWidth + 1;
   r.tuiles    = document.querySelectorAll(".tile").length;
+  // Un SVG n'annonce que son titre : chaque graphique doit doubler ses valeurs
+  // d'un tableau hors ecran, et rester atteignable au clavier.
+  r.equiv     = document.querySelectorAll(".plot table.visually-hidden").length;
+  r.focalisables = document.querySelectorAll(".plot svg[tabindex]").length;
+  var g = document.querySelector("#plotTri svg"), tp = document.getElementById("tipTri");
+  if(g && tp){
+    g.dispatchEvent(new FocusEvent("focus"));
+    var ouvert = tp.classList.contains("on"), a = tp.textContent;
+    g.dispatchEvent(new KeyboardEvent("keydown", {key:"ArrowLeft"}));
+    var b = tp.textContent;
+    g.dispatchEvent(new FocusEvent("blur"));
+    r.clavier = (ouvert ? "1" : "0") + (a && b && a !== b ? "1" : "0") + (tp.classList.contains("on") ? "0" : "1");
+  }
+  var av = document.getElementById("vAvisBox");
+  r.vAvis = av && !av.hidden ? (document.getElementById("vAvis").textContent || "").slice(0, 40) : "";
   r.graphes   = document.querySelectorAll(".plot svg").length;
   r.courbes   = document.querySelectorAll("#plotNet path[stroke]").length;
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
@@ -265,6 +348,49 @@ def main():
         controle("couleurs uniquement dans les tokens", not hex_perdus, ", ".join(hex_perdus)[:60])
         controle("aucune ombre portée", "box-shadow" not in hors_tokens or
                  all("var(--ring)" in l for l in hors_tokens.splitlines() if "box-shadow" in l))
+        # Le vert et le rouge de la couche données tombent à 2,9:1 sur fond clair :
+        # lisibles en tracé, pas en texte. On vérifie donc chaque paire réellement
+        # utilisée, plutôt que de faire confiance à l'œil.
+        themes = {"sombre": tokens_du_theme(css, ":root"),
+                  "clair": tokens_du_theme(css, ':root[data-theme="light"]')}
+        # Le thème clair n'est qu'une surcharge : ce qu'il ne redéfinit pas vient du sombre.
+        themes["clair"] = {**themes["sombre"], **themes["clair"]}
+        themes = {nom: resoudre(t) for nom, t in themes.items()}
+        # (libellé, sélecteur dont on lit la couleur, fond, fond sous-jacent si translucide)
+        composants = [("texte courant", "body", "--bg", None),
+                      ("badge gagnant", ".pill.win", "--up-bg", "--surface"),
+                      ("badge perdant", ".pill.lose", "--down-bg", "--surface"),
+                      ("badge neutre", ".pill.flat", "--surface-2", None),
+                      ("rendement héros", ".hero .big", "--surface", None),
+                      ("rendement héros négatif", ".hero .big.bad", "--surface", None),
+                      ("pouvoir d'achat", ".reel b", "--surface-2", None),
+                      ("pouvoir d'achat négatif", ".reel b.bad", "--surface-2", None),
+                      ("valeur de tuile en hausse", ".v.pos", "--surface", None),
+                      ("valeur de tuile en baisse", ".v.neg", "--surface", None),
+                      ("cellule en hausse", "td.pos", "--bg", None),
+                      ("cellule en baisse", "td.neg", "--bg", None),
+                      ("libellés et axes", ".tile .k", "--surface", None),
+                      ("note sous graphique", ".axisnote", "--bg", None)]
+        for theme, t in themes.items():
+            for nom, selecteur, fond, sur in composants:
+                encre = encre_de(css, selecteur)
+                if encre is None or encre not in t or fond not in t:
+                    controle("contraste %s, %s" % (theme, nom), False,
+                             "règle « %s » : couleur %s introuvable" % (selecteur, encre or "—"))
+                    continue
+                r = contraste(t[encre], t[fond], t[sur] if sur else None)
+                controle("contraste %s, %s" % (theme, nom), r >= 4.5,
+                         "%s → %.2f:1 (seuil 4.5)" % (encre, r))
+
+        # Une couleur se lit au runtime par son nom : une variable inexistante ne
+        # plante pas, elle rend une chaîne vide. C'est ainsi que --ink-3 a survécu.
+        app = (SITE / "js" / "app.js").read_text(encoding="utf-8")
+        declares = set(re.findall(r"(--[a-z0-9-]+)\s*:", css))
+        appeles = set(re.findall(r'css\(\s*"(--[a-z0-9-]+)"', app))
+        appeles |= set(re.findall(r'(?:color|textColor)\s*:\s*"(--[a-z0-9-]+)"', app))
+        fantomes = sorted(appeles - declares)
+        controle("aucun token CSS fantôme appelé par le JS", not fantomes, ", ".join(fantomes))
+
         polices = list(SITE.rglob("*.woff*"))
         controle("police système, aucune police embarquée",
                  "@font-face" not in css and not polices, "%d fichier(s)" % len(polices))
@@ -303,6 +429,8 @@ def main():
                     controle("accueil : quatre placements comparés", r["vcourbes"] == 4, str(r["vcourbes"]))
                     controle("accueil : sensibilité tracée", r["vsens"] >= 6, "%d barres" % r["vsens"])
                     controle("accueil : rendement affiché", "%" in r["vitrine"], r["vitrine"])
+                    controle("accueil : avis éditorial rendu",
+                             len(r.get("vAvis") or "") > 20, r.get("vAvis") or "absent")
 
             for largeur in (1360, 390):
                 r = sonde_navigateur(chrome, base, SITE / "calculatrice" / "index.html", largeur)
@@ -322,6 +450,12 @@ def main():
                              "%s vs %s" % (vitrine.get("vitrine", "—"), r["tri"]))
                     controle("six tuiles d'indicateurs", r["tuiles"] == 6, str(r["tuiles"]))
                     controle("sept graphiques tracés", r["graphes"] == 7, str(r["graphes"]))
+                    controle("sept équivalents textuels", r.get("equiv") == 7, str(r.get("equiv")))
+                    controle("sept graphiques atteignables au clavier",
+                             r.get("focalisables") == 7, str(r.get("focalisables")))
+                    # « ouvre au focus », « les flèches déplacent », « se ferme au blur »
+                    controle("infobulle pilotable au clavier", r.get("clavier") == "111",
+                             r.get("clavier") or "sonde muette")
                     controle("quatre courbes comparées", r["courbes"] == 4, str(r["courbes"]))
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
@@ -349,8 +483,11 @@ def main():
                              "%s → %s" % (r.get("cascHorizon"), r.get("cascAn1")))
                     controle("tableau annuel rempli", r["lignes"] >= 10, "%d lignes" % r["lignes"])
                     controle("rendement calculé", "%" in r["tri"], r["tri"])
-            for chemin in ("/guides/", "/guides/tri-immobilier/", "/questions-frequentes/",
-                           "/hypotheses-de-calcul/", "/mentions-legales/"):
+            # Les six guides, pas un seul : l'erreur de contenu trouvée à l'audit
+            # vivait précisément dans celui qui n'était jamais chargé.
+            fiches = sorted(f.parent.name for f in (SITE / "guides").glob("*/index.html"))
+            for chemin in ["/guides/"] + ["/guides/%s/" % f for f in fiches] + \
+                          ["/questions-frequentes/", "/hypotheses-de-calcul/", "/mentions-legales/"]:
                 fichier = fichier_pour(chemin)
                 for largeur in (1360, 390):
                     r = sonde_navigateur(chrome, base, fichier, largeur) if fichier else None
@@ -427,6 +564,53 @@ lignes.push('apport nul : TRI non calculable|'+(run({apport:0}).final.tri===null
 lignes.push('duree amortissement nulle sans plantage|'+(isFinite(run({amortBatiAns:0}).final.tri)?1:0)+'|');
 lignes.push('horizon 1 an sans plantage|'+(isFinite(run({horizon:1}).final.tri)?1:0)+'|');
 lignes.push('champs fiscaux absents toleres|'+(isFinite(run({fiscBourse:undefined,fiscFonds:undefined}).final.gainBourse)?1:0)+'|');
+// Surtaxe de plus-value (art. 1609 nonies G) : chaque palier s'ouvre par une
+// bande de 10 000 EUR ou une decote lisse la marche. Sans elle, le code
+// surestimait de 79 % juste au-dessus de 50 000 EUR.
+var attenduSurtaxe = [[50000,0],[51000,570],[60000,1200],[61000,1220],[100000,2000],
+  [105000,2650],[110000,3300],[155000,5450],[160000,6400],[205000,9250],[210000,10500],
+  [255000,14050],[260000,15600],[300000,18000]];
+var ecarts = attenduSurtaxe.filter(function(c){ return Math.abs(surtaxePV(c[0])-c[1])>0.01; });
+lignes.push('surtaxe de plus-value : table legale|'+(ecarts.length===0?1:0)+'|'
+  + (ecarts.length ? ecarts[0][0]+' EUR -> '+surtaxePV(ecarts[0][0]).toFixed(0)+' au lieu de '+ecarts[0][1] : '14 points verifies'));
+// Et elle reste croissante : une decote mal posee creerait une inversion.
+var inverse = 0;
+for(var b=45000; b<=270000; b+=250) if(surtaxePV(b+250) < surtaxePV(b) - 1e-9) inverse++;
+lignes.push('surtaxe de plus-value : croissante|'+(inverse===0?1:0)+'|'+inverse+' inversion(s)');
+// Aucun cout d'acquisition : les rentabilites rapportees au cout divisent par zero.
+var z = run({prix:0, notairePct:0, fraisAcq:0, fraisDossier:0, mobilier:0, apport:0,
+  items:[{nom:'R',montant:0,taux:0,duree:0,deduc:0}]});
+var fini = [z.brute,z.bruteCout,z.nette,z.netteNette].every(isFinite);
+lignes.push('cout d acquisition nul : aucune division par zero|'+(fini?1:0)+'|'
+  +[z.brute,z.bruteCout,z.nette,z.netteNette].join(' '));
+// Duree de pret nulle : sans garde, le capital restait du pour toujours, jamais
+// amorti ni facture, mais retranche du prix de vente a chaque annee.
+var d0 = run({duree:0});
+lignes.push('duree de pret nulle : aucune dette fantome|'
+  +(d0.rows[d0.rows.length-1].crd < 0.01 && isFinite(d0.final.gain)?1:0)+'|CRD final '
+  +d0.rows[d0.rows.length-1].crd.toFixed(0)+' EUR');
+// Deficit foncier : la part hors interets s'impute sur le revenu global dans la
+// limite du plafond, le reste est reporte. Teste ici sur le regime reel foncier,
+// dont la mecanique differe entierement du deficit BIC verifie plus haut.
+var df = run({regime:'reel-foncier', ps:17.2, cfe:0, loyer:200, indexLoyer:0,
+  items:[{nom:'R',montant:60000,taux:0,duree:30,deduc:100}]});
+// 60 000 EUR de travaux face a 2 400 EUR de loyers : le deficit imputable
+// depasse largement le plafond, l'economie de l'annee 1 vaut donc exactement
+// plafond x TMI, et doubler le plafond doit la doubler.
+var e1 = -df.rows[0].impot;
+var df2 = run({regime:'reel-foncier', ps:17.2, cfe:0, loyer:200, indexLoyer:0, plafondDeficit:21400,
+  items:[{nom:'R',montant:60000,taux:0,duree:30,deduc:100}]});
+var e2 = -df2.rows[0].impot;
+lignes.push('deficit foncier plafonne a 10 700 EUR|'
+  +(Math.abs(e1 - 10700*0.30) < 1 && Math.abs(e2 - 21400*0.30) < 1 ? 1:0)
+  +'|economie '+e1.toFixed(0)+' EUR, puis '+e2.toFixed(0)+' EUR a 21 400 EUR de plafond');
+// Le surplus non impute doit reapparaitre plus tard, pas disparaitre.
+var sansDeficit = run({regime:'reel-foncier', ps:17.2, cfe:0, loyer:200, indexLoyer:0,
+  items:[{nom:'R',montant:0,taux:0,duree:30,deduc:100}]});
+var cumulAvec = df.rows.reduce(function(s,r){ return s+r.impot; }, 0);
+var cumulSans = sansDeficit.rows.reduce(function(s,r){ return s+r.impot; }, 0);
+lignes.push('deficit foncier reporte sur les annees suivantes|'+(cumulAvec < cumulSans - 1?1:0)
+  +'|impot cumule '+cumulAvec.toFixed(0)+' vs '+cumulSans.toFixed(0)+' EUR');
 print(lignes.join('\\n'));
 """, encoding="utf-8")
         try:

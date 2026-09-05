@@ -6,8 +6,9 @@ qui expliquent ce qu'il mesure.
 > **Pour voir le site :** `python3 outils/servir.py`.
 > Ouvrir `index.html` en double-clic ne marche pas — c'est un fichier source,
 > pas une page : les chemins sont absolus et les guides n'existent que dans
-> `site/`, produit par `build.py`. Il répond à deux questions que les simulateurs
-courants laissent de côté :
+> `site/`, produit par `build.py`.
+
+Il répond à deux questions que les simulateurs courants laissent de côté :
 
 - **Combien ce projet rapporte-t-il vraiment, chaque année ?** Un TRI calculé sur
   les fonds réellement sortis de votre poche, en euros courants et en pouvoir

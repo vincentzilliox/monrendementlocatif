@@ -124,7 +124,7 @@
           <dt class="tot">Montant emprunté</dt><dd class="tot" id="dEmprunt">—</dd>
           <dd class="cap" id="dCap"></dd>
         </dl>
-        <div class="f"><label for="duree">Durée du prêt</label><div class="wrap uw"><input id="duree" type="number" step="1" value="20"><span class="unit">ans</span></div></div>
+        <div class="f"><label for="duree">Durée du prêt</label><div class="wrap uw"><input id="duree" type="number" step="1" min="1" max="40" value="20"><span class="unit">ans</span></div></div>
         <div class="f"><label for="taux">Taux d'intérêt</label><div class="wrap"><input id="taux" type="number" step="0.05" value="3.4"><span class="unit">%</span></div></div>
         <div class="f"><label for="assur">Assurance emprunteur<span class="hint">% du capital emprunté / an</span></label><div class="wrap"><input id="assur" type="number" step="0.01" value="0.34"><span class="unit">%</span></div></div>
         <dl class="derived">
@@ -229,12 +229,12 @@
         <p class="herosub" id="heroSub"></p>
         <div class="bench"><span class="pill num" id="benchPill">—</span><span id="benchText"></span></div>
         <div class="avis" id="avisBox" hidden>
-          <p class="eyebrow">L'avis de Mon Rendement Locatif</p>
+          <p class="eyebrow">L'avis de Mon rendement locatif</p>
           <p id="avisText"></p>
         </div>
       </div>
       <div class="best">
-        <p class="eyebrow">Meilleur moment pour revendre</p>
+        <p class="eyebrow" id="bestEyebrow">Meilleur moment pour revendre</p>
         <div class="yr" id="bestYear">—</div>
         <p id="bestText"></p>
         <dl id="bestList"></dl>
