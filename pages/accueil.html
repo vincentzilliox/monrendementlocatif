@@ -11,10 +11,85 @@
     <p class="eyebrow">Calculateur indépendant · France · à jour de la loi de finances 2026</p>
     <h1>Quel est le vrai rendement de votre investissement locatif&nbsp;?</h1>
     <p class="pitch">La plupart des simulateurs répondent par un rendement brut : les loyers divisés par le prix. Celui-ci calcule le rendement de <b>l'argent que vous sortez réellement de votre poche</b>, année après année, net d'impôt et corrigé de l'inflation — puis vous dit quelle année revendre, et ce que les mêmes versements auraient donné en bourse.</p>
-    <div class="accroche-actions">
-      <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
-      <a class="btn" href="/guides/">Lire les guides</a>
-    </div>
+    <section class="quiz" id="assistant" aria-labelledby="qTitre">
+      <h2 id="qTitre" class="visually-hidden">Votre projet en quelques questions</h2>
+      <p class="qprog">
+        <span class="qnum" id="qCompteur" aria-live="polite">Question 1 sur 7</span>
+        <span class="qbar" aria-hidden="true"><i id="qJauge"></i></span>
+      </p>
+
+      <div class="qstep" id="qEtapeBien">
+        <h3 class="qtitre" tabindex="-1">Combien coûte le bien&nbsp;?</h3>
+        <div class="qchamp"><input id="qPrix" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qPrixAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="qPrixAide">Le prix affiché, hors frais de notaire.</p>
+        <div class="qchoix" role="radiogroup" aria-label="Ancien ou neuf">
+          <label><input type="radio" name="qNeuf" value="ancien" checked><span>Ancien</span></label>
+          <label><input type="radio" name="qNeuf" value="neuf"><span>Neuf</span></label>
+        </div>
+        <p class="qaide" id="qNotaireAide"></p>
+      </div>
+
+      <div class="qstep" id="qEtapeLoyer" hidden>
+        <h3 class="qtitre" tabindex="-1">Quel loyer mensuel en attendez-vous&nbsp;?</h3>
+        <div class="qchamp"><input id="qLoyer" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qLoyerAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="qLoyerAide">Hors charges. Regardez les annonces du quartier pour un bien comparable.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeLocation" hidden>
+        <h3 class="qtitre" tabindex="-1">Louerez-vous nu ou meublé&nbsp;?</h3>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Nu ou meublé">
+          <label><input type="radio" name="qLocation" value="meuble" checked><span>Meublé<small>loyers plus élevés, fiscalité plus douce, mobilier à acheter</small></span></label>
+          <label><input type="radio" name="qLocation" value="nu"><span>Nu<small>baux plus longs, gestion plus simple</small></span></label>
+          <label><input type="radio" name="qLocation" value="inconnu"><span>Je ne sais pas encore<small>nous retiendrons le régime le plus favorable sur vos chiffres</small></span></label>
+        </div>
+      </div>
+
+      <div class="qstep" id="qEtapeTravaux" hidden>
+        <h3 class="qtitre" tabindex="-1">Des travaux sont-ils prévus&nbsp;?</h3>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Travaux prévus">
+          <label><input type="radio" name="qTvx" value="montant" checked><span>Oui<small>ils s'ajoutent à la valeur du bien, puis la perdent avec le temps</small></span></label>
+          <label><input type="radio" name="qTvx" value="aucun"><span>Aucun<small>le bien est prêt à louer</small></span></label>
+          <label><input type="radio" name="qTvx" value="inconnu"><span>Je ne sais pas encore<small>nous provisionnons une rénovation à la hauteur du prix</small></span></label>
+        </div>
+        <div class="qchamp" id="qTravauxChamp"><input id="qTravaux" type="text" inputmode="numeric" autocomplete="off" aria-label="Montant des travaux"><span class="qunit">€</span></div>
+      </div>
+
+      <div class="qstep" id="qEtapeApport" hidden>
+        <h3 class="qtitre" tabindex="-1">Quel apport pouvez-vous engager&nbsp;?</h3>
+        <div class="qchamp"><input id="qApport" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qApportAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="qApportAide">Le reste est emprunté. Tout ce que vous sortez de votre poche, apport compris, sert de base au rendement.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeDuree" hidden>
+        <h3 class="qtitre" tabindex="-1">Sur combien d'années emprunter&nbsp;?</h3>
+        <div class="qchoix" role="radiogroup" aria-label="Durée du prêt" id="qDureeChoix">
+          <label><input type="radio" name="qDuree" value="15"><span>15 ans</span></label>
+          <label><input type="radio" name="qDuree" value="20"><span>20 ans</span></label>
+          <label><input type="radio" name="qDuree" value="25"><span>25 ans</span></label>
+        </div>
+        <p class="qaide">Plus le prêt est long, plus la trésorerie respire — et plus le crédit coûte cher.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeTmi" hidden>
+        <h3 class="qtitre" tabindex="-1">Quelle est votre tranche d'imposition&nbsp;?</h3>
+        <div class="qchoix" role="radiogroup" aria-label="Tranche marginale d'imposition" id="qTmiChoix"></div>
+        <p class="qaide">La tranche marginale figure sur votre avis d'imposition. C'est elle qui fixe l'impôt sur les loyers.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeRecap" hidden>
+        <h3 class="qtitre" tabindex="-1">Votre projet, tel que nous l'avons compris</h3>
+        <dl class="qrecap" id="qRecap"></dl>
+        <p class="qaide" id="qHypo"></p>
+        <a class="btn primary" id="qGo" href="/calculatrice/">Voir mon rendement</a>
+      </div>
+
+      <div class="qnav">
+        <button type="button" class="btn" id="qBack" hidden>Retour</button>
+        <button type="button" class="btn primary" id="qNext">Suivant</button>
+        <button type="button" class="btn" id="qSkip" hidden>Je ne sais pas encore</button>
+      </div>
+      <p class="qpasser" id="qPasser"><a id="qSauter" href="/calculatrice/">Passer les questions et ouvrir la calculatrice</a> · <a href="/guides/">Lire les guides</a></p>
+    </section>
     <ul class="trust">
       <li>Gratuit, sans inscription</li>
       <li>Quatre régimes fiscaux, à jour des règles 2026</li>
@@ -55,7 +130,6 @@
         </dl>
       </div>
     </section>
-    <p class="apercu-note">Ces valeurs sont calculées dans votre navigateur, à l'instant, par le moteur de la calculatrice — ce n'est pas une capture d'écran.</p>
   </section>
 
   <section class="concept">
@@ -129,7 +203,7 @@
     <div class="phead">
       <div>
         <h2>Comprendre avant de calculer</h2>
-        <p>Six guides courts et chiffrés, écrits à partir du même moteur que la calculatrice.</p>
+        <p>Six guides courts et chiffrés, cohérents avec les chiffres de la calculatrice.</p>
       </div>
     </div>
     <div class="cards">
@@ -141,8 +215,8 @@
 
   <section class="final">
     <h2>Votre projet, vos chiffres, en deux minutes</h2>
-    <p>Commencez par le régime fiscal : le formulaire n'affiche ensuite que les questions qui concernent votre situation. Un scénario complet est prérempli, chaque champ reste modifiable.</p>
-    <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
+    <p>Sept questions, chacune préremplie d'une valeur raisonnable, et la calculatrice s'ouvre réglée sur votre projet. Rien n'est figé : les trente-six hypothèses restent modifiables une fois dedans.</p>
+    <a class="btn primary" href="#assistant">Répondre aux questions</a>
   </section>
 
 </div>

@@ -398,3 +398,32 @@ function avis(triReel, bourseReel){
     return `Belle réserve de valeur. Le projet ne rattrape pas la bourse, mais il bat l'inflation : votre capital garde son pouvoir d'achat, ce que ni un compte courant ni un livret réglementé ne permettent aujourd'hui.`;
   return `Le rendement ne suit pas l'inflation. Vous récupérerez plus d'euros qu'engagés, mais ils achèteront moins : à ces hypothèses, l'opération vous appauvrit en pouvoir d'achat.`;
 }
+
+/* ---------- le lien qui porte les hypothèses ---------- */
+// Un fragment d'URL suffit à transmettre une simulation entière. Le format est
+// écrit ici, et lu par depuisHash() : la calculatrice le produit à partir de son
+// formulaire, l'assistant de la page d'accueil à partir de ses réponses. Deux
+// appelants, une seule grammaire — sinon les liens de l'un cesseraient un jour
+// d'être compris par l'autre.
+const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
+  .map(v => encodeURIComponent(String(v).replace(/[|:]/g, " "))).join(":");
+
+// `valeurs` : les hypothèses à transmettre, `defauts` : celles de l'ouverture.
+// Seul ce qui diffère voyage — un lien sans fragment est donc exactement le
+// scénario par défaut, celui que la page d'accueil affiche.
+function lienHypotheses(valeurs, defauts, items){
+  const q = [];
+  Object.keys(valeurs).forEach(k => {
+    const v = valeurs[k];
+    if(typeof v === "boolean"){
+      if(v !== defauts[k]) q.push(k + "=" + (v ? 1 : 0));
+    } else if(String(v) !== String(defauts[k])){
+      q.push(k + "=" + encodeURIComponent(v));
+    }
+  });
+  if(items){
+    const tvx = items.map(codeItem).join("|");
+    if(tvx !== TVX_DEFAUT.map(codeItem).join("|")) q.push("tvx=" + tvx);
+  }
+  return q.length ? "#" + q.join("&") : "";
+}

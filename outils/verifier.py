@@ -25,6 +25,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import _local
 from _local import CHROME, JSC, RACINE, SITE, premier_existant, servir_en_fond
 
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+import build   # pour relire les valeurs par défaut exactement comme lui
+
 SRC = RACINE / "src"
 SOURCE = RACINE / "index.html"
 DOMAINE = "https://monrendementlocatif.fr"
@@ -230,6 +233,34 @@ setTimeout(function(){
     select.value = initial;
     select.dispatchEvent(new Event("change", {bubbles:true}));
   }
+  // L'assistant de l'accroche : une question a l'ecran, sept questions, puis le
+  // recapitulatif. On le parcourt deux fois — en acceptant tout, puis en doublant
+  // le prix — et on lit la cible du bouton final sans quitter la page.
+  var q = document.getElementById("assistant");
+  if(q){
+    var pasVus = function(){ return Array.prototype.filter.call(
+      q.querySelectorAll(".qstep"), function(e){ return !e.hidden; }); };
+    var suivant = document.getElementById("qNext"), n = 0;
+    r.qVisibles = pasVus().length;
+    while(!suivant.hidden && n < 12){ suivant.click(); n++; }
+    r.qEtapes = n;
+    r.qFin = pasVus().length === 1 ? pasVus()[0].id : "";
+    r.qLienDefaut = document.getElementById("qGo").getAttribute("href");
+    // Le recapitulatif est la plus large des etapes : on remesure ici.
+    r.qDeborde = largeur < 500
+      ? Array.prototype.some.call(q.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e) && !cache(e); })
+      : false;
+    var modifier = q.querySelector('.qmod[data-etape="0"]');
+    if(modifier){
+      modifier.click();
+      var prix = document.getElementById("qPrix");
+      prix.value = (parseInt(prix.value.replace(/[^\d]/g, ""), 10) || 0) * 2;
+      prix.dispatchEvent(new Event("input", {bubbles:true}));
+      n = 0;
+      while(!suivant.hidden && n < 12){ suivant.click(); n++; }
+      r.qLienModifie = document.getElementById("qGo").getAttribute("href");
+    }
+  }
   r.lignes    = document.querySelectorAll("#tbl tbody tr").length;
   r.questions = document.querySelectorAll(".faqg article").length;
   r.tri       = (document.getElementById("heroTri")||{}).textContent || "";
@@ -421,6 +452,16 @@ def main():
         balisage = SOURCE.read_text(encoding="utf-8")
         controle("index.html ne porte que le balisage",
                  "<style>" not in balisage and "<script>" not in balisage)
+        # L'assistant propose des valeurs sans en connaître aucune : il les tire de
+        # DEFAUTS, à proportion du prix. Un chiffre recopié ici cesserait de suivre
+        # le formulaire à la première mise à jour du scénario par défaut.
+        assistant_src = sans_commentaires((SRC / "assistant.js").read_text(encoding="utf-8"))
+        defauts = json.loads(build._defauts(balisage, calc_src))
+        recopies = sorted({"%s = %g" % (cle, defauts[cle])
+                           for cle in ("prix", "loyer", "apport", "tf", "mobilier")
+                           if re.search(r"(?<![\d.])%g(?![\d.])" % defauts[cle], assistant_src)})
+        controle("l'assistant ne recopie aucune valeur par défaut",
+                 not recopies, ", ".join(recopies))
 
         print("\nCONFIDENTIALITÉ ET POIDS")
         textes = css + "".join(f.read_text(encoding="utf-8") for _, f in pages)
@@ -460,6 +501,23 @@ def main():
                              len(r.get("vAvis") or "") > 20, r.get("vAvis") or "absent")
                     controle("accueil : aucun graphique ne piège le défilement",
                              not r.get("piege"), r.get("piege") or "")
+                    controle("assistant : une seule question à l'écran",
+                             r.get("qVisibles") == 1, "%s étape(s) visible(s)" % r.get("qVisibles"))
+                    controle("assistant : sept questions puis le récapitulatif",
+                             r.get("qEtapes") == 7 and r.get("qFin") == "qEtapeRecap",
+                             "%s clics → %s" % (r.get("qEtapes"), r.get("qFin") or "—"))
+                    # L'assistant ne doit inventer aucune hypothèse : tout accepter
+                    # doit rendre le scénario que la vitrine affiche juste au-dessus,
+                    # c'est-à-dire un lien sans le moindre fragment.
+                    controle("assistant : les valeurs proposées rejouent le scénario par défaut",
+                             r.get("qLienDefaut") == "/calculatrice/", r.get("qLienDefaut") or "—")
+                    manquants = [c for c in ("prix=", "loyer=", "apport=", "tf=", "copro=", "mobilier=")
+                                 if c not in (r.get("qLienModifie") or "")]
+                    controle("assistant : le prix entraîne loyer, apport et charges",
+                             not manquants, ", ".join(manquants) or (r.get("qLienModifie") or "—")[-58:])
+                if not r.get("qDeborde") is None:
+                    controle("assistant %d px : le récapitulatif ne déborde pas" % largeur,
+                             not r.get("qDeborde"))
 
             for largeur in (1360, 390):
                 r = sonde_navigateur(chrome, base, SITE / "calculatrice" / "index.html", largeur)

@@ -141,6 +141,28 @@ def _defauts(src, script):
     return json.dumps(valeurs, ensure_ascii=False, indent=2)
 
 
+def _options(src):
+    """Les choix des listes déroulantes du formulaire, relus dans le HTML.
+
+    L'assistant de la page d'accueil pose les mêmes questions que la
+    calculatrice : mêmes régimes, mêmes tranches d'imposition. Recopier ces
+    listes dans un second fichier, c'est accepter qu'elles divergent au
+    prochain barème.
+    """
+    listes = {}
+    for cle in ("regime", "tmi"):
+        bloc = re.search(r'<select id="%s">(.*?)</select>' % cle, src, re.S)
+        if not bloc:
+            raise SystemExit("index.html : liste « %s » introuvable" % cle)
+        listes[cle] = [
+            {"valeur": valeur, "libelle": re.sub(r"\s+", " ", libelle).strip()}
+            for valeur, libelle in re.findall(
+                r'<option value="([^"]*)"[^>]*>(.*?)</option>', bloc.group(1), re.S)]
+        if not listes[cle]:
+            raise SystemExit("index.html : liste « %s » vide" % cle)
+    return json.dumps(listes, ensure_ascii=False, indent=2)
+
+
 # Pilote de la page d'accueil : un seul scénario, celui que la calculatrice
 # propose à l'ouverture, rendu avec les fonctions du bloc partagé.
 # ---------------------------------------------------------------- pages
@@ -391,6 +413,7 @@ def main():
     lire = lambda nom: (SRC / nom).read_text(encoding="utf-8").strip()
     moteur, graphiques = lire("moteur.js"), lire("graphiques.js")
     calculatrice, vitrine = lire("calculatrice.js"), lire("vitrine.js")
+    assistant = lire("assistant.js")
 
     # L'en-tête et le pied du calculateur servent à toutes les pages : une seule
     # source pour la navigation, aucun risque de dérive entre les pages. On les
@@ -428,8 +451,14 @@ def main():
     if marqueur not in vitrine:
         raise SystemExit("src/vitrine.js : ligne DEFAUTS introuvable")
     vitrine = vitrine.replace(marqueur, "const DEFAUTS = %s;" % _defauts(src, calculatrice))
+    marqueur = "const OPTIONS = {/* build.py : listes de choix */};"
+    if marqueur not in vitrine:
+        raise SystemExit("src/vitrine.js : ligne OPTIONS introuvable")
+    vitrine = vitrine.replace(marqueur, "const OPTIONS = %s;" % _options(src))
+    # L'assistant de l'accroche ferme la marche : il s'appuie sur le moteur pour
+    # départager les régimes, et sur scenario() pour compléter les hypothèses.
     (SITE / "js" / "vitrine.js").write_text(
-        prelude + "\n".join((moteur, graphiques, vitrine)) + "\n", encoding="utf-8")
+        prelude + "\n".join((moteur, graphiques, vitrine, assistant)) + "\n", encoding="utf-8")
     (SITE / "assets" / "favicon.svg").write_text(favicon.svg(), encoding="utf-8")
     # Image de partage : produite par outils/og_image.py, versionnée à la racine
     # puis recopiée. Sans cette copie, un `rm -rf site` la perdrait.

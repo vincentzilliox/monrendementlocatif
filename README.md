@@ -68,6 +68,7 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `src/graphiques.js` | Le dessin SVG et les infobulles, plus les configurations de graphiques partagées par les deux pages. |
 | `src/calculatrice.js` | L'interface : lecture du formulaire, rendu, persistance. Seul fichier à connaître les identifiants des champs. |
 | `src/vitrine.js` | Le pilote de la page d'accueil. |
+| `src/assistant.js` | Les sept questions de l'accroche, et le lien préréglé qu'elles construisent. |
 | `pages/accueil.html` | La page d'accueil, servie sur `/`. |
 | `pages/*.html` | Questions fréquentes, hypothèses de calcul, mentions légales, 404. |
 | `guides/*.html` | Les six guides : un bloc `meta` JSON puis un `<article class="prose">`. |
@@ -88,17 +89,25 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 pages annexes détaillent la méthode : `/questions-frequentes/` et
 `/hypotheses-de-calcul/`.
 
+L'accroche de `/` ne renvoie pas vers un formulaire vide : elle pose sept
+questions — prix, loyer, nu ou meublé, travaux, apport, durée du prêt, tranche
+d'imposition — chacune préremplie, chacune dotée d'un « je ne sais pas encore »
+quand elle s'y prête. Le régime fiscal, lui, n'est pas demandé : le moteur
+départage les régimes de la famille choisie et retient le plus favorable. Les
+réponses partent dans le fragment de `/calculatrice/`, où tout reste modifiable.
+
 ### Comment les sources s'assemblent
 
 ```
-src/moteur.js + src/graphiques.js + src/calculatrice.js  ->  site/js/app.js
-src/moteur.js + src/graphiques.js + src/vitrine.js       ->  site/js/vitrine.js
+src/moteur.js + src/graphiques.js + src/calculatrice.js                     ->  site/js/app.js
+src/moteur.js + src/graphiques.js + src/vitrine.js + src/assistant.js       ->  site/js/vitrine.js
 ```
 
 Un seul moteur, un seul jeu de graphiques, deux pilotes : la page d'accueil
 rejoue le scénario par défaut avec le code exact de la calculatrice, sans
 capture d'écran et sans possibilité de dérive. Les valeurs par défaut sont
-relues dans le balisage de `index.html`, jamais recopiées.
+relues dans le balisage de `index.html`, jamais recopiées — de même que les
+listes de choix, que `build.py` injecte dans `OPTIONS`.
 
 Trois règles, et ce sont des contrôles, pas des conventions :
 
@@ -106,6 +115,10 @@ Trois règles, et ce sont des contrôles, pas des conventions :
   le harnais de test l'exécute hors navigateur.
 - `src/graphiques.js` a le droit au document, jamais aux identifiants des
   champs.
+- `src/assistant.js` ne connaît aucun chiffre : il propose des valeurs déduites
+  de `DEFAUTS` à proportion du prix saisi. Accepter toutes ses propositions doit
+  donc rendre un lien *sans fragment*, c'est-à-dire le scénario même de la
+  vitrine — et c'est un contrôle.
 - `index.html` ne porte que du balisage, délimité par des marqueurs appariés
   `<!-- entete:début -->` / `<!-- entete:fin -->` : `build.py` refuse de
   construire s'ils manquent, sont dupliqués ou se croisent.
@@ -155,13 +168,13 @@ FAQPage), `script` et `priorite`.
 python3 outils/verifier.py
 ```
 
-Plus de quatre-vingt-dix contrôles : ressources servies, métadonnées de chaque
+Plus de cent cinquante contrôles : ressources servies, métadonnées de chaque
 page, sitemap complet et sans fantôme, liens internes, charte respectée, absence
 d'appel vers un domaine tiers et de mesure d'audience, erreurs JavaScript et
 débordement à 1360 et 390 px sur cinq pages, graphiques présents, égalité du
-rendement affiché par l'accueil et par la calculatrice, et cohérence du moteur
-financier (invariant TRI/graphique, frais de vente, impôt des placements,
-déficit BIC, identité de la cascade). Code de sortie non nul si l'un échoue.
+rendement affiché par l'accueil et par la calculatrice, parcours complet de
+l'assistant, et cohérence du moteur financier (invariant TRI/graphique, frais de
+vente, impôt des placements, déficit BIC, identité de la cascade). Code de sortie non nul si l'un échoue.
 
 Et pour photographier le résultat (clair/sombre, 1360 et 390 px) :
 

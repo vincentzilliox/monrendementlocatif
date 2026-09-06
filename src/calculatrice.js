@@ -617,15 +617,13 @@ function retablirDefauts(){
 // L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
 // un guide peut ouvrir le calculateur pré-réglé (/#regime=reel-foncier).
 const BOOLS = ["ira","prixSuitInflation"];
-const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
-  .map(v => encodeURIComponent(String(v).replace(/[|:]/g, " "))).join(":");
+// Le format du lien vit dans le moteur : l'assistant de la page d'accueil en
+// produit un sans jamais voir ce formulaire. Ici on ne fait que lire les champs.
 function versHash(){
-  const q = [];
-  FIELDS.concat(SELECTS).forEach(k => { const v = $(k).value; if(String(v) !== String(DEFAULTS[k])) q.push(k + "=" + encodeURIComponent(v)); });
-  BOOLS.forEach(k => { if($(k).checked !== DEFAULTS[k]) q.push(k + "=" + ($(k).checked ? 1 : 0)); });
-  const tvx = items.map(codeItem).join("|");
-  if(tvx !== TVX_DEFAUT.map(codeItem).join("|")) q.push("tvx=" + tvx);
-  const h = q.length ? "#" + q.join("&") : "";
+  const valeurs = {};
+  FIELDS.concat(SELECTS).forEach(k => valeurs[k] = $(k).value);
+  BOOLS.forEach(k => valeurs[k] = $(k).checked);
+  const h = lienHypotheses(valeurs, DEFAULTS, items);
   const actuel = location.hash.indexOf("=") >= 0 ? location.hash : "";
   if(h !== actuel) history.replaceState(null, "", location.pathname + location.search + h);
 }

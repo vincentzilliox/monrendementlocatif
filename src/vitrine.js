@@ -7,10 +7,16 @@
    ═════════════════════════════════════════════════════════════════ */
 
 const DEFAUTS = {/* build.py : valeurs par défaut */};
+// Les choix offerts par les listes déroulantes du formulaire : l'assistant pose
+// les mêmes tranches d'imposition et les mêmes régimes que la calculatrice.
+const OPTIONS = {/* build.py : listes de choix */};
 
-function scenario(){
-  const p = Object.assign({}, DEFAUTS);
-  p.items = TVX_DEFAUT.map(o => ({...o}));
+// Sans argument : le scénario d'ouverture de la calculatrice, celui que la
+// vitrine met en scène. Avec `surcharges`, celui que l'assistant construit au
+// fil des réponses — le reste des hypothèses restant aux valeurs par défaut.
+function scenario(surcharges){
+  const p = Object.assign({}, DEFAUTS, surcharges || {});
+  p.items = (surcharges && surcharges.items ? surcharges.items : TVX_DEFAUT).map(o => ({...o}));
   p.travaux = p.items.reduce((s, it) => s + it.montant, 0);
   // La case « prix, loyers et charges suivent l'inflation » est cochée par défaut.
   p.indexPrix = p.indexLoyer = p.indexCharges = p.inflation;
