@@ -212,6 +212,55 @@ setTimeout(function(){
     curseur.value = curseur.max;
     curseur.dispatchEvent(new Event("input", {bubbles:true}));
   }
+  // Les infobulles : chaque bouton doit porter un texte, et le clavier doit
+  // pouvoir l'ouvrir puis le refermer, sans quoi l'explication serait perdue
+  // pour qui n'a pas de souris. La bulle doit aussi rester dans l'ecran.
+  var boutons = document.querySelectorAll(".i"), vides = 0;
+  Array.prototype.forEach.call(boutons, function(b){
+    var c = b.parentElement.querySelector(".ibody");
+    if(!c || (c.textContent || "").trim().length < 10) vides++;
+  });
+  r.bulles = boutons.length;
+  r.bullesVides = vides;
+  if(boutons.length){
+    var pop0 = document.getElementById("pop");
+    boutons[0].focus();
+    var ouverte = !!(pop0 && !pop0.hidden && (pop0.textContent || "").length > 10
+      && boutons[0].getAttribute("aria-describedby") === "pop");
+    var boite = pop0 ? pop0.getBoundingClientRect() : null;
+    var borne = !!(boite && boite.left >= 0 && boite.right <= innerWidth + 1);
+    document.dispatchEvent(new KeyboardEvent("keydown", {key:"Escape"}));
+    r.bulleClavier = (ouverte ? "1" : "0") + (borne ? "1" : "0")
+      + (pop0 && pop0.hidden ? "1" : "0");
+    boutons[0].blur();
+  }
+  // Le budget de texte : c'est ce controle qui empeche la verbosite de revenir.
+  var trop = function(sel, max){
+    return Array.prototype.map.call(document.querySelectorAll(sel), function(e){
+      return (e.textContent || "").trim(); })
+      .filter(function(t){ return t.length > max; })
+      .map(function(t){ return t.length + " car. : " + t.slice(0, 30); }).join(" | ");
+  };
+  r.tropLong = trop(".phead p", 120) + trop(".axisnote", 200);
+  // Ce qui sert a decider reste a l'ecran ; le reste attend d'etre demande.
+  r.replie = ["analyse", "detail"].filter(function(id){
+    var e = document.getElementById(id); return e && !e.open; }).join(",");
+  // Le panneau a deux niveaux. Le balayage des regimes qui suit exige, lui, le
+  // mode complet : en mode Essentiel la moitie de ces champs n'est pas montree.
+  var champsVisibles = function(){ return Array.prototype.filter.call(
+    document.querySelectorAll("#railbox .f"),
+    function(e){ return e.offsetParent !== null; }).length; };
+  var bEss = document.getElementById("railEssentiel"),
+      bTout = document.getElementById("railTout");
+  if(bEss && bTout){
+    bEss.click();
+    r.champsEssentiel = champsVisibles();
+    bTout.click();
+    r.champsTout = champsVisibles();
+    r.debordeTout = largeur < 500
+      ? Array.prototype.some.call(document.body.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e) && !cache(e); })
+      : d.scrollWidth > d.clientWidth + 1;
+  }
   // Le formulaire ne doit poser que les questions du régime choisi : on parcourt
   // les quatre régimes et on relève, pour chacun, les champs réellement visibles.
   var conditionnels = ["fAbattement","fPlafondDeficit","fCfe","fMobilier","fPartBati","fAmortBati","fAmortTvx","fAmortMob"];
@@ -233,6 +282,7 @@ setTimeout(function(){
     select.value = initial;
     select.dispatchEvent(new Event("change", {bubbles:true}));
   }
+  if(bEss) bEss.click();
   // L'assistant de l'accroche : une question a l'ecran, sept questions, puis le
   // recapitulatif. On le parcourt deux fois — en acceptant tout, puis en doublant
   // le prix — et on lit la cible du bouton final sans quitter la page.
@@ -501,6 +551,9 @@ def main():
                              len(r.get("vAvis") or "") > 20, r.get("vAvis") or "absent")
                     controle("accueil : aucun graphique ne piège le défilement",
                              not r.get("piege"), r.get("piege") or "")
+                    controle("accueil : chaque infobulle porte une explication",
+                             r.get("bulles", 0) >= 2 and not r.get("bullesVides"),
+                             "%s bouton(s), %s sans texte" % (r.get("bulles"), r.get("bullesVides")))
                     controle("assistant : une seule question à l'écran",
                              r.get("qVisibles") == 1, "%s étape(s) visible(s)" % r.get("qVisibles"))
                     controle("assistant : sept questions puis le récapitulatif",
@@ -529,6 +582,8 @@ def main():
                 controle("calculatrice %d px : aucun NaN affiché" % largeur, not r["suspects"],
                          ", ".join(r["suspects"])[:40])
                 controle("calculatrice %d px : aucun débordement" % largeur, not r["deborde"])
+                controle("calculatrice %d px : aucun débordement, panneau complet" % largeur,
+                         not r.get("debordeTout"))
                 if largeur == 1360:
                     # La vitrine rejoue le scénario par défaut : le moindre écart
                     # signalerait qu'elle a cessé de suivre le moteur.
@@ -563,6 +618,28 @@ def main():
                               or vus.get(rg, {}).get("deduc") != deduc]
                     controle("chaque régime n'expose que ses champs", not ecarts,
                              ", ".join(ecarts) or "4 régimes vérifiés")
+                    # Une explication vidée de son texte est pire qu'absente :
+                    # le bouton reste, et ne dit plus rien.
+                    controle("chaque infobulle porte une explication",
+                             r.get("bulles", 0) >= 25 and not r.get("bullesVides"),
+                             "%s bouton(s), %s sans texte" % (r.get("bulles"), r.get("bullesVides")))
+                    # « s'ouvre au focus », « tient dans l'écran », « Échap referme »
+                    controle("infobulle pilotable au clavier et bornée à l'écran",
+                             r.get("bulleClavier") == "111",
+                             r.get("bulleClavier") or "sonde muette")
+                    # Le budget de texte : sans lui, les paragraphes reviendraient
+                    # un par un sous chaque graphique.
+                    controle("descriptions courtes sous chaque titre",
+                             not r.get("tropLong"), (r.get("tropLong") or "")[:60])
+                    # Replié ne veut pas dire absent : les sept graphiques sont
+                    # tracés, comptés et atteignables, ouverts ou non.
+                    controle("analyse et tableau repliés à l'ouverture",
+                             r.get("replie") == "analyse,detail", r.get("replie") or "aucun")
+                    controle("mode Essentiel : onze réglages décisifs",
+                             r.get("champsEssentiel") == 11
+                             and (r.get("champsTout") or 0) > 20,
+                             "%s champs, %s en mode complet"
+                             % (r.get("champsEssentiel"), r.get("champsTout")))
                     controle("renvois vers les pages annexes",
                              r["liens"] >= 3, "%d liens" % r["liens"])
                     controle("avis éditorial affiché", bool(r.get("avis")),

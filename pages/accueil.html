@@ -109,25 +109,31 @@
     </div>
 
     <section class="verdict">
-      <div>
-        <p class="eyebrow">Rendement annuel moyen si vous revendez à l'horizon</p>
-        <div class="hero"><span class="big num" id="vTri">—</span><span class="per">par an, net de tout,<br>sur les fonds réellement engagés</span></div>
-        <p class="reel"><b id="vReel">—</b> par an en pouvoir d'achat, une fois l'inflation retirée. C'est ce chiffre qui dit si vous vous enrichissez.</p>
-        <p class="herosub">Vous sortez <b id="vMise">—</b> de votre poche, apport et effort d'épargne compris, pour un gain net de <b id="vGain">—</b>. L'opération cesse d'être perdante à partir de l'<b id="vMort">—</b>.</p>
-        <div class="bench"><span class="pill num" id="vPastille">—</span><span>face à la bourse, qui rend <b id="vBourse">—</b> par an hors inflation une fois l'impôt payé.</span></div>
+      <div class="vmain">
+        <p class="eyebrow">Rendement annuel net, revente à <b id="vAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></p>
+        <div class="hero">
+          <span class="big num" id="vTri">—</span>
+          <span class="pill num" id="vPastille">—</span>
+          <span class="per">face à la bourse, qui rend <b id="vBourse">—</b> par an nette d'impôt</span>
+        </div>
+        <p class="reel"><b class="num" id="vReel">—</b> en pouvoir d'achat, inflation retirée<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>C'est ce chiffre qui dit si vous vous enrichissez : un capital qui progresse moins vite que les prix achète moins de choses à l'arrivée.</span></span></p>
+        <dl class="facts">
+          <dt>Sorti de votre poche</dt><dd id="vMise">—</dd>
+          <dt>Gain net à la revente</dt><dd id="vGain">—</dd>
+          <dt>Point mort</dt><dd id="vMort">—</dd>
+        </dl>
         <div class="avis" id="vAvisBox" hidden>
-          <p class="eyebrow">L'avis de Mon rendement locatif</p>
           <p id="vAvis"></p>
         </div>
       </div>
       <div class="best">
         <p class="eyebrow">Meilleur moment pour revendre</p>
         <div class="yr" id="vBest">—</div>
-        <p>La fiscalité française avance par seuils : l'année optimale n'est presque jamais la dernière.</p>
         <dl>
           <dt>Rendement annualisé</dt><dd id="vBestTri">—</dd>
           <dt>Net récupéré à la vente</dt><dd id="vBestNet">—</dd>
         </dl>
+        <p>La fiscalité française avance par seuils : l'année optimale n'est presque jamais la dernière.</p>
       </div>
     </section>
   </section>

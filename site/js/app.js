@@ -836,6 +836,81 @@ function tipRow(color, label, value){
   return `<div class="tr"><span class="tl"><i class="dot" style="background:${color}"></i>${label}</span><span class="tv">${value}</span></div>`;
 }
 
+/* ---------- infobulles ---------- */
+// Une explication à la demande. Le texte vit dans un `.ibody` masqué, posé à côté
+// de son bouton : il reste dans le balisage — donc lisible par un robot et par un
+// lecteur d'écran — mais n'occupe l'écran que le temps qu'on le demande. C'est ce
+// qui a permis de retirer la vingtaine de lignes grises du panneau et les sept
+// paragraphes qui coiffaient les graphiques.
+// Un seul panneau pour toute la page, posé en `fixed` et borné au viewport : à
+// 390 px il ne peut pas déborder, quel que soit le bord où vit le déclencheur.
+function brancherInfobulles(){
+  if(document.getElementById("pop")) return;
+  const pop = document.createElement("div");
+  pop.id = "pop"; pop.className = "pop"; pop.setAttribute("role", "tooltip");
+  pop.hidden = true;
+  document.body.appendChild(pop);
+
+  let ouvert = null;
+  const fermer = () => {
+    if(!ouvert) return;
+    ouvert.setAttribute("aria-expanded", "false");
+    ouvert.removeAttribute("aria-describedby");
+    ouvert = null;
+    pop.hidden = true;
+  };
+  const ouvrir = bouton => {
+    if(ouvert === bouton) return;
+    const corps = bouton.parentElement && bouton.parentElement.querySelector(".ibody");
+    if(!corps) return;
+    fermer();
+    ouvert = bouton;
+    pop.innerHTML = corps.innerHTML;
+    // Mesurer d'abord, placer ensuite : la largeur dépend du texte.
+    pop.hidden = false;
+    pop.style.left = "0px"; pop.style.top = "0px";
+    const b = bouton.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left + b.width/2 - w/2)) + "px";
+    // Sous le bouton, sauf s'il n'y a plus la place en bas et qu'il y en a en haut.
+    pop.style.top = (b.bottom + 10 + h > innerHeight && b.top - 10 - h > 0
+      ? b.top - 10 - h : b.bottom + 10) + "px";
+    bouton.setAttribute("aria-expanded", "true");
+    bouton.setAttribute("aria-describedby", "pop");
+  };
+  const cible = ev => ev.target.closest ? ev.target.closest(".i") : null;
+  const dansPop = ev => !!(ev.target.closest && ev.target.closest(".pop"));
+
+  // Survol à la souris seulement : au doigt, l'ouverture reste au toucher, sinon
+  // le premier appui ouvrirait et le second refermerait aussitôt.
+  document.addEventListener("pointerover", ev => {
+    if(ev.pointerType && ev.pointerType !== "mouse") return;
+    const b = cible(ev);
+    if(b) ouvrir(b);
+    else if(!dansPop(ev)) fermer();
+  });
+  document.addEventListener("click", ev => {
+    const b = cible(ev);
+    // Un bouton logé dans un <summary> replierait la section : on lui coupe
+    // l'événement, l'infobulle n'est pas un geste de navigation.
+    if(b){ ev.preventDefault(); ev.stopPropagation(); ouvrir(b); }
+    else if(!dansPop(ev)) fermer();
+  });
+  document.addEventListener("focusin", ev => {
+    const b = cible(ev);
+    if(b) ouvrir(b); else fermer();
+  });
+  document.addEventListener("keydown", ev => {
+    if(ev.key !== "Escape" || !ouvert) return;
+    const b = ouvert;
+    fermer();
+    b.focus();
+  });
+  // La bulle est ancrée à un point de l'écran : dès que la page bouge sous elle,
+  // elle ment. On la referme plutôt que de la suivre.
+  addEventListener("scroll", fermer, true);
+  addEventListener("resize", fermer);
+}
+
 /* ---------- configurations partagées ---------- */
 // Les seuils fiscaux créent de vraies ruptures de pente : sans repère, elles
 // passent pour des artefacts de calcul.
@@ -921,6 +996,9 @@ function planifier(fn){
    ═════════════════════════════════════════════════════════════════ */
 
 const $ = id => document.getElementById(id);
+// Une explication produite au fil du rendu : même balisage que celles écrites à
+// la main dans index.html, donc même bulle et même comportement au clavier.
+const bulle = txt => `<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>${txt}</span></span>`;
 
 /* ---------- formulaire ---------- */
 const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
@@ -1006,17 +1084,22 @@ function render(){
   const heroEl = $("heroTri");
   heroEl.textContent = triF===null ? "—" : sPct(triF);
   heroEl.classList.toggle("bad", triF!==null && triF<0);
+  $("heroAns").textContent = p.horizon + " ans";
 
+  // Le pouvoir d'achat tenait en trois phrases ; il tient en un nombre étiqueté.
   const triReel = final.triReel;
-  $("heroReel").innerHTML = triF===null ? ""
-    : `<b class="${triReel<0?"bad":""}">${sPct(triReel)}</b> par an en pouvoir d'achat, une fois retirés ${pct(p.inflation/100)} d'inflation. ` +
-      (triReel < 0
-        ? `Votre capital progresse en euros, mais recule en pouvoir d'achat.`
-        : `Votre gain de ${eur.format(final.gain)} vaut ${eur.format(final.gain/Math.pow(1+p.inflation/100, p.horizon))} en euros d'aujourd'hui.`);
+  const reelEl = $("heroReel");
+  reelEl.textContent = triF===null ? "—" : sPct(triReel);
+  reelEl.classList.toggle("bad", triF!==null && triReel<0);
+  $("heroReelTxt").textContent = triF===null
+    ? "renseignez un apport ou des frais payés comptant"
+    : `en pouvoir d'achat, ${pct(p.inflation/100)} d'inflation retirés`;
 
-  $("heroSub").innerHTML = triF===null
-    ? `Renseignez un apport ou des frais payés comptant pour calculer un rendement sur fonds propres.`
-    : `Sur <b>${p.horizon} ans</b>, vous sortez <b>${eur.format(final.mise)}</b> de votre poche, apport et effort d'épargne compris. Vous en récupérez <b>${eur.format(final.gain + final.mise)}</b> en revendant à cette date — soit un gain net de <b>${sEur(final.gain)}</b>.`;
+  $("vdMise").textContent = triF===null ? "—" : eur.format(final.mise);
+  const gainEl = $("vdGain");
+  gainEl.textContent = sEur(final.gain);
+  gainEl.className = final.gain >= 0 ? "up" : "down";
+  $("vdMort").textContent = mort===-1 ? "jamais" : mort===0 ? "immédiat" : "année " + rows[mort].y;
 
   // Les taux de placement sont réels ; on les convertit en nominal pour les hints
   // et pour la ligne de référence du graphique, qui trace un TRI nominal.
@@ -1028,32 +1111,32 @@ function render(){
   $("hBourse").textContent = `soit ${pct(bourse)} en euros courants, avant impôt`;
 
   const pill = $("benchPill");
-  if(triF===null){ pill.textContent="n/a"; pill.className="pill flat"; $("benchText").textContent=""; }
+  let ecart = null;
+  if(triF===null){ pill.textContent="n/a"; pill.className="pill num flat"; $("benchText").textContent=""; }
   else {
     const bNet = final.triBourseReel === null ? bourseReelle : final.triBourseReel;
-    const d = triReel - bNet;
-    pill.textContent = pts(d);
-    pill.className = "pill " + (Math.abs(d)<0.002 ? "flat" : d>0 ? "win" : "lose");
-    const bourseTxt = `la bourse, qui rend ${pct(bNet)} par an hors inflation une fois l'impôt payé (${pct(bourseReelle)} avant)`;
-    $("benchText").innerHTML = d>0
-      ? `de mieux que ${bourseTxt}.`
-      : Math.abs(d)<0.002 ? `— équivalent à ${bourseTxt}.`
-      : `de moins que ${bourseTxt}.`;
+    ecart = triReel - bNet;
+    pill.textContent = pts(ecart);
+    pill.className = "pill num " + (Math.abs(ecart)<0.002 ? "flat" : ecart>0 ? "win" : "lose");
+    $("benchText").textContent =
+      (Math.abs(ecart)<0.002 ? "à égalité avec" : ecart>0 ? "de mieux que" : "de moins que")
+      + ` la bourse, qui rend ${pct(bNet)} par an nette d'impôt`;
   }
+  // Le chiffre du verdict suit le lecteur dans la sous-navigation collante.
+  $("navTri").innerHTML = triF===null ? ""
+    : `<b>${sPct(triF)}</b> par an${ecart===null ? "" : " · " + pts(ecart) + " vs bourse"}`;
   const mot = triF === null ? null : avis(triReel, final.triBourseReel === null ? bourseReelle : final.triBourseReel);
   $("avisBox").hidden = mot === null;
   if(mot) $("avisText").textContent = mot;
 
   if(best){
-    $("bestEyebrow").textContent = `Meilleur moment pour revendre, dans les ${p.horizon} ans simulés`;
+    $("bestEyebrow").textContent = `Meilleur moment pour revendre, sur ${p.horizon} ans`;
     $("bestYear").textContent = "Année " + best.y;
     $("bestText").textContent = best.y === p.horizon
-      ? "Le rendement progresse encore à la fin de la période analysée : allongez l'horizon pour voir s'il finit par plafonner."
-      : `Au-delà, le rendement annualisé décroît : les abattements de plus-value ne compensent plus la fin de l'effet de levier.`;
+      ? "Le rendement progresse encore en fin de période : allongez l'horizon pour voir s'il plafonne."
+      : "Au-delà, les abattements de plus-value ne compensent plus la fin de l'effet de levier.";
     $("bestList").innerHTML =
       `<dt>Rendement annualisé</dt><dd>${sPct(best.tri)}</dd>` +
-      `<dt>En pouvoir d'achat</dt><dd>${sPct(best.triReel)}</dd>` +
-      `<dt>Prix de revente estimé</dt><dd>${eur.format(best.valeur)}</dd>` +
       `<dt>Net récupéré à la vente</dt><dd>${eur.format(best.netVente)}</dd>` +
       `<dt>Gain net total</dt><dd>${sEur(best.gain)}</dd>`;
   } else {
@@ -1092,36 +1175,42 @@ function render(){
   const impotsLoyers = rows.reduce((s,x) => s + x.impot, 0);
   const impotsTotal = impotsLoyers + final.impotPV + final.repriseDF;
 
+  // Le point mort a rejoint le verdict ; sa place revient à l'effort d'épargne,
+  // qui répond à la question qu'on se pose vraiment : combien ça me coûte, et
+  // pendant combien de temps. Chaque phrase d'explication part en infobulle.
+  const effort = -R.cumulEffort;
   $("indicateurs").innerHTML = [
     ["Rentabilité brute", pct(R.brute),
-      `Loyers annuels ÷ prix d'achat, comme dans les annonces. Sur le coût total, frais et travaux compris : ${pct(R.bruteCout)}.`, ""],
-    ["Rentabilité nette-nette (année 1)", pct(R.netteNette),
+      `Loyers annuels divisés par le prix d'achat, comme dans les annonces. Rapportée au coût total — frais de notaire, agence et travaux compris — elle vaut ${pct(R.bruteCout)}.`, ""],
+    ["Rentabilité nette-nette", pct(R.netteNette),
+      `Après charges et impôt, sur la première année, rapportée au coût total de l'opération. ` + (
       r1.impot < -0.5
-        ? `Après charges et impôt, année 1. La déduction des travaux crée une économie d'impôt, d'où un chiffre supérieur aux ${pct(R.nette)} d'avant impôt.`
+        ? `La déduction des travaux crée une économie d'impôt, d'où un chiffre supérieur aux ${pct(R.nette)} d'avant impôt.`
         : Math.abs(R.nette - R.netteNette) < 0.0005
-          ? "Après charges et impôt, année 1. La fiscalité ne coûte rien cette année-là."
-          : `Après charges et impôt, année 1. Avant impôt : ${pct(R.nette)}.`, ""],
+          ? `La fiscalité ne coûte rien cette année-là.`
+          : `Avant impôt : ${pct(R.nette)}.`), ""],
     ["Cash-flow mensuel", (cf>=0?"+":"−")+eur.format(Math.abs(cf)),
-      cf>=0 ? "Le bien s'autofinance dès la première année" : "Ce que le bien vous réclame chaque mois, année 1",
+      `Loyers encaissés moins charges, mensualité et impôt, la première année. ` +
+      (cf>=0 ? `Le bien s'autofinance dès le départ.` : `C'est ce qu'il vous réclame chaque mois.`),
       cf>=0?"pos":"neg"],
     ["Le loyer couvre", couverture===null ? "—" : pct(couverture),
-      couverture===null ? "Aucun crédit : rien à couvrir."
-        : "de la mensualité de crédit. Les charges et la fiscalité viennent en plus.", ""],
-    ["Point mort", mort===-1 ? "jamais" : mort===0 ? "immédiat" : "Année "+rows[mort].y,
-      mort===-1 ? `Sur ${p.horizon} ans, revendre reste perdant à chaque date.`
-        : mort===0 ? "L'opération est gagnante dès la première année."
-        : "Avant cette date, revendre laisse une perte : les frais d'acquisition ne sont pas amortis.", ""],
+      couverture===null ? `Aucun crédit : il n'y a pas de mensualité à couvrir.`
+        : `de la mensualité de crédit, la première année. Les charges et la fiscalité viennent en plus.`, ""],
+    ["Effort d'épargne cumulé", eur.format(effort),
+      effort < 1
+        ? `Sur ${p.horizon} ans, le bien ne vous réclame jamais rien : les loyers couvrent tout, chaque année.`
+        : `Ce que le bien vous réclame en plus de l'apport sur ${p.horizon} ans, les années où les loyers ne couvrent pas tout — soit ${eur.format(effort/(p.horizon*12))} par mois en moyenne.`, ""],
     ["Impôts sur "+p.horizon+" ans",
       impotsTotal>=0 ? eur.format(impotsTotal) : "+"+eur.format(-impotsTotal),
       impotsTotal < 0
-        ? "Les économies d'impôt dépassent ce que vous versez."
+        ? `Les économies d'impôt dépassent ce que vous versez : le projet allège votre imposition.`
         : Math.abs(impotsLoyers) < 1
-          ? "Entièrement dû à la revente : l'impôt sur les loyers est nul."
+          ? `Entièrement dû à la revente : l'impôt sur les loyers est nul sur toute la période.`
           : impotsLoyers < 0
             ? `La revente coûte ${eur.format(final.impotPV)} ; les loyers vous font économiser ${eur.format(-impotsLoyers)}.`
             : `${eur.format(impotsLoyers)} sur les loyers, ${eur.format(final.impotPV)} sur la plus-value.`,
       impotsTotal>=0 ? "" : "pos"]
-  ].map(([k,v,nn,cl]) => `<div class="tile"><span class="k">${k}</span><span class="v ${cl} num">${v}</span><span class="n">${nn}</span></div>`).join("");
+  ].map(([k,v,nn,cl]) => `<div class="tile"><span class="k">${k}${bulle(nn)}</span><span class="v ${cl} num">${v}</span></div>`).join("");
 
   $("dMens").textContent = eur.format(R.mensualite);
   $("dCout2").textContent = eur.format(R.coutCredit);
@@ -1144,12 +1233,10 @@ function render(){
   const pire = rows.reduce((m,r) => r.tri !== null && r.tri < m ? r.tri : m, 0);
   $("triNote").textContent = echelleTri === "complete"
     ? (pire < -0.30
-        ? `Échelle complète : l'année 1 descend à ${sPct(pire)}, ce qui écrase la zone où se joue la décision. Revenez sur « zone lisible » pour détailler les rendements courants.`
+        ? `L'année 1 descend à ${sPct(pire)} et écrase le reste : « zone lisible » détaille les rendements courants.`
         : "")
     : hidden === 0 ? ""
-      : hidden === 1
-        ? "La première année sort de l'échelle : revendre immédiatement ne laisse pas le temps d'amortir les frais d'acquisition. Basculez sur « échelle complète » pour la voir."
-        : `Les ${hidden} premières années sortent de l'échelle : revendre aussi tôt ne laisse pas le temps d'amortir les frais d'acquisition. Basculez sur « échelle complète » pour les voir.`;
+      : `${hidden === 1 ? "La première année sort" : "Les " + hidden + " premières années sortent"} de l'échelle : revendre aussi tôt n'amortit pas les frais d'acquisition.`;
 
   drawChart($("plotTri"), $("tipTri"), {
     x: xs, height: 270, label:"Rendement annualisé selon l'année de revente",
@@ -1171,10 +1258,10 @@ function render(){
   });
 
   const phraseMort = mort === -1
-    ? `Sur ${p.horizon} ans, l'opération ne repasse jamais dans le vert : revendre reste perdant à chaque date.`
+    ? `Sur ${p.horizon} ans, revendre reste perdant à chaque date.`
     : mort === 0
       ? `L'opération est bénéficiaire dès la première année.`
-      : `Il faut attendre l'année ${rows[mort].y} pour que l'opération cesse d'être en perte : avant, la revente ne couvre pas les frais d'acquisition.`;
+      : `L'opération cesse d'être en perte à l'année ${rows[mort].y}.`;
 
   // Où se situe l'immobilier face aux trois placements, à l'horizon retenu.
   const liste = n => n.length === 1 ? n[0] : n.slice(0,-1).join(", ") + " et " + n[n.length-1];
@@ -1186,10 +1273,10 @@ function render(){
   const bat = rivaux.filter(r => final.gainImmo >= r.v).map(r => r.nom);
   const perd = rivaux.filter(r => final.gainImmo < r.v);
   const phraseRang = bat.length === 3
-    ? ` À ${p.horizon} ans, il devance les trois placements comparés.`
+    ? ` À ${p.horizon} ans, elle devance les trois placements comparés.`
     : perd.length === 3
-      ? ` À ${p.horizon} ans, les trois placements comparés font mieux, à commencer par ${perd[perd.length-1].nom} qui finit ${eur.format(perd[perd.length-1].v - final.gainImmo)} devant.`
-      : ` À ${p.horizon} ans, il devance ${liste(bat)} mais reste derrière ${liste(perd.map(r=>r.nom))}.`;
+      ? ` À ${p.horizon} ans, les trois placements font mieux : ${perd[perd.length-1].nom} finit ${eur.format(perd[perd.length-1].v - final.gainImmo)} devant.`
+      : ` À ${p.horizon} ans, elle devance ${liste(bat)} mais reste derrière ${liste(perd.map(r=>r.nom))}.`;
   $("netNote").textContent = phraseMort + phraseRang;
 
   drawChart($("plotNet"), $("tipNet"), cfgGainNet(p, R));
@@ -1266,14 +1353,12 @@ function renderComplements(p){
     onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
   });
   const enCours = regs.find(r => r.rg === p.regime);
-  // L'hypothèse de mobilier décide d'une partie de l'écart : elle doit être dite.
-  const hypMobilier = p.mobilier > 0
-    ? `Les deux régimes meublés retiennent ${eur.format(p.mobilier)} de mobilier, soit ${pct(p.prix > 0 ? p.mobilier/p.prix : 0)} du prix ; en location nue, ce montant sort du coût de l'opération.`
-    : `Aucun mobilier n'est renseigné : les régimes meublés sont ici calculés sans meubles, ce qui les désavantage — un logement loué meublé doit être équipé.`;
-  $("regNote").textContent = (!meilleur || meilleur.tri === null ? "" :
-    meilleur.rg === p.regime
-      ? `Sur vos hypothèses, votre régime est déjà le plus favorable des quatre. `
-      : `Sur vos hypothèses, ${meilleur.label.replace("\n"," ").toLowerCase()} ferait mieux : ${sPct(meilleur.tri)} contre ${sPct(enCours.tri)} par an, soit ${sEur(meilleur.gain - enCours.gain)} de gain sur ${p.horizon} ans. Vérifiez que vous y êtes éligible. `) + hypMobilier;
+  // L'hypothèse de mobilier explique une partie de l'écart : elle est dite dans
+  // l'infobulle du panneau, pas dans une phrase de plus sous le graphique.
+  $("regNote").textContent = !meilleur || meilleur.tri === null ? ""
+    : meilleur.rg === p.regime
+      ? `Sur vos hypothèses, votre régime est déjà le plus favorable des quatre.`
+      : `${meilleur.label.replace("\n"," ")} ferait mieux : ${sPct(meilleur.tri)} contre ${sPct(enCours.tri)} par an, soit ${sEur(meilleur.gain - enCours.gain)} de gain sur ${p.horizon} ans. Vérifiez votre éligibilité.`;
 
   // D'où vient le gain : une cascade dont la somme des marches est exactement le
   // gain, à l'année de revente choisie au curseur.
@@ -1322,9 +1407,13 @@ function renderComplements(p){
         (i < items.length-1 ? tipRow("transparent","Cumul à cette étape", sEur(it.to)) : "");
     }
   });
+  // Deux entrées, une sortie : la note dit exactement les trois termes de
+  // l'identité que la cascade dessine, et rien de plus.
   const revalorisation = f.valeur - p.prix;
+  const sorties = f.cumulCharges + f.cumulCredit + f.cumulImpot + fraisAcquisition
+    + equipement + f.fraisVente + f.ira + f.impotPV + f.repriseDF;
   $("cascNote").textContent =
-    `En revendant fin d'année ${anCasc}, les loyers ont apporté ${eur.format(f.cumulLoyers)} et le bien se revend ${revalorisation >= 0 ? eur.format(revalorisation) + " au-dessus" : eur.format(-revalorisation) + " en dessous"} de son prix d'achat. En face, ${eur.format(fraisAcquisition)} de frais d'acquisition — dont ${eur.format(R.notaire)} de notaire — sont perdus dès la signature, ${eur.format(equipement)} sont partis en travaux et mobilier, le crédit a coûté ${eur.format(f.cumulCredit)} et la fiscalité ${eur.format(f.cumulImpot + f.impotPV + f.repriseDF)}.`;
+    `Fin d'année ${anCasc} : ${eur.format(f.cumulLoyers)} de loyers et ${revalorisation >= 0 ? eur.format(revalorisation) + " de revalorisation" : eur.format(-revalorisation) + " de dévalorisation"}, contre ${eur.format(sorties)} de charges, frais, intérêts et impôts.`;
 
   // Patrimoine net et dette.
   const xs = rows.map(r => String(r.y));
@@ -1452,6 +1541,25 @@ $("tvxList").addEventListener("click", e => {
   items.splice(parseInt(b.dataset.i, 10), 1);
   renderItems(); render();
 });
+/* ---------- niveau de détail du panneau ---------- */
+// « Essentiel » ne montre que les champs marqués `key` dans le balisage : ceux
+// auxquels le rendement est le plus sensible, plus ceux sans lesquels il n'y a
+// pas de projet. Aucun champ n'est retiré du calcul — seulement de la vue.
+let railMode = "essentiel";
+try{
+  const m = localStorage.getItem("rentaloc.rail");
+  if(m === "essentiel" || m === "tout") railMode = m;
+}catch(e){}
+function setRail(v){
+  railMode = v;
+  $("railbox").classList.toggle("essentiel", v === "essentiel");
+  $("railEssentiel").setAttribute("aria-pressed", v === "essentiel" ? "true" : "false");
+  $("railTout").setAttribute("aria-pressed", v === "tout" ? "true" : "false");
+  try{ localStorage.setItem("rentaloc.rail", v); }catch(e){}
+}
+$("railEssentiel").addEventListener("click", () => setRail("essentiel"));
+$("railTout").addEventListener("click", () => setRail("tout"));
+
 function setEchelle(v){
   echelleTri = v;
   $("echLisible").setAttribute("aria-pressed", v === "lisible" ? "true" : "false");
@@ -1609,8 +1717,15 @@ liensSections.forEach(a => a.addEventListener("click", e => {
   const cible = document.querySelector(a.getAttribute("href"));
   if(!cible) return;
   e.preventDefault();
+  if(cible.tagName === "DETAILS") cible.open = true;
   cible.scrollIntoView({behavior:"smooth", block:"start"});
 }));
+// Les graphiques repliés sont tracés comme les autres, mais dans un conteneur
+// de largeur nulle : ils retomberaient sur leur largeur plancher de 320 px.
+// On les redessine à l'ouverture, une fois la place connue.
+["analyse","detail"].forEach(id => {
+  $(id).addEventListener("toggle", () => { if($(id).open) render(); });
+});
 if("IntersectionObserver" in window){
   const visibles = new Map();
   const io = new IntersectionObserver(entrees => {
@@ -1634,6 +1749,8 @@ load();
 depuisHash();
 renderItems();
 syncTheme();
+setRail(railMode);
+brancherInfobulles();
 $("echLisible").setAttribute("aria-pressed", echelleTri === "lisible" ? "true" : "false");
 $("echComplete").setAttribute("aria-pressed", echelleTri === "complete" ? "true" : "false");
 render();

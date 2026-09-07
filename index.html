@@ -3,7 +3,13 @@
      page réutilisés par toutes les pages du site. Le style vit dans
      src/style.css, le script dans src/*.js ; build.py assemble le tout.
      Les marqueurs « entete » et « pied » délimitent ce qui est repris
-     ailleurs : build.py refuse de construire s'ils manquent ou se croisent. -->
+     ailleurs : build.py refuse de construire s'ils manquent ou se croisent.
+
+     Deux conventions structurent cette page :
+       · une explication longue ne s'écrit pas à l'écran, elle vit dans un
+         <span class="ibody" hidden> à côté de son bouton « i » ;
+       · un champ décisif porte la classe « key » : ce sont les seuls que le
+         panneau montre en mode Essentiel. -->
 
 <!-- entete:début -->
 <header class="topbar">
@@ -39,18 +45,26 @@
 
 <div class="pagehead">
   <h1>Calculatrice de rendement locatif</h1>
-  <p>Renseignez votre projet : le rendement annualisé net d'impôt, le meilleur moment pour revendre et la comparaison avec la bourse se recalculent à chaque frappe.</p>
+  <p>Le rendement net d'impôt, le meilleur moment pour revendre et la comparaison avec la bourse, recalculés à chaque frappe.</p>
 </div>
 
 <div class="shell">
   <aside class="rail" aria-label="Hypothèses de calcul">
-  <details class="railbox" id="railbox" open>
+  <details class="railbox essentiel" id="railbox" open>
     <summary>Vos hypothèses</summary>
+
+    <div class="railmode">
+      <div class="seg" role="group" aria-label="Niveau de détail du panneau">
+        <button type="button" id="railEssentiel" aria-pressed="true">Essentiel</button>
+        <button type="button" id="railTout" aria-pressed="false">Tous les réglages</button>
+      </div>
+      <span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« Essentiel » ne montre que les onze réglages auxquels le rendement est le plus sensible. Les vingt-cinq autres gardent leur valeur et continuent d'entrer dans le calcul : « Tous les réglages » les rend modifiables.</span></span>
+    </div>
+
     <details class="group" open>
-      <summary>1 · Régime fiscal</summary>
+      <summary>Régime fiscal<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>C'est le paramètre le plus décisif : à situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept d'un régime à l'autre. Les questions posées ensuite s'adaptent au régime choisi, et le comparatif des quatre régimes les chiffre tous sur votre projet.</span></span></summary>
       <div class="fields">
-        <p class="grouphint">C'est le paramètre le plus décisif : à situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept d'un régime à l'autre. Les questions posées ensuite s'adaptent au régime choisi.</p>
-        <div class="f stack"><label for="regime">Location nue ou meublée<span class="hint">le comparatif plus bas chiffre les quatre régimes sur votre projet</span></label>
+        <div class="f stack key"><div class="fl"><label for="regime">Location nue ou meublée</label></div>
           <select id="regime">
             <option value="micro-foncier">Nu — micro-foncier (abattement 30 %)</option>
             <option value="reel-foncier">Nu — réel (charges + déficit foncier)</option>
@@ -58,61 +72,59 @@
             <option value="lmnp-reel" selected>Meublé — LMNP au réel (amortissement)</option>
           </select>
         </div>
-        <div class="f stack"><label for="tmi">Tranche marginale d'imposition</label>
+        <div class="f stack key"><div class="fl"><label for="tmi">Tranche marginale d'imposition</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Elle figure sur votre avis d'imposition. C'est elle qui fixe l'impôt sur les loyers, auquel s'ajoutent les prélèvements sociaux.</span></span></div>
           <select id="tmi">
             <option value="0">0 %</option><option value="11">11 %</option>
             <option value="30" selected>30 %</option><option value="41">41 %</option><option value="45">45 %</option>
           </select>
         </div>
-        <div class="f" id="fAbattement"><label for="abattement">Abattement forfaitaire<span class="hint">30 % en micro-foncier, 50 % en micro-BIC · 30 % en meublé de tourisme non classé</span></label><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
-        <div class="f" id="fPlafondDeficit"><label for="plafondDeficit">Plafond du déficit imputable<span class="hint">10 700 €/an · 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027</span></label><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
-        <div class="f" id="fCfe"><label for="cfe">CFE<span class="hint">exonérée la 1<sup>re</sup> année et sous 5 000 € de recettes</span></label><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
-        <div class="f" id="fPartBati"><label for="partBati">Part amortissable<span class="hint">quote-part hors terrain, 80 à 90 % selon l'emplacement</span></label><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
-        <div class="f" id="fAmortBati"><label for="amortBatiAns">Amortissement du bâti</label><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
-        <div class="f" id="fAmortTvx"><label for="amortTvxAns">Amortissement des travaux</label><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
-        <div class="f" id="fAmortMob"><label for="amortMobAns">Amortissement du mobilier</label><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAbattement"><div class="fl"><label for="abattement">Abattement forfaitaire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>30 % en micro-foncier, 50 % en micro-BIC, 30 % en meublé de tourisme non classé.</span></span></div><div class="wrap"><input id="abattement" type="number" step="1" min="0" max="100" value="50"><span class="unit">%</span></div></div>
+        <div class="f" id="fPlafondDeficit"><div class="fl"><label for="plafondDeficit">Plafond du déficit imputable</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>10 700 € par an, porté à 21 400 € pour la rénovation d'une passoire thermique jusqu'à fin 2027. Au-delà, le déficit se reporte dix ans sur les seuls revenus fonciers.</span></span></div><div class="wrap"><input id="plafondDeficit" type="number" step="100" min="0" value="10700"><span class="unit">€</span></div></div>
+        <div class="f" id="fCfe"><div class="fl"><label for="cfe">CFE</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Cotisation foncière des entreprises : la location meublée est une activité commerciale. Exonérée la première année et sous 5 000 € de recettes.</span></span></div><div class="wrap uw"><input id="cfe" type="number" step="50" min="0" value="400"><span class="unit">€/an</span></div></div>
+        <div class="f" id="fPartBati"><div class="fl"><label for="partBati">Part amortissable</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le terrain ne s'amortit pas. La quote-part hors terrain vaut 80 à 90 % du prix selon l'emplacement — d'autant moins que le foncier est cher.</span></span></div><div class="wrap"><input id="partBati" type="number" step="1" min="0" max="100" value="85"><span class="unit">%</span></div></div>
+        <div class="f" id="fAmortBati"><div class="fl"><label for="amortBatiAns">Amortissement du bâti</label></div><div class="wrap uw"><input id="amortBatiAns" type="number" step="1" min="1" max="60" value="30"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAmortTvx"><div class="fl"><label for="amortTvxAns">Amortissement des travaux</label></div><div class="wrap uw"><input id="amortTvxAns" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+        <div class="f" id="fAmortMob"><div class="fl"><label for="amortMobAns">Amortissement du mobilier</label></div><div class="wrap uw"><input id="amortMobAns" type="number" step="1" min="1" max="20" value="7"><span class="unit">ans</span></div></div>
         <details class="more">
           <summary>Prélèvements sociaux</summary>
           <div class="fields">
-            <div class="f"><label for="ps">PS sur les loyers<span class="hint">18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu</span></label><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
-            <div class="f"><label for="psPV">PS sur la plus-value<span class="hint">les cessions immobilières échappent à la hausse</span></label><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
+            <div class="f"><div class="fl"><label for="ps">PS sur les loyers</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>18,6 % en meublé depuis la hausse de CSG, 17,2 % en nu.</span></span></div><div class="wrap"><input id="ps" type="number" step="0.1" value="18.6"><span class="unit">%</span></div></div>
+            <div class="f"><div class="fl"><label for="psPV">PS sur la plus-value</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les cessions immobilières échappent à la hausse de CSG : 17,2 %.</span></span></div><div class="wrap"><input id="psPV" type="number" step="0.1" value="17.2"><span class="unit">%</span></div></div>
           </div>
         </details>
       </div>
     </details>
 
     <details class="group" open>
-      <summary>2 · Le bien</summary>
+      <summary>Le bien</summary>
       <div class="fields">
-        <div class="f"><label for="prix">Prix d'achat</label><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
-        <div class="f"><label for="notairePct">Frais de notaire<span class="hint">7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation · 2 à 3 % dans le neuf</span></label><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
-        <div class="f"><label for="fraisAcq">Frais d'agence à l'achat</label><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
-        <div class="f" id="fMobilier"><label for="mobilier">Mobilier<span class="hint">meubles, électroménager, literie — environ 4 % du prix pour un appartement entièrement meublé, amortissable au LMNP réel</span></label><div class="wrap"><input id="mobilier" type="number" step="500" value="8000"><span class="unit">€</span></div></div>
+        <div class="f key"><div class="fl"><label for="prix">Prix d'achat</label></div><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <div class="f"><div class="fl"><label for="notairePct">Frais de notaire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation. 2 à 3 % dans le neuf.</span></span></div><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
+        <div class="f"><div class="fl"><label for="fraisAcq">Frais d'agence à l'achat</label></div><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <div class="f" id="fMobilier"><div class="fl"><label for="mobilier">Mobilier</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Meubles, électroménager, literie : environ 4 % du prix pour un appartement entièrement meublé. Amortissable au LMNP réel, et neutralisé si vous repassez en location nue.</span></span></div><div class="wrap"><input id="mobilier" type="number" step="500" value="8000"><span class="unit">€</span></div></div>
       </div>
     </details>
 
     <details class="group" open>
-      <summary>3 · Le financement</summary>
+      <summary>Le financement</summary>
       <div class="fields">
-        <div class="f"><label for="apport">Apport personnel</label><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
+        <div class="f key"><div class="fl"><label for="apport">Apport personnel</label></div><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
         <dl class="derived">
           <dt>Coût total de l'opération</dt><dd id="dCout">—</dd>
           <dt>Votre apport</dt><dd id="dApport">—</dd>
-          <dt class="tot">Montant emprunté</dt><dd class="tot" id="dEmprunt">—</dd>
-          <dd class="cap" id="dCap"></dd>
+          <dt class="tot">Montant emprunté<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCap" hidden></span></span></dt><dd class="tot" id="dEmprunt">—</dd>
         </dl>
-        <div class="f"><label for="duree">Durée du prêt</label><div class="wrap uw"><input id="duree" type="number" step="1" min="1" max="40" value="20"><span class="unit">ans</span></div></div>
-        <div class="f"><label for="taux">Taux d'intérêt</label><div class="wrap"><input id="taux" type="number" step="0.05" value="3.4"><span class="unit">%</span></div></div>
-        <div class="f"><label for="assur">Assurance emprunteur<span class="hint">% du capital emprunté / an</span></label><div class="wrap"><input id="assur" type="number" step="0.01" value="0.34"><span class="unit">%</span></div></div>
+        <div class="f key"><div class="fl"><label for="duree">Durée du prêt</label></div><div class="wrap uw"><input id="duree" type="number" step="1" min="1" max="40" value="20"><span class="unit">ans</span></div></div>
+        <div class="f key"><div class="fl"><label for="taux">Taux d'intérêt</label></div><div class="wrap"><input id="taux" type="number" step="0.05" value="3.4"><span class="unit">%</span></div></div>
+        <div class="f"><div class="fl"><label for="assur">Assurance emprunteur</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>En pourcentage du capital emprunté, par an.</span></span></div><div class="wrap"><input id="assur" type="number" step="0.01" value="0.34"><span class="unit">%</span></div></div>
         <dl class="derived">
           <dt>Mensualité, assurance incluse</dt><dd id="dMens">—</dd>
-          <dt>Coût total du crédit</dt><dd id="dCout2">—</dd>
-          <dd class="cap" id="dCap2"></dd>
+          <dt>Coût total du crédit<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCap2" hidden></span></span></dt><dd id="dCout2">—</dd>
         </dl>
         <details class="more">
           <summary>Frais de dossier et remboursement anticipé</summary>
           <div class="fields">
-            <div class="f"><label for="fraisDossier">Frais de dossier + garantie</label><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
+            <div class="f"><div class="fl"><label for="fraisDossier">Frais de dossier + garantie</label></div><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
             <label class="check"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
           </div>
         </details>
@@ -120,60 +132,57 @@
     </details>
 
     <details class="group" open>
-      <summary>4 · L'exploitation</summary>
+      <summary>L'exploitation</summary>
       <div class="fields">
-        <div class="f"><label for="loyer">Loyer mensuel hors charges</label><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
-        <div class="f"><label for="vacance">Vacance locative + impayés</label><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
-        <div class="f"><label for="tf">Taxe foncière</label><div class="wrap uw"><input id="tf" type="number" step="50" value="1200"><span class="unit">€/an</span></div></div>
-        <div class="f"><label for="copro">Charges de copro non récupérables</label><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>
+        <div class="f key"><div class="fl"><label for="loyer">Loyer mensuel hors charges</label></div><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
+        <div class="f key"><div class="fl"><label for="vacance">Vacance locative + impayés</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des loyers que vous n'encaisserez pas : logement vide entre deux locataires, loyers impayés. Comptez 5 % en zone tendue, davantage ailleurs.</span></span></div><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+        <div class="f key"><div class="fl"><label for="tf">Taxe foncière</label></div><div class="wrap uw"><input id="tf" type="number" step="50" value="1200"><span class="unit">€/an</span></div></div>
+        <div class="f key"><div class="fl"><label for="copro">Charges de copro non récupérables</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des charges de copropriété qui reste à votre charge : celles qui sont récupérables sont refacturées au locataire et n'entrent pas ici.</span></span></div><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>
         <details class="more">
           <summary>Assurances, gestion, entretien</summary>
           <div class="fields">
-            <div class="f"><label for="pno">Assurance PNO + GLI</label><div class="wrap uw"><input id="pno" type="number" step="25" value="180"><span class="unit">€/an</span></div></div>
-            <div class="f"><label for="gestion">Gestion locative</label><div class="wrap"><input id="gestion" type="number" step="0.5" value="0"><span class="unit">%</span></div></div>
-            <div class="f"><label for="entretien">Provision entretien<span class="hint">% des loyers encaissés</span></label><div class="wrap"><input id="entretien" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+            <div class="f"><div class="fl"><label for="pno">Assurance PNO + GLI</label></div><div class="wrap uw"><input id="pno" type="number" step="25" value="180"><span class="unit">€/an</span></div></div>
+            <div class="f"><div class="fl"><label for="gestion">Gestion locative</label></div><div class="wrap"><input id="gestion" type="number" step="0.5" value="0"><span class="unit">%</span></div></div>
+            <div class="f"><div class="fl"><label for="entretien">Provision entretien</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>En pourcentage des loyers encaissés : ce que vous mettez de côté pour la chaudière, la peinture et les remises en état entre deux locataires.</span></span></div><div class="wrap"><input id="entretien" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
           </div>
         </details>
       </div>
     </details>
 
-    <details class="group">
-      <summary>5 · Travaux &amp; dépréciation</summary>
+    <details class="group" open>
+      <summary>Travaux<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez : une cuisine neuve fait grimper le prix aujourd'hui, vingt ans plus tard elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel — entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</span></span></summary>
       <div class="fields">
-        <p class="grouphint">Chaque poste ajoute son montant à la valeur du bien, puis la perd au rythme que vous indiquez. Une cuisine neuve fait grimper le prix aujourd'hui ; vingt ans plus tard, elle ne vaut plus rien. « Déductible » ne vaut qu'au régime réel : entretien, réparation et amélioration ouvrent droit à déduction, la construction et l'agrandissement non.</p>
         <div class="tvxlist" id="tvxList"></div>
         <button type="button" class="addbtn" id="tvxAdd">+ Ajouter un poste</button>
         <dl class="derived">
           <dt>Total des travaux</dt><dd id="tvxTotal">—</dd>
-          <dt>Valeur restante à l'horizon</dt><dd id="tvxResid">—</dd>
+          <dt>Valeur restante à l'horizon<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="tvxCap" hidden></span></span></dt><dd id="tvxResid">—</dd>
           <dt>Déductible au réel</dt><dd id="tvxDeduc">—</dd>
-          <dd class="cap" id="tvxCap"></dd>
         </dl>
       </div>
     </details>
 
-    <details class="group">
-      <summary>6 · Projection &amp; revente</summary>
+    <details class="group" open>
+      <summary>Projection &amp; revente</summary>
       <div class="fields">
-        <div class="f"><label for="horizon">Horizon d'analyse</label><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
-        <div class="f"><label for="inflation">Inflation</label><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f key"><div class="fl"><label for="horizon">Horizon d'analyse</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La durée simulée. Le rendement affiché en haut est celui d'une revente à cette date — mais chaque année de revente est calculée, et la meilleure vous est indiquée.</span></span></div><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
+        <div class="f"><div class="fl"><label for="inflation">Inflation</label></div><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
         <label class="souscheck"><input id="prixSuitInflation" type="checkbox" checked> Prix, loyers et charges suivent l'inflation</label>
-        <div class="f" id="fIndexPrix"><label for="indexPrix">Revalorisation du bien</label><div class="wrap uw"><input id="indexPrix" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
-        <div class="f" id="fIndexLoyer"><label for="indexLoyer">Indexation des loyers</label><div class="wrap uw"><input id="indexLoyer" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
-        <div class="f" id="fIndexCharges"><label for="indexCharges">Inflation des charges</label><div class="wrap uw"><input id="indexCharges" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
-        <div class="f"><label for="fraisVente">Frais d'agence à la revente</label><div class="wrap"><input id="fraisVente" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
+        <div class="f" id="fIndexPrix"><div class="fl"><label for="indexPrix">Revalorisation du bien</label></div><div class="wrap uw"><input id="indexPrix" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f" id="fIndexLoyer"><div class="fl"><label for="indexLoyer">Indexation des loyers</label></div><div class="wrap uw"><input id="indexLoyer" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f" id="fIndexCharges"><div class="fl"><label for="indexCharges">Inflation des charges</label></div><div class="wrap uw"><input id="indexCharges" type="number" step="0.1" value="2"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="fraisVente">Frais d'agence à la revente</label></div><div class="wrap"><input id="fraisVente" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
       </div>
     </details>
 
-    <details class="group">
-      <summary>7 · Placements comparés</summary>
+    <details class="group pro">
+      <summary>Placements comparés<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Taux <b>hors inflation</b> et <b>avant impôt</b>, comme le rendement réel du bien. La comparaison, elle, se fait nette d'impôt des deux côtés : le Livret A est exonéré, les deux autres supportent le taux que vous indiquez sur leurs gains.</span></span></summary>
       <div class="fields">
-        <p class="grouphint">Taux <b>hors inflation</b> et <b>avant impôt</b>, comme le rendement réel du bien. La comparaison, elle, se fait nette d'impôt des deux côtés : le Livret A est exonéré, les deux autres supportent le taux que vous indiquez sur leurs gains.</p>
-        <div class="f"><label for="livretA">Livret A<span class="hint" id="hLivret"></span></label><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.3"><span class="unit">%/an</span></div></div>
-        <div class="f"><label for="fondsEuros">Fonds euros<span class="hint" id="hFonds"></span></label><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
-        <div class="f"><label for="bourse">Bourse<span class="hint" id="hBourse"></span></label><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
-        <div class="f"><label for="fiscBourse">Impôt sur les gains boursiers<span class="hint">31,4 % en compte-titres depuis 2026 (PFU : 12,8 % + 18,6 % de prélèvements sociaux) · 18,6 % en PEA après 5 ans</span></label><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="31.4"><span class="unit">%</span></div></div>
-        <div class="f"><label for="fiscFonds">Impôt sur les gains du fonds euros<span class="hint">l'assurance-vie échappe à la hausse de CSG : 30 % avant 8 ans · 24,7 % après, au-delà de l'abattement</span></label><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+        <div class="f"><div class="fl"><label for="livretA">Livret A</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="hLivret" hidden></span></span></div><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.3"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="fondsEuros">Fonds euros</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="hFonds" hidden></span></span></div><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="bourse">Bourse</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="hBourse" hidden></span></span></div><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="fiscBourse">Impôt sur les gains boursiers</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>31,4 % en compte-titres depuis 2026 (PFU : 12,8 % d'impôt plus 18,6 % de prélèvements sociaux). 18,6 % en PEA après cinq ans.</span></span></div><div class="wrap"><input id="fiscBourse" type="number" step="0.1" min="0" max="100" value="31.4"><span class="unit">%</span></div></div>
+        <div class="f"><div class="fl"><label for="fiscFonds">Impôt sur les gains du fonds euros</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'assurance-vie échappe à la hausse de CSG : 30 % avant huit ans, 24,7 % après, au-delà de l'abattement annuel.</span></span></div><div class="wrap"><input id="fiscFonds" type="number" step="0.1" min="0" max="100" value="30"><span class="unit">%</span></div></div>
       </div>
     </details>
 
@@ -187,44 +196,51 @@
   <main class="canvas">
     <nav class="subnav" aria-label="Sections de la page">
       <a href="#verdict">Verdict</a>
-      <a href="#indicateurs">Indicateurs</a>
       <a href="#rendement">Rendement</a>
-      <a href="#regimes">Régimes</a>
       <a href="#placements">Placements</a>
-      <a href="#tresorerie">Trésorerie</a>
-      <a href="#patrimoine">Patrimoine</a>
-      <a href="#sensibilite">Sensibilité</a>
-      <a href="#detail">Détail</a>
+      <a href="#regimes">Régimes</a>
+      <a href="#analyse">Analyse détaillée</a>
+      <a href="#detail">Tableau annuel</a>
       <a href="#suite">Pour aller plus loin</a>
+      <span class="spacer"></span>
+      <span class="navtri" id="navTri" aria-hidden="true"></span>
     </nav>
 
     <section class="verdict" id="verdict">
-      <div>
-        <p class="eyebrow">Rendement annuel moyen si vous revendez à l'horizon</p>
-        <div class="hero"><span class="big num" id="heroTri">—</span><span class="per">par an, net de tout,<br>sur les fonds réellement engagés</span></div>
-        <p class="reel" id="heroReel"></p>
-        <p class="herosub" id="heroSub"></p>
-        <div class="bench"><span class="pill num" id="benchPill">—</span><span id="benchText"></span></div>
+      <div class="vmain">
+        <p class="eyebrow">Rendement annuel net, revente à <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></p>
+        <div class="hero">
+          <span class="big num" id="heroTri">—</span>
+          <span class="pill num" id="benchPill">—</span>
+          <span class="per" id="benchText"></span>
+        </div>
+        <p class="reel"><b class="num" id="heroReel">—</b> <span id="heroReelTxt">en pouvoir d'achat</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le même rendement une fois l'inflation retirée. C'est ce chiffre qui dit si vous vous enrichissez : un capital qui progresse moins vite que les prix achète moins de choses à l'arrivée.</span></span></p>
+        <dl class="facts">
+          <dt>Sorti de votre poche<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'apport du premier jour, plus chaque euro que le bien vous a réclamé ensuite quand les loyers ne couvraient pas tout.</span></span></dt><dd id="vdMise">—</dd>
+          <dt>Gain net à la revente</dt><dd id="vdGain">—</dd>
+          <dt>Point mort<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La première année où revendre cesse de laisser une perte. Avant cette date, la vente ne couvre pas les frais de notaire et d'agence payés à l'achat.</span></span></dt><dd id="vdMort">—</dd>
+        </dl>
         <div class="avis" id="avisBox" hidden>
-          <p class="eyebrow">L'avis de Mon rendement locatif</p>
           <p id="avisText"></p>
         </div>
       </div>
       <div class="best">
         <p class="eyebrow" id="bestEyebrow">Meilleur moment pour revendre</p>
         <div class="yr" id="bestYear">—</div>
-        <p id="bestText"></p>
         <dl id="bestList"></dl>
+        <p id="bestText"></p>
       </div>
     </section>
 
     <section class="tiles" id="indicateurs" aria-label="Indicateurs clés"></section>
 
+    <div id="warnBox"></div>
+
     <section class="panel" id="rendement">
       <div class="phead">
         <div>
-          <h2>Rendement annualisé selon l'année de revente</h2>
-          <p>Chaque point répond à la même question : « si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? » La ligne de référence est le même argent, versé aux mêmes dates en bourse, une fois l'impôt sur les gains payé.</p>
+          <h2>Rendement selon l'année de revente<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque point répond à la même question : si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? La ligne de référence est le même argent, versé aux mêmes dates en bourse, une fois l'impôt sur les gains payé. Les repères verticaux marquent les seuils d'abattement de plus-value.</span></span></h2>
+          <p>Si vous revendez fin d'année N, ce que votre argent aura rapporté en moyenne chaque année.</p>
         </div>
         <div class="seg" role="group" aria-label="Échelle verticale">
           <button type="button" id="echLisible" aria-pressed="true">Zone lisible</button>
@@ -232,33 +248,22 @@
         </div>
       </div>
       <div class="legend">
-        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Rendement du projet</span></span>
-        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Bourse à mêmes versements, nette d'impôt, en euros courants</span></span>
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Votre projet</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Bourse, nette d'impôt</span></span>
       </div>
       <div class="plot" id="plotTri"><div class="tip" id="tipTri"></div></div>
       <p class="axisnote" id="triNote"></p>
     </section>
 
-    <section class="panel" id="regimes">
-      <div class="phead">
-        <div>
-          <h2>Le même projet sous les quatre régimes fiscaux</h2>
-          <p>Rendement annualisé à l'horizon, toutes hypothèses égales par ailleurs — seuls changent le régime et les réglages qui en découlent (prélèvements sociaux, CFE, abattement). Louer meublé suppose d'acheter des meubles : les deux régimes meublés retiennent le mobilier saisi dans vos hypothèses, la location nue l'exclut du coût de l'opération. Cliquez sur une barre pour adopter ce régime.</p>
-        </div>
-      </div>
-      <div class="plot" id="plotReg"><div class="tip" id="tipReg"></div></div>
-      <p class="axisnote" id="regNote"></p>
-    </section>
-
     <section class="panel" id="placements">
       <div class="phead">
         <div>
-          <h2>Gagné ou perdu, selon l'année de revente</h2>
-          <p>Ce que vous avez réellement gagné : le capital détenu à cette date, net d'impôt, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</p>
+          <h2>Gagné ou perdu, face à trois placements<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le capital détenu à cette date, net d'impôt, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</span></span></h2>
+          <p>Ce que vous avez réellement gagné, une fois retiré tout ce que vous avez versé.</p>
         </div>
       </div>
       <div class="legend">
-        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Immobilier, revendu cette année-là</span></span>
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Immobilier</span></span>
         <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Bourse</span></span>
         <span style="color:var(--d3)"><i class="swatch tirets"></i><span style="color:var(--text-muted)">Fonds euros</span></span>
         <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Livret A</span></span>
@@ -267,83 +272,101 @@
       <p class="axisnote" id="netNote"></p>
     </section>
 
-    <section class="panel" id="cascade">
+    <section class="panel" id="regimes">
       <div class="phead">
         <div>
-          <h2>D'où vient le gain</h2>
-          <p>Tout ce qui entre et tout ce qui sort depuis l'achat, en euros courants, jusqu'au gain net si vous revendiez à la date choisie. Déplacez le curseur pour voir la décomposition se former année après année : cela ne change que ce graphique, pas l'horizon de la simulation.</p>
-        </div>
-        <div class="tools annee">
-          <label for="cascAnnee">Revente fin d'année</label>
-          <input type="range" id="cascAnnee" min="1" step="1" value="25">
-          <output class="num" id="cascAnneeVal">25</output>
+          <h2>Le même projet sous les quatre régimes<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Rendement annualisé à l'horizon, toutes hypothèses égales par ailleurs — seuls changent le régime et les réglages qui en découlent : prélèvements sociaux, CFE, abattement. Louer meublé suppose d'acheter des meubles : les deux régimes meublés retiennent le mobilier saisi dans vos hypothèses, la location nue l'exclut du coût de l'opération.</span></span></h2>
+          <p>Cliquez sur une barre pour adopter ce régime.</p>
         </div>
       </div>
-      <div class="plotwrap"><div class="plot large" id="plotCasc"><div class="tip" id="tipCasc"></div></div></div>
-      <p class="axisnote" id="cascNote"></p>
+      <div class="plot" id="plotReg"><div class="tip" id="tipReg"></div></div>
+      <p class="axisnote" id="regNote"></p>
     </section>
 
-    <section class="panel" id="tresorerie">
-      <div class="phead">
-        <div>
-          <h2>Trésorerie annuelle après impôt</h2>
-          <p>Loyers encaissés moins charges, mensualités et impôt. En dessous de zéro, le projet vous coûte de l'argent chaque année — un effort d'épargne, pas nécessairement un mauvais placement.</p>
-        </div>
-      </div>
-      <div class="plot" id="plotCf"><div class="tip" id="tipCf"></div></div>
-    </section>
+    <details class="panel fold" id="analyse">
+      <summary><span class="foldtitle">Analyse détaillée</span><span class="foldhint">trésorerie, décomposition du gain, patrimoine, sensibilité</span></summary>
+      <div class="folded">
 
-    <section class="panel" id="patrimoine">
-      <div class="phead">
-        <div>
-          <h2>Patrimoine net et dette, année par année</h2>
-          <p>La valeur du bien monte, le capital restant dû descend : l'écart entre les deux est votre patrimoine net. Tant qu'il reste sous les sommes sorties de votre poche, la revente ne vous rembourserait pas.</p>
-        </div>
-      </div>
-      <div class="legend">
-        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Patrimoine net (valeur − dette)</span></span>
-        <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Valeur du bien</span></span>
-        <span style="color:var(--text-muted)"><i class="swatch"></i><span style="color:var(--text-muted)">Capital restant dû</span></span>
-        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Sorti de votre poche, cumulé</span></span>
-      </div>
-      <div class="plot" id="plotPat"><div class="tip" id="tipPat"></div></div>
-    </section>
+        <section class="sub" id="tresorerie">
+          <div class="phead">
+            <div>
+              <h2>Trésorerie annuelle après impôt<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Loyers encaissés moins charges, mensualités et impôt. En dessous de zéro, le projet vous coûte de l'argent chaque année — un effort d'épargne, pas nécessairement un mauvais placement : il achète du capital.</span></span></h2>
+              <p>Ce que le bien vous rapporte, ou vous réclame, chaque année.</p>
+            </div>
+          </div>
+          <div class="plot" id="plotCf"><div class="tip" id="tipCf"></div></div>
+        </section>
 
-    <section class="panel" id="sensibilite">
-      <div class="phead">
-        <div>
-          <h2>Ce qui fait vraiment bouger le rendement</h2>
-          <p>Variation du rendement annualisé à l'horizon quand un seul paramètre change, les autres restant fixes. Les barres les plus longues désignent les hypothèses à vérifier en priorité avant de signer.</p>
-        </div>
-      </div>
-      <div class="legend">
-        <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario favorable</span></span>
-        <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario défavorable</span></span>
-      </div>
-      <div class="plot" id="plotSens"><div class="tip" id="tipSens"></div></div>
-      <p class="axisnote" id="sensNote"></p>
-    </section>
+        <section class="sub" id="cascade">
+          <div class="phead">
+            <div>
+              <h2>D'où vient le gain<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Tout ce qui entre et tout ce qui sort depuis l'achat, en euros courants, jusqu'au gain net si vous revendiez à la date choisie. La somme des marches vaut exactement le gain : c'est une identité comptable, vérifiée à chaque construction du site. Le curseur ne change que ce graphique, pas l'horizon de la simulation.</span></span></h2>
+              <p>Chaque marche s'ajoute à la précédente ; la dernière est le gain net.</p>
+            </div>
+            <div class="tools annee">
+              <label for="cascAnnee">Revente fin d'année</label>
+              <input type="range" id="cascAnnee" min="1" step="1" value="25">
+              <output class="num" id="cascAnneeVal">25</output>
+            </div>
+          </div>
+          <div class="plotwrap"><div class="plot large" id="plotCasc"><div class="tip" id="tipCasc"></div></div></div>
+          <p class="axisnote" id="cascNote"></p>
+        </section>
 
-    <section class="panel" id="detail">
-      <div class="phead">
-        <div>
-          <h2>Détail annuel</h2>
-          <p>L'année surlignée est celle qui maximise le rendement annualisé.</p>
-        </div>
-        <div class="tools">
-          <button type="button" class="btn sm" id="copy">Copier</button>
-          <button type="button" class="btn sm" id="csv">Télécharger le CSV</button>
-        </div>
+        <section class="sub" id="patrimoine">
+          <div class="phead">
+            <div>
+              <h2>Patrimoine net et dette<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La valeur du bien monte, le capital restant dû descend : l'écart entre les deux est votre patrimoine net. Tant qu'il reste sous les sommes sorties de votre poche, la revente ne vous rembourserait pas.</span></span></h2>
+              <p>L'écart entre la valeur du bien et la dette, année après année.</p>
+            </div>
+          </div>
+          <div class="legend">
+            <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Patrimoine net</span></span>
+            <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Valeur du bien</span></span>
+            <span style="color:var(--text-muted)"><i class="swatch"></i><span style="color:var(--text-muted)">Capital restant dû</span></span>
+            <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Sorti de votre poche</span></span>
+          </div>
+          <div class="plot" id="plotPat"><div class="tip" id="tipPat"></div></div>
+        </section>
+
+        <section class="sub" id="sensibilite">
+          <div class="phead">
+            <div>
+              <h2>Ce qui fait bouger le rendement<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Variation du rendement annualisé à l'horizon quand un seul paramètre change, les autres restant fixes. Les barres les plus longues désignent les hypothèses à vérifier en priorité avant de signer : ce sont celles dont une erreur d'estimation coûte le plus cher.</span></span></h2>
+              <p>Les barres les plus longues sont les hypothèses à vérifier avant de signer.</p>
+            </div>
+          </div>
+          <div class="legend">
+            <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario favorable</span></span>
+            <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario défavorable</span></span>
+          </div>
+          <div class="plot" id="plotSens"><div class="tip" id="tipSens"></div></div>
+          <p class="axisnote" id="sensNote"></p>
+        </section>
+
       </div>
-      <div id="warnBox"></div>
-      <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
-    </section>
+    </details>
+
+    <details class="panel fold" id="detail">
+      <summary><span class="foldtitle">Tableau annuel</span><span class="foldhint">année par année, exportable en CSV</span></summary>
+      <div class="folded">
+        <div class="phead">
+          <div>
+            <p>L'année surlignée est celle qui maximise le rendement annualisé.</p>
+          </div>
+          <div class="tools">
+            <button type="button" class="btn sm" id="copy">Copier</button>
+            <button type="button" class="btn sm" id="csv">Télécharger le CSV</button>
+          </div>
+        </div>
+        <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </details>
 
     <section class="panel" id="suite">
       <div class="phead">
         <div>
           <h2>Pour aller plus loin</h2>
-          <p>Ce que la simulation modélise, ce qu'elle laisse de côté, et les questions qui reviennent le plus.</p>
         </div>
       </div>
       <ul class="liens">

@@ -406,6 +406,81 @@ function tipRow(color, label, value){
   return `<div class="tr"><span class="tl"><i class="dot" style="background:${color}"></i>${label}</span><span class="tv">${value}</span></div>`;
 }
 
+/* ---------- infobulles ---------- */
+// Une explication à la demande. Le texte vit dans un `.ibody` masqué, posé à côté
+// de son bouton : il reste dans le balisage — donc lisible par un robot et par un
+// lecteur d'écran — mais n'occupe l'écran que le temps qu'on le demande. C'est ce
+// qui a permis de retirer la vingtaine de lignes grises du panneau et les sept
+// paragraphes qui coiffaient les graphiques.
+// Un seul panneau pour toute la page, posé en `fixed` et borné au viewport : à
+// 390 px il ne peut pas déborder, quel que soit le bord où vit le déclencheur.
+function brancherInfobulles(){
+  if(document.getElementById("pop")) return;
+  const pop = document.createElement("div");
+  pop.id = "pop"; pop.className = "pop"; pop.setAttribute("role", "tooltip");
+  pop.hidden = true;
+  document.body.appendChild(pop);
+
+  let ouvert = null;
+  const fermer = () => {
+    if(!ouvert) return;
+    ouvert.setAttribute("aria-expanded", "false");
+    ouvert.removeAttribute("aria-describedby");
+    ouvert = null;
+    pop.hidden = true;
+  };
+  const ouvrir = bouton => {
+    if(ouvert === bouton) return;
+    const corps = bouton.parentElement && bouton.parentElement.querySelector(".ibody");
+    if(!corps) return;
+    fermer();
+    ouvert = bouton;
+    pop.innerHTML = corps.innerHTML;
+    // Mesurer d'abord, placer ensuite : la largeur dépend du texte.
+    pop.hidden = false;
+    pop.style.left = "0px"; pop.style.top = "0px";
+    const b = bouton.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left + b.width/2 - w/2)) + "px";
+    // Sous le bouton, sauf s'il n'y a plus la place en bas et qu'il y en a en haut.
+    pop.style.top = (b.bottom + 10 + h > innerHeight && b.top - 10 - h > 0
+      ? b.top - 10 - h : b.bottom + 10) + "px";
+    bouton.setAttribute("aria-expanded", "true");
+    bouton.setAttribute("aria-describedby", "pop");
+  };
+  const cible = ev => ev.target.closest ? ev.target.closest(".i") : null;
+  const dansPop = ev => !!(ev.target.closest && ev.target.closest(".pop"));
+
+  // Survol à la souris seulement : au doigt, l'ouverture reste au toucher, sinon
+  // le premier appui ouvrirait et le second refermerait aussitôt.
+  document.addEventListener("pointerover", ev => {
+    if(ev.pointerType && ev.pointerType !== "mouse") return;
+    const b = cible(ev);
+    if(b) ouvrir(b);
+    else if(!dansPop(ev)) fermer();
+  });
+  document.addEventListener("click", ev => {
+    const b = cible(ev);
+    // Un bouton logé dans un <summary> replierait la section : on lui coupe
+    // l'événement, l'infobulle n'est pas un geste de navigation.
+    if(b){ ev.preventDefault(); ev.stopPropagation(); ouvrir(b); }
+    else if(!dansPop(ev)) fermer();
+  });
+  document.addEventListener("focusin", ev => {
+    const b = cible(ev);
+    if(b) ouvrir(b); else fermer();
+  });
+  document.addEventListener("keydown", ev => {
+    if(ev.key !== "Escape" || !ouvert) return;
+    const b = ouvert;
+    fermer();
+    b.focus();
+  });
+  // La bulle est ancrée à un point de l'écran : dès que la page bouge sous elle,
+  // elle ment. On la referme plutôt que de la suivre.
+  addEventListener("scroll", fermer, true);
+  addEventListener("resize", fermer);
+}
+
 /* ---------- configurations partagées ---------- */
 // Les seuils fiscaux créent de vraies ruptures de pente : sans repère, elles
 // passent pour des artefacts de calcul.

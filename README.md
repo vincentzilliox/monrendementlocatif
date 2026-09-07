@@ -50,6 +50,24 @@ prix.
 régimes, gain net face aux trois placements, cascade du gain, trésorerie
 annuelle, patrimoine net et dette, sensibilité du TRI aux six paramètres clés.
 
+## Deux règles d'interface
+
+**Une explication ne s'écrit pas à l'écran.** Elle attend dans un
+`<span class="ibody" hidden>` posé à côté de son bouton `i`, et une bulle unique,
+bornée au viewport, l'affiche à la demande. Le texte reste donc dans le balisage —
+lisible par un robot et par un lecteur d'écran — sans occuper la page. Deux
+contrôles le tiennent : aucun bouton sans texte, et le clavier doit pouvoir ouvrir
+la bulle puis la refermer. Un troisième plafonne à 120 caractères ce qui reste
+visible sous un titre de graphique.
+
+**Le panneau a deux niveaux.** Il s'ouvre sur les onze réglages marqués `key` dans
+`index.html` — ceux auxquels le rendement est le plus sensible, plus ceux sans
+lesquels il n'y a pas de projet. « Tous les réglages » découvre les vingt-cinq
+autres, qui n'ont jamais cessé d'entrer dans le calcul. De même côté résultats :
+le verdict, les indicateurs et les trois graphiques qui décident restent à
+l'écran ; trésorerie, cascade, patrimoine, sensibilité et tableau annuel attendent
+d'être dépliés — tracés quand même, et redessinés à l'ouverture.
+
 ## Charte graphique
 
 L'interface est monochrome (noir, blanc, gris) ; la couleur est réservée à la
@@ -65,7 +83,7 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `index.html` | Le balisage de la calculatrice, et la seule source de l'en-tête et du pied de page de tout le site. |
 | `src/style.css` | La feuille de style, unique pour tout le site. |
 | `src/moteur.js` | Le calcul. Aucun accès au document : `outils/verifier.py` le contrôle, et le harnais de test l'exécute tel quel. |
-| `src/graphiques.js` | Le dessin SVG et les infobulles, plus les configurations de graphiques partagées par les deux pages. |
+| `src/graphiques.js` | Le dessin SVG, les infobulles des graphiques et celles de l'interface, plus les configurations partagées par les deux pages. |
 | `src/calculatrice.js` | L'interface : lecture du formulaire, rendu, persistance. Seul fichier à connaître les identifiants des champs. |
 | `src/vitrine.js` | Le pilote de la page d'accueil. |
 | `src/assistant.js` | Les sept questions de l'accroche, et le lien préréglé qu'elles construisent. |
@@ -171,7 +189,9 @@ python3 outils/verifier.py
 Plus de cent cinquante contrôles : ressources servies, métadonnées de chaque
 page, sitemap complet et sans fantôme, liens internes, charte respectée, absence
 d'appel vers un domaine tiers et de mesure d'audience, erreurs JavaScript et
-débordement à 1360 et 390 px sur cinq pages, graphiques présents, égalité du
+débordement à 1360 et 390 px sur cinq pages — panneau replié puis déployé —,
+graphiques présents, infobulles pourvues d'un texte et pilotables au clavier,
+budget de texte sous chaque titre, égalité du
 rendement affiché par l'accueil et par la calculatrice, parcours complet de
 l'assistant, et cohérence du moteur financier (invariant TRI/graphique, frais de
 vente, impôt des placements, déficit BIC, identité de la cascade). Code de sortie non nul si l'un échoue.

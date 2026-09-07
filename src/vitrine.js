@@ -31,7 +31,12 @@ function vitrine(){
 
   ecrire("vTri", sPct(f.tri));
   ecrire("vReel", sPct(f.triReel));
+  ecrire("vAns", p.horizon + " ans");
+  const reelEl = g("vReel");
+  if(reelEl) reelEl.classList.toggle("bad", f.triReel < 0);
   ecrire("vGain", sEur(f.gain));
+  const gainEl = g("vGain");
+  if(gainEl) gainEl.className = f.gain >= 0 ? "up" : "down";
   ecrire("vMise", eur.format(f.mise));
   ecrire("vBest", "Année " + b.y);
   ecrire("vBestTri", sPct(b.tri));
@@ -61,6 +66,8 @@ function vitrine(){
   drawTornado(g("vPlotSens"), g("vTipSens"), cfgSensibilite(sens, f.tri));
   if(sens.length) ecrire("vSens", sens[0].nom.toLowerCase());
 }
+
+brancherInfobulles();
 
 let vid;
 addEventListener("resize", () => { clearTimeout(vid); vid = setTimeout(vitrine, 140); });
