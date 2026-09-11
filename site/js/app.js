@@ -131,6 +131,11 @@ function compute(p){
   const sch = schedule(emprunt, p.taux, p.duree, p.assur);
   const valeur0 = p.prix + p.travaux;
   const tauxImpot = (p.tmi + p.ps)/100;
+  // Affichage brut : le même projet sans aucun impôt — ni sur les loyers, ni sur
+  // la plus-value, ni sur les gains des placements comparés. Charges, crédit,
+  // taxe foncière et CFE restent dus : le bien les coûte quelle que soit la
+  // fiscalité. L'écart entre les deux affichages est donc ce que coûte l'impôt.
+  const avantImpot = p.avantImpot === true;
 
   // Part des travaux ouvrant droit à déduction, poste par poste.
   const travauxDeductibles = (p.items || []).reduce((s, it) => s + it.montant*(it.deduc/100), 0);
@@ -173,7 +178,7 @@ function compute(p){
   const nominal = r => (1 + r/100)*(1 + p.inflation/100) - 1;
   const bourse = nominal(p.bourse), rFonds = nominal(p.fondsEuros), rLivret = nominal(p.livretA);
   const part = v => Math.max(0, Math.min(1, (Number(v) || 0)/100));
-  const fiscB = part(p.fiscBourse), fiscF = part(p.fiscFonds);
+  const fiscB = avantImpot ? 0 : part(p.fiscBourse), fiscF = avantImpot ? 0 : part(p.fiscFonds);
   // Capital net de l'impôt sur le gain, le gain étant ce qui dépasse les versements.
   const netDe = (capital, verse, fisc) => capital - Math.max(0, capital - verse)*fisc;
 
@@ -236,6 +241,7 @@ function compute(p){
       amortReintegre += usedImm;
       impot = (base - used)*tauxImpot;
     }
+    if(avantImpot) impot = 0;
 
     const cfAvant = loyers - charges - annuite;
     const cfNet = cfAvant - impot;
@@ -263,10 +269,10 @@ function compute(p){
     const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
     const baseIR = pvBrute*(1-abattementIR(y));
     const basePS = pvBrute*(1-abattementPS(y));
-    const impotPV = baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
+    const impotPV = avantImpot ? 0 : baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
 
     // Vendre avant le 31/12 de la 3e année suivant une imputation la fait reprendre.
-    const repriseDF = p.regime === "reel-foncier"
+    const repriseDF = p.regime === "reel-foncier" && !avantImpot
       ? imputations.reduce((s,d) => s + (d.y > y-3 ? d.amt : 0), 0)*(p.tmi/100)
       : 0;
 
@@ -1041,6 +1047,7 @@ function read(){
   p.regime = $("regime").value;
   p.tmi = parseFloat($("tmi").value);
   p.ira = $("ira").checked;
+  p.avantImpot = fiscalite === "brut";
   // Par défaut prix, loyers et charges suivent l'inflation : pas de gain réel sur
   // la pierre, seuls le levier et les loyers créent de la valeur.
   if($("prixSuitInflation").checked){
@@ -1066,6 +1073,13 @@ try{
   const e = localStorage.getItem("rentaloc.echelle");
   if(e === "lisible" || e === "complete") echelleTri = e;
 }catch(e){}
+// « net » : tout s'affiche après impôt, comme le verdict l'a toujours fait.
+// « brut » : le même projet avant impôt, pour mesurer ce que coûte la fiscalité.
+let fiscalite = "net";
+try{
+  const f = localStorage.getItem("rentaloc.fiscalite");
+  if(f === "net" || f === "brut") fiscalite = f;
+}catch(e){}
 
 function render(){
   oublierTheme();
@@ -1084,6 +1098,10 @@ function render(){
   const p = read();
   R = compute(p);
   const {rows, best, final} = R;
+  const brut = p.avantImpot;
+  // Les impôts restent annoncés en brut : c'est précisément ce que l'affichage
+  // ne déduit pas. On les lit sur le même projet, calculé net.
+  const Rnet = brut ? compute(Object.assign({}, p, {avantImpot:false})) : R;
   // Point mort : première année où revendre cesse de laisser une perte.
   const mort = rows.findIndex(r => r.gainImmo >= 0);
 
@@ -1127,12 +1145,13 @@ function render(){
     pill.className = "pill num " + (Math.abs(ecart)<0.002 ? "flat" : ecart>0 ? "win" : "lose");
     $("benchText").textContent =
       (Math.abs(ecart)<0.002 ? "à égalité avec" : ecart>0 ? "de mieux que" : "de moins que")
-      + ` la bourse, qui rend ${pct(bNet)} par an nette d'impôt`;
+      + ` la bourse, qui rend ${pct(bNet)} par an ${brut ? "avant impôt" : "nette d'impôt"}`;
   }
   // Le chiffre du verdict suit le lecteur dans la sous-navigation collante.
   $("navTri").innerHTML = triF===null ? ""
     : `<b>${sPct(triF)}</b> par an${ecart===null ? "" : " · " + pts(ecart) + " vs bourse"}`;
-  const mot = triF === null ? null : avis(triReel, final.triBourseReel === null ? bourseReelle : final.triBourseReel);
+  // L'avis juge ce que vous gardez : il ne se prononce pas sur des chiffres avant impôt.
+  const mot = triF === null || brut ? null : avis(triReel, final.triBourseReel === null ? bourseReelle : final.triBourseReel);
   $("avisBox").hidden = mot === null;
   if(mot) $("avisText").textContent = mot;
 
@@ -1144,8 +1163,8 @@ function render(){
       : "Au-delà, les abattements de plus-value ne compensent plus la fin de l'effet de levier.";
     $("bestList").innerHTML =
       `<dt>Rendement annualisé</dt><dd>${sPct(best.tri)}</dd>` +
-      `<dt>Net récupéré à la vente</dt><dd>${eur.format(best.netVente)}</dd>` +
-      `<dt>Gain net total</dt><dd>${sEur(best.gain)}</dd>`;
+      `<dt>${brut ? "Récupéré à la vente, avant impôt" : "Net récupéré à la vente"}</dt><dd>${eur.format(best.netVente)}</dd>` +
+      `<dt>${brut ? "Gain total avant impôt" : "Gain net total"}</dt><dd>${sEur(best.gain)}</dd>`;
   } else {
     $("bestEyebrow").textContent = "Meilleur moment pour revendre";
     $("bestYear").textContent = "—"; $("bestText").textContent = ""; $("bestList").innerHTML = "";
@@ -1179,8 +1198,8 @@ function render(){
   const cf = R.cfMensuel1;
   const r1 = rows[0];
   const couverture = r1.annuite > 0 ? r1.loyers/r1.annuite : null;
-  const impotsLoyers = rows.reduce((s,x) => s + x.impot, 0);
-  const impotsTotal = impotsLoyers + final.impotPV + final.repriseDF;
+  const impotsLoyers = Rnet.rows.reduce((s,x) => s + x.impot, 0);
+  const impotsTotal = impotsLoyers + Rnet.final.impotPV + Rnet.final.repriseDF;
 
   // Le point mort a rejoint le verdict ; sa place revient à l'effort d'épargne,
   // qui répond à la question qu'on se pose vraiment : combien ça me coûte, et
@@ -1189,6 +1208,8 @@ function render(){
   $("indicateurs").innerHTML = [
     ["Rentabilité brute", pct(R.brute),
       `Loyers annuels divisés par le prix d'achat, comme dans les annonces. Rapportée au coût total — frais de notaire, agence et travaux compris — elle vaut ${pct(R.bruteCout)}.`, ""],
+    brut ? ["Rentabilité nette", pct(R.nette),
+      `Après charges, avant impôt, sur la première année, rapportée au coût total de l'opération. Après impôt : ${pct(Rnet.netteNette)}.`, ""] :
     ["Rentabilité nette-nette", pct(R.netteNette),
       `Après charges et impôt, sur la première année, rapportée au coût total de l'opération. ` + (
       r1.impot < -0.5
@@ -1197,7 +1218,8 @@ function render(){
           ? `La fiscalité ne coûte rien cette année-là.`
           : `Avant impôt : ${pct(R.nette)}.`), ""],
     ["Cash-flow mensuel", (cf>=0?"+":"−")+eur.format(Math.abs(cf)),
-      `Loyers encaissés moins charges, mensualité et impôt, la première année. ` +
+      (brut ? `Loyers encaissés moins charges et mensualité, avant impôt, la première année. `
+            : `Loyers encaissés moins charges, mensualité et impôt, la première année. `) +
       (cf>=0 ? `Le bien s'autofinance dès le départ.` : `C'est ce qu'il vous réclame chaque mois.`),
       cf>=0?"pos":"neg"],
     ["Le loyer couvre", couverture===null ? "—" : pct(couverture),
@@ -1209,13 +1231,13 @@ function render(){
         : `Ce que le bien vous réclame en plus de l'apport sur ${p.horizon} ans, les années où les loyers ne couvrent pas tout — soit ${eur.format(effort/(p.horizon*12))} par mois en moyenne.`, ""],
     ["Impôts sur "+p.horizon+" ans",
       impotsTotal>=0 ? eur.format(impotsTotal) : "+"+eur.format(-impotsTotal),
-      impotsTotal < 0
+      (brut ? "Non déduits ici : l'affichage brut est avant impôt. " : "") + (impotsTotal < 0
         ? `Les économies d'impôt dépassent ce que vous versez : le projet allège votre imposition.`
         : Math.abs(impotsLoyers) < 1
           ? `Entièrement dû à la revente : l'impôt sur les loyers est nul sur toute la période.`
           : impotsLoyers < 0
-            ? `La revente coûte ${eur.format(final.impotPV)} ; les loyers vous font économiser ${eur.format(-impotsLoyers)}.`
-            : `${eur.format(impotsLoyers)} sur les loyers, ${eur.format(final.impotPV)} sur la plus-value.`,
+            ? `La revente coûte ${eur.format(Rnet.final.impotPV)} ; les loyers vous font économiser ${eur.format(-impotsLoyers)}.`
+            : `${eur.format(impotsLoyers)} sur les loyers, ${eur.format(Rnet.final.impotPV)} sur la plus-value.`),
       impotsTotal>=0 ? "" : "pos"]
   ].map(([k,v,nn,cl]) => `<div class="tile"><span class="k">${k}${bulle(nn)}</span><span class="v ${cl} num">${v}</span></div>`).join("");
 
@@ -1252,14 +1274,14 @@ function render(){
     fmtVal: sPct,
     series: [
       {color:"--d1", nom:"Rendement du projet", values: rows.map(r=>r.tri), fill:true},
-      {color:"--d2", nom:"Bourse, nette d'impôt", values: rows.map(r=>r.triBourse), dash:true}
+      {color:"--d2", nom: brut ? "Bourse, avant impôt" : "Bourse, nette d'impôt", values: rows.map(r=>r.triBourse), dash:true}
     ],
     tip: i => {
       const r = rows[i];
       return `<div class="th">Revente année ${r.y}</div>` +
         tipRow(css("--d1"),"Rendement du projet", r.tri===null?"—":sPct(r.tri)) +
         tipRow("transparent","dont pouvoir d'achat", r.triReel===null?"—":sPct(r.triReel)) +
-        tipRow(css("--d2"),"Bourse, nette d'impôt", r.triBourse===null?"—":pct(r.triBourse)) +
+        tipRow(css("--d2"), brut ? "Bourse, avant impôt" : "Bourse, nette d'impôt", r.triBourse===null?"—":pct(r.triBourse)) +
         tipRow("transparent","Gain net cumulé", sEur(r.gain));
     }
   });
@@ -1286,34 +1308,40 @@ function render(){
       : ` À ${p.horizon} ans, elle devance ${liste(bat)} mais reste derrière ${liste(perd.map(r=>r.nom))}.`;
   $("netNote").textContent = phraseMort + phraseRang;
 
-  drawChart($("plotNet"), $("tipNet"), cfgGainNet(p, R));
+  drawChart($("plotNet"), $("tipNet"), cfgGainNet(p, R,
+    brut ? {label:"Gain avant impôt, immobilier comparé à trois placements"} : null));
 
   drawChart($("plotCf"), $("tipCf"), {
-    x: xs, height: 200, padLeft: 78, band:true, zero:true, label:"Trésorerie annuelle après impôt",
+    x: xs, height: 200, padLeft: 78, band:true, zero:true,
+    label: brut ? "Trésorerie annuelle avant impôt" : "Trésorerie annuelle après impôt",
     fmtAxis: (v,ref) => ref>=10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €",
     fmtVal: sEur,
-    series: [{color:"--d1", nom:"Trésorerie nette", values: rows.map(r=>r.cfNet)}],
+    series: [{color:"--d1", nom: brut ? "Trésorerie avant impôt" : "Trésorerie nette", values: rows.map(r=>r.cfNet)}],
     tip: i => {
       const r = rows[i];
       return `<div class="th">Année ${r.y}</div>` +
-        tipRow(r.cfNet>=0?css("--up"):css("--down"),"Trésorerie nette", sEur(r.cfNet)) +
+        tipRow(r.cfNet>=0?css("--up"):css("--down"), brut ? "Trésorerie avant impôt" : "Trésorerie nette", sEur(r.cfNet)) +
         tipRow("transparent","Loyers encaissés", eur.format(r.loyers)) +
         tipRow("transparent","Charges", cost(r.charges)) +
         tipRow("transparent","Mensualités", cost(r.annuite)) +
-        tipRow("transparent","Impôt", cost(r.impot));
+        (brut ? "" : tipRow("transparent","Impôt", cost(r.impot)));
     }
   });
 
-  const cols = ["Année","Loyers","Charges","Intérêts","Mensualités","Impôt","Trésorerie","Trésorerie cumulée","Valeur du bien","Capital dû","Impôt plus-value","Net si revente","Rendement annualisé"];
+  // Avant impôt, les deux colonnes d'impôt ne contiendraient que des zéros : elles
+  // quittent le tableau, et l'export CSV fait de même.
+  const cols = ["Année","Loyers","Charges","Intérêts","Mensualités","Impôt","Trésorerie","Trésorerie cumulée","Valeur du bien","Capital dû","Impôt plus-value","Net si revente","Rendement annualisé"]
+    .filter(c => !(brut && c.startsWith("Impôt")));
+  const celluleImpot = v => brut ? "" : `<td>${cost(v)}</td>`;
   $("tbl").tHead.innerHTML = "<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
   $("tbl").tBodies[0].innerHTML = rows.map(r => {
     const cls = best && r.y===best.y ? ' class="peak"' : "";
     return `<tr${cls}><td>Année ${r.y}</td>`+[
-      eur.format(r.loyers), cost(r.charges), cost(r.interets), cost(r.annuite), cost(r.impot)
-    ].map(v=>`<td>${v}</td>`).join("")
+      eur.format(r.loyers), cost(r.charges), cost(r.interets), cost(r.annuite)
+    ].map(v=>`<td>${v}</td>`).join("") + celluleImpot(r.impot)
     + `<td class="${r.cfNet>=0?"pos":"neg"}">${sEur(r.cfNet)}</td>`
     + `<td class="${r.cumulCF>=0?"pos":"neg"}">${sEur(r.cumulCF)}</td>`
-    + `<td>${eur.format(r.valeur)}</td><td>${eur.format(r.crd)}</td><td>${cost(r.impotPV)}</td><td>${eur.format(r.netVente)}</td>`
+    + `<td>${eur.format(r.valeur)}</td><td>${eur.format(r.crd)}</td>${celluleImpot(r.impotPV)}<td>${eur.format(r.netVente)}</td>`
     + `<td class="${r.tri!==null&&r.tri>=0?"pos":"neg"}">${r.tri===null?"—":sPct(r.tri)}</td></tr>`;
   }).join("");
 
@@ -1354,7 +1382,7 @@ function renderComplements(p){
         tipRow("transparent","Rendement annualisé", r.tri===null?"—":sPct(r.tri)) +
         tipRow("transparent","En pouvoir d'achat", r.triReel===null?"—":sPct(r.triReel)) +
         tipRow("transparent","Gain net à l'horizon", sEur(r.gain)) +
-        tipRow("transparent","Impôts cumulés", r.impots >= 0 ? cost(r.impots) : "+"+eur.format(-r.impots)) +
+        (p.avantImpot ? "" : tipRow("transparent","Impôts cumulés", r.impots >= 0 ? cost(r.impots) : "+"+eur.format(-r.impots))) +
         (r.rg===p.regime ? "" : `<div class="tr" style="margin-top:6px;color:var(--text-muted)">Cliquer pour adopter ce régime</div>`);
     },
     onClick: i => { if(regs[i].rg !== p.regime){ appliquerRegime(regs[i].rg); render(); toast("Régime : " + regs[i].label.replace("\n"," ")); } }
@@ -1362,7 +1390,11 @@ function renderComplements(p){
   const enCours = regs.find(r => r.rg === p.regime);
   // L'hypothèse de mobilier explique une partie de l'écart : elle est dite dans
   // l'infobulle du panneau, pas dans une phrase de plus sous le graphique.
-  $("regNote").textContent = !meilleur || meilleur.tri === null ? ""
+  // Avant impôt, les régimes ne diffèrent plus que par le mobilier et la CFE : le
+  // classement ne dirait rien du choix fiscal.
+  $("regNote").textContent = p.avantImpot
+    ? "Avant impôt, les régimes ne se distinguent que par le mobilier et la CFE : repassez en net pour les départager."
+    : !meilleur || meilleur.tri === null ? ""
     : meilleur.rg === p.regime
       ? `Sur vos hypothèses, votre régime est déjà le plus favorable des quatre.`
       : `${meilleur.label.replace("\n"," ")} ferait mieux : ${sPct(meilleur.tri)} contre ${sPct(enCours.tri)} par an, soit ${sEur(meilleur.gain - enCours.gain)} de gain sur ${p.horizon} ans. Vérifiez votre éligibilité.`;
@@ -1385,7 +1417,7 @@ function renderComplements(p){
     {label:"Loyers\nencaissés",        v: f.cumulLoyers},
     {label:"Charges",                  v: -f.cumulCharges},
     {label:"Intérêts et\nassurance",   v: -f.cumulCredit},
-    {label:"Impôt sur\nles loyers",    v: -f.cumulImpot},
+    {label:"Impôt sur\nles loyers",    v: -f.cumulImpot, impot:true},
     {label:"Frais\nd'acquisition",     v: -fraisAcquisition,
      detail: [["Frais de notaire", R.notaire], ["Frais d'agence", p.fraisAcq],
               ["Dossier et garantie", p.fraisDossier]]},
@@ -1393,8 +1425,10 @@ function renderComplements(p){
      detail: [["Travaux", p.travaux], ["Mobilier", R.mobilier]]},
     {label:"Revalorisation\ndu bien",  v: f.valeur - p.prix},
     {label:"Frais de\nrevente",        v: -(f.fraisVente + f.ira)},
-    {label:"Impôt sur la\nplus-value", v: -(f.impotPV + f.repriseDF)}
-  ];
+    {label:"Impôt sur la\nplus-value", v: -(f.impotPV + f.repriseDF), impot:true}
+  // Avant impôt, ces deux marches valent zéro : on les retire plutôt que de
+  // dessiner deux marches vides. La somme reste le gain.
+  ].filter(m => !(p.avantImpot && m.impot));
   let acc = 0;
   const items = marches.map(m => {
     const it = {label:m.label, from:acc, to:acc+m.v, color: m.v >= 0 ? "--up" : "--down",
@@ -1420,7 +1454,7 @@ function renderComplements(p){
   const sorties = f.cumulCharges + f.cumulCredit + f.cumulImpot + fraisAcquisition
     + equipement + f.fraisVente + f.ira + f.impotPV + f.repriseDF;
   $("cascNote").textContent =
-    `Fin d'année ${anCasc} : ${eur.format(f.cumulLoyers)} de loyers et ${revalorisation >= 0 ? eur.format(revalorisation) + " de revalorisation" : eur.format(-revalorisation) + " de dévalorisation"}, contre ${eur.format(sorties)} de charges, frais, intérêts et impôts.`;
+    `Fin d'année ${anCasc} : ${eur.format(f.cumulLoyers)} de loyers et ${revalorisation >= 0 ? eur.format(revalorisation) + " de revalorisation" : eur.format(-revalorisation) + " de dévalorisation"}, contre ${eur.format(sorties)} de ${p.avantImpot ? "charges, frais et intérêts" : "charges, frais, intérêts et impôts"}.`;
 
   // Patrimoine net et dette.
   const xs = rows.map(r => String(r.y));
@@ -1581,6 +1615,20 @@ $("cascAnnee").addEventListener("input", () => {
 $("echLisible").addEventListener("click", () => setEchelle("lisible"));
 $("echComplete").addEventListener("click", () => setEchelle("complete"));
 
+// Les libellés qui changent avec l'affichage portent leur version brute dans le
+// balisage (data-brut) ; la version nette est leur texte, relu au démarrage.
+const libellesFiscaux = [...document.querySelectorAll("[data-brut]")];
+libellesFiscaux.forEach(el => { el.dataset.net = el.textContent; });
+function setFiscalite(v){
+  fiscalite = v;
+  $("fiscNet").setAttribute("aria-pressed", v === "net" ? "true" : "false");
+  $("fiscBrut").setAttribute("aria-pressed", v === "brut" ? "true" : "false");
+  libellesFiscaux.forEach(el => { el.textContent = v === "brut" ? el.dataset.brut : el.dataset.net; });
+  try{ localStorage.setItem("rentaloc.fiscalite", v); }catch(e){}
+}
+$("fiscNet").addEventListener("click", () => { setFiscalite("net"); render(); });
+$("fiscBrut").addEventListener("click", () => { setFiscalite("brut"); render(); });
+
 $("tvxAdd").addEventListener("click", () => {
   items.push({nom:"Nouveau poste", montant:5000, taux:5, duree:20, deduc:100});
   renderItems(); render();
@@ -1706,16 +1754,18 @@ $("share").addEventListener("click", async () => {
 
 function csvTexte(){
   const head = ["Annee","Loyers","Charges","Interets","Mensualites","Impot","Tresorerie","Tresorerie cumulee","Valeur","Capital du","Impot plus-value","Net si revente","Rendement annualise"];
-  return [head.join(";")].concat(R.rows.map(r => [
+  // Mêmes colonnes que le tableau : avant impôt, les deux colonnes d'impôt sortent.
+  const garde = (v, i) => !(R.p.avantImpot && head[i].startsWith("Impot"));
+  return [head.filter(garde).join(";")].concat(R.rows.map(r => [
     r.y, r.loyers, r.charges, r.interets, r.annuite, r.impot, r.cfNet, r.cumulCF,
     r.valeur, r.crd, r.impotPV, r.netVente, r.tri===null?"":(r.tri*100)
-  ].map(v => typeof v==="number" ? v.toFixed(2).replace(".",",") : v).join(";"))).join("\n");
+  ].filter(garde).map(v => typeof v==="number" ? v.toFixed(2).replace(".",",") : v).join(";"))).join("\n");
 }
 $("csv").addEventListener("click", () => {
   if(!R) return;
   const blob = new Blob(["﻿" + csvTexte()], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "rendement-locatif.csv";
+  a.href = URL.createObjectURL(blob); a.download = R.p.avantImpot ? "rendement-locatif-avant-impot.csv" : "rendement-locatif.csv";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   toast("CSV téléchargé — ouvrez-le dans un tableur");
@@ -1761,6 +1811,7 @@ depuisHash();
 renderItems();
 syncTheme();
 setRail(railMode);
+setFiscalite(fiscalite);
 brancherInfobulles();
 $("echLisible").setAttribute("aria-pressed", echelleTri === "lisible" ? "true" : "false");
 $("echComplete").setAttribute("aria-pressed", echelleTri === "complete" ? "true" : "false");

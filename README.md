@@ -50,6 +50,12 @@ prix.
 régimes, gain net face aux trois placements, cascade du gain, trésorerie
 annuelle, patrimoine net et dette, sensibilité du TRI aux six paramètres clés.
 
+**Brut ou net** — une bascule de la barre de navigation passe toute la
+calculatrice avant impôt : verdict, graphiques, tableau et export CSV. Seule la
+fiscalité disparaît (impôt sur les loyers, plus-value, reprise de déficit,
+impôt des placements comparés) ; charges, crédit, taxe foncière et CFE restent
+dus. L'écart entre les deux affichages est donc ce que coûte l'impôt.
+
 ## Deux règles d'interface
 
 **Une explication ne s'écrit pas à l'écran.** Elle attend dans un

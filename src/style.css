@@ -339,6 +339,9 @@ details.fold>summary:hover .foldtitle{text-decoration:underline}
   font-variant-numeric:tabular-nums;
 }
 .navtri:empty{display:none}
+/* Net ou brut : la bascule reste au bord droit de la sous-navigation, même quand
+   les liens défilent dessous sur petit écran. */
+.subnav .seg.fisc{align-self:center; position:sticky; right:0; margin-left:8px; background:var(--bg)}
 .navtri b{color:var(--text); font-weight:600}
 @media (max-width:1040px){ .navtri{display:none} }
 

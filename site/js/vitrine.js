@@ -131,6 +131,11 @@ function compute(p){
   const sch = schedule(emprunt, p.taux, p.duree, p.assur);
   const valeur0 = p.prix + p.travaux;
   const tauxImpot = (p.tmi + p.ps)/100;
+  // Affichage brut : le même projet sans aucun impôt — ni sur les loyers, ni sur
+  // la plus-value, ni sur les gains des placements comparés. Charges, crédit,
+  // taxe foncière et CFE restent dus : le bien les coûte quelle que soit la
+  // fiscalité. L'écart entre les deux affichages est donc ce que coûte l'impôt.
+  const avantImpot = p.avantImpot === true;
 
   // Part des travaux ouvrant droit à déduction, poste par poste.
   const travauxDeductibles = (p.items || []).reduce((s, it) => s + it.montant*(it.deduc/100), 0);
@@ -173,7 +178,7 @@ function compute(p){
   const nominal = r => (1 + r/100)*(1 + p.inflation/100) - 1;
   const bourse = nominal(p.bourse), rFonds = nominal(p.fondsEuros), rLivret = nominal(p.livretA);
   const part = v => Math.max(0, Math.min(1, (Number(v) || 0)/100));
-  const fiscB = part(p.fiscBourse), fiscF = part(p.fiscFonds);
+  const fiscB = avantImpot ? 0 : part(p.fiscBourse), fiscF = avantImpot ? 0 : part(p.fiscFonds);
   // Capital net de l'impôt sur le gain, le gain étant ce qui dépasse les versements.
   const netDe = (capital, verse, fisc) => capital - Math.max(0, capital - verse)*fisc;
 
@@ -236,6 +241,7 @@ function compute(p){
       amortReintegre += usedImm;
       impot = (base - used)*tauxImpot;
     }
+    if(avantImpot) impot = 0;
 
     const cfAvant = loyers - charges - annuite;
     const cfNet = cfAvant - impot;
@@ -263,10 +269,10 @@ function compute(p){
     const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
     const baseIR = pvBrute*(1-abattementIR(y));
     const basePS = pvBrute*(1-abattementPS(y));
-    const impotPV = baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
+    const impotPV = avantImpot ? 0 : baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
 
     // Vendre avant le 31/12 de la 3e année suivant une imputation la fait reprendre.
-    const repriseDF = p.regime === "reel-foncier"
+    const repriseDF = p.regime === "reel-foncier" && !avantImpot
       ? imputations.reduce((s,d) => s + (d.y > y-3 ? d.amt : 0), 0)*(p.tmi/100)
       : 0;
 

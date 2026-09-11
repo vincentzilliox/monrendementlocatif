@@ -221,11 +221,15 @@
       <a href="#suite">Pour aller plus loin</a>
       <span class="spacer"></span>
       <span class="navtri" id="navTri" aria-hidden="true"></span>
+      <div class="seg fisc" role="group" aria-label="Montants après impôt (net) ou avant impôt (brut)">
+        <button type="button" id="fiscNet" aria-pressed="true">Net</button>
+        <button type="button" id="fiscBrut" aria-pressed="false">Brut</button>
+      </div>
     </nav>
 
     <section class="verdict" id="verdict">
       <div class="vmain">
-        <p class="eyebrow">Rendement annuel net, revente à <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></p>
+        <p class="eyebrow">Rendement annuel <span data-brut="avant impôt">net</span>, revente à <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. <span data-brut="Net de toutes les charges, mais avant impôt sur les loyers et sur la plus-value.">Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></span></p>
         <div class="hero">
           <span class="big num" id="heroTri">—</span>
           <span class="pill num" id="benchPill">—</span>
@@ -234,7 +238,7 @@
         <p class="reel"><b class="num" id="heroReel">—</b> <span id="heroReelTxt">en pouvoir d'achat</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le même rendement une fois l'inflation retirée. C'est ce chiffre qui dit si vous vous enrichissez : un capital qui progresse moins vite que les prix achète moins de choses à l'arrivée.</span></span></p>
         <dl class="facts">
           <dt>Sorti de votre poche<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'apport du premier jour, plus chaque euro que le bien vous a réclamé ensuite quand les loyers ne couvraient pas tout.</span></span></dt><dd id="vdMise">—</dd>
-          <dt>Gain net à la revente</dt><dd id="vdGain">—</dd>
+          <dt><span data-brut="Gain avant impôt">Gain net</span> à la revente</dt><dd id="vdGain">—</dd>
           <dt>Point mort<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La première année où revendre cesse de laisser une perte. Avant cette date, la vente ne couvre pas les frais de notaire et d'agence payés à l'achat.</span></span></dt><dd id="vdMort">—</dd>
         </dl>
         <div class="avis" id="avisBox" hidden>
@@ -256,7 +260,7 @@
     <section class="panel" id="rendement">
       <div class="phead">
         <div>
-          <h2>Rendement selon l'année de revente<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque point répond à la même question : si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? La ligne de référence est le même argent, versé aux mêmes dates en bourse, une fois l'impôt sur les gains payé. Les repères verticaux marquent les seuils d'abattement de plus-value.</span></span></h2>
+          <h2>Rendement selon l'année de revente<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque point répond à la même question : si je vends à la fin de cette année-là, combien mon argent aura-t-il rapporté, en moyenne, chaque année ? La ligne de référence est le même argent, versé aux mêmes dates en bourse, <span data-brut="avant impôt sur les gains.">une fois l'impôt sur les gains payé.</span> Les repères verticaux marquent les seuils d'abattement de plus-value.</span></span></h2>
           <p>Si vous revendez fin d'année N, ce que votre argent aura rapporté en moyenne chaque année.</p>
         </div>
         <div class="seg" role="group" aria-label="Échelle verticale">
@@ -266,7 +270,7 @@
       </div>
       <div class="legend">
         <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Votre projet</span></span>
-        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Bourse, nette d'impôt</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)" data-brut="Bourse, avant impôt">Bourse, nette d'impôt</span></span>
       </div>
       <div class="plot" id="plotTri"><div class="tip" id="tipTri"></div></div>
       <p class="axisnote" id="triNote"></p>
@@ -275,7 +279,7 @@
     <section class="panel" id="placements">
       <div class="phead">
         <div>
-          <h2>Gagné ou perdu, face à trois placements<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le capital détenu à cette date, net d'impôt, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</span></span></h2>
+          <h2>Gagné ou perdu, face à trois placements<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le capital détenu à cette date, <span data-brut="avant impôt">net d'impôt</span>, moins tout ce que vous avez sorti de votre poche depuis le départ. Sous la ligne zéro, l'opération est en perte — c'est le cas les premières années, le temps d'amortir les frais de notaire et d'agence. Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates : le même apport au départ, puis chaque euro d'effort d'épargne que le bien réclame.</span></span></h2>
           <p>Ce que vous avez réellement gagné, une fois retiré tout ce que vous avez versé.</p>
         </div>
       </div>
@@ -307,7 +311,7 @@
         <section class="sub" id="tresorerie">
           <div class="phead">
             <div>
-              <h2>Trésorerie annuelle après impôt<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Loyers encaissés moins charges, mensualités et impôt. En dessous de zéro, le projet vous coûte de l'argent chaque année — un effort d'épargne, pas nécessairement un mauvais placement : il achète du capital.</span></span></h2>
+              <h2>Trésorerie annuelle <span data-brut="avant impôt">après impôt</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden><span data-brut="Loyers encaissés moins charges et mensualités, avant impôt.">Loyers encaissés moins charges, mensualités et impôt.</span> En dessous de zéro, le projet vous coûte de l'argent chaque année — un effort d'épargne, pas nécessairement un mauvais placement : il achète du capital.</span></span></h2>
               <p>Ce que le bien vous rapporte, ou vous réclame, chaque année.</p>
             </div>
           </div>

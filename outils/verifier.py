@@ -318,6 +318,19 @@ setTimeout(function(){
   r.vitrine   = (document.getElementById("vTri")||{}).textContent || "";
   r.vcourbes  = document.querySelectorAll("#vPlotNet path[stroke]").length;
   r.vsens     = document.querySelectorAll("#vPlotSens svg rect").length;
+  // Brut : le meme projet avant impot. Le rendement change, les colonnes d'impot
+  // quittent le tableau, le verdict le dit, et revenir en net rend le chiffre de depart.
+  var bBrut = document.getElementById("fiscBrut"), bNet = document.getElementById("fiscNet");
+  if(bBrut && bNet){
+    var triNet = document.getElementById("heroTri").textContent;
+    bBrut.click();
+    r.brut = (document.getElementById("heroTri").textContent !== triNet ? "1" : "0")
+      + (document.getElementById("tbl").tHead.textContent.indexOf("Imp") < 0 ? "1" : "0")
+      + (/avant imp/.test(document.querySelector("#verdict .eyebrow").textContent) ? "1" : "0");
+    bNet.click();
+    r.brut += document.getElementById("heroTri").textContent === triNet
+      && document.getElementById("tbl").tHead.textContent.indexOf("Imp") >= 0 ? "1" : "0";
+  }
   // Un lien complet efface la saisie d'une visite precedente ; un lien de guide
   // s'y superpose. Mesure en dernier : elle modifie le formulaire.
   var tx = document.getElementById("taux");
@@ -630,6 +643,10 @@ def main():
                              r.get("lienComplet") is True, str(r.get("lienComplet")))
                     controle("lien de guide : conserve la saisie du visiteur",
                              r.get("lienGuide") is True, str(r.get("lienGuide")))
+                    # « rendement change », « colonnes d'impôt retirées »,
+                    # « verdict avant impôt », « retour net identique »
+                    controle("bascule brut/net : rendement, tableau et libellés suivent",
+                             r.get("brut") == "1111", r.get("brut") or "sonde muette")
                     controle("aucun graphique ne piège le défilement",
                              not r.get("piege"), r.get("piege") or "")
                     controle("les graphiques suivent la bascule de thème",
@@ -765,6 +782,23 @@ lignes.push('apport nul : TRI non calculable|'+(run({apport:0}).final.tri===null
 lignes.push('duree amortissement nulle sans plantage|'+(isFinite(run({amortBatiAns:0}).final.tri)?1:0)+'|');
 lignes.push('horizon 1 an sans plantage|'+(isFinite(run({horizon:1}).final.tri)?1:0)+'|');
 lignes.push('champs fiscaux absents toleres|'+(isFinite(run({fiscBourse:undefined,fiscFonds:undefined}).final.gainBourse)?1:0)+'|');
+// Affichage brut : aucun impot nulle part, charges et credit inchanges. L'ecart
+// entre les deux affichages doit etre l'impot, et rien d'autre.
+['lmnp-reel','reel-foncier','micro-foncier','lmnp-micro'].forEach(function(rg){
+  var n=run({regime:rg}), b=run({regime:rg, avantImpot:true});
+  var nul=b.rows.every(function(x){ return x.impot===0 && x.impotPV===0 && x.repriseDF===0; });
+  var memes=b.rows.every(function(x,i){ return Math.abs(x.charges-n.rows[i].charges)<1e-9
+    && Math.abs(x.annuite-n.rows[i].annuite)<1e-9 && Math.abs(x.valeur-n.rows[i].valeur)<1e-9; });
+  lignes.push('brut '+rg+' : aucun impot, charges et credit inchanges|'+(nul&&memes?1:0)+'|');
+});
+var bb=run({avantImpot:true}), b0=run({fiscBourse:0, fiscFonds:0});
+lignes.push('brut : placements compares avant impot|'
+  +(Math.abs(bb.final.gainBourse-b0.final.gainBourse)<1e-6 && Math.abs(bb.final.gainFonds-b0.final.gainFonds)<1e-6?1:0)+'|');
+// La cascade brute n'a plus de marches d'impot : sa somme doit rester le gain.
+var fb=bb.final, sommeBrute=fb.cumulLoyers-fb.cumulCharges-fb.cumulCredit
+  -(bb.notaire+bb.p.fraisAcq+bb.p.fraisDossier)-(bb.p.travaux+bb.mobilier)
+  +(fb.valeur-bb.p.prix)-(fb.fraisVente+fb.ira);
+lignes.push('brut : cascade sans marches d impot = gain|'+(Math.abs(sommeBrute-fb.gain)<1?1:0)+'|ecart '+(sommeBrute-fb.gain).toFixed(2)+' EUR');
 // Surtaxe de plus-value (art. 1609 nonies G) : chaque palier s'ouvre par une
 // bande de 10 000 EUR ou une decote lisse la marche. Sans elle, le code
 // surestimait de 79 % juste au-dessus de 50 000 EUR.
