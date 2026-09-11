@@ -436,6 +436,10 @@ def main():
                 defauts.append("canonical")
             if "og:image" not in html:
                 defauts.append("og:image")
+            # Le thème choisi doit être posé avant la feuille de style : posé en fin
+            # de page, il laissait voir le thème par défaut à chaque changement de page.
+            if "rentaloc.theme" not in html.split("</head>")[0].split('rel="stylesheet"')[0]:
+                defauts.append("thème posé après la première peinture")
             try:
                 ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', html, re.S).group(1))
             except Exception:
@@ -477,10 +481,14 @@ def main():
         # Le vert et le rouge de la couche données tombent à 2,9:1 sur fond clair :
         # lisibles en tracé, pas en texte. On vérifie donc chaque paire réellement
         # utilisée, plutôt que de faire confiance à l'œil.
-        themes = {"sombre": tokens_du_theme(css, ":root"),
-                  "clair": tokens_du_theme(css, ':root[data-theme="light"]')}
-        # Le thème clair n'est qu'une surcharge : ce qu'il ne redéfinit pas vient du sombre.
-        themes["clair"] = {**themes["sombre"], **themes["clair"]}
+        themes = {"clair": tokens_du_theme(css, ":root"),
+                  "sombre": tokens_du_theme(css, ':root[data-theme="dark"]')}
+        # Le sombre s'écrit deux fois : choisi sur le site, ou préféré par le
+        # navigateur. Deux copies qui divergeraient donneraient deux sombres.
+        controle("thème sombre : choix manuel et préférence du navigateur identiques",
+                 themes["sombre"] == tokens_du_theme(css, ':root:not([data-theme="light"])'))
+        # Le thème sombre n'est qu'une surcharge : ce qu'il ne redéfinit pas vient du clair.
+        themes["sombre"] = {**themes["clair"], **themes["sombre"]}
         themes = {nom: resoudre(t) for nom, t in themes.items()}
         # (libellé, sélecteur dont on lit la couleur, fond, fond sous-jacent si translucide)
         composants = [("texte courant", "body", "--bg", None),

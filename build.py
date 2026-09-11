@@ -170,6 +170,10 @@ def _tete(titre, description, chemin, jsonld, noindex=False, type_og="website"):
     """Le <head> commun : métadonnées, partage, icônes, feuille de style."""
     url = DOMAINE + chemin
     robots = '<meta name="robots" content="noindex, follow">\n' if noindex else ""
+    # Le petit script avant la feuille de style pose le thème choisi avant la
+    # première peinture. Chargé en fin de page, il laissait voir le thème par
+    # défaut à chaque changement de page, puis basculait : un éclair de l'autre
+    # thème avant le bon.
     return f"""<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{titre}</title>
@@ -196,6 +200,7 @@ def _tete(titre, description, chemin, jsonld, noindex=False, type_og="website"):
 <meta name="twitter:description" content="{description}">
 <meta name="twitter:image" content="{DOMAINE}/assets/og-image.png">
 <script type="application/ld+json">{jsonld}</script>
+<script>try{{var t=localStorage.getItem("rentaloc.theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
 <link rel="stylesheet" href="/css/style.css">"""
 
 
@@ -222,11 +227,11 @@ def _page(tete, corps, scripts):
 SITE_JS = """"use strict";
 (function(){
   const b = document.getElementById("theme");
-  // Sombre par défaut : seule une préférence système explicitement claire,
-  // ou un choix manuel, fait basculer en clair.
+  // Clair par défaut, sombre si le navigateur le préfère ; un choix fait sur le
+  // site l'emporte, et le <head> l'a déjà posé avant la première peinture.
   const estSombre = () => {
     const t = document.documentElement.getAttribute("data-theme");
-    return t ? t === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
+    return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   };
   const sync = () => {
     if(!b) return;
@@ -234,7 +239,6 @@ SITE_JS = """"use strict";
     b.setAttribute("aria-checked", nuit ? "true" : "false");
     b.setAttribute("aria-label", nuit ? "Mode nuit activé" : "Mode jour activé");
   };
-  try{ const t = localStorage.getItem("rentaloc.theme"); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
   if(b) b.addEventListener("click", () => {
     const suivant = estSombre() ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", suivant);
@@ -242,7 +246,7 @@ SITE_JS = """"use strict";
     sync();
     document.dispatchEvent(new Event("theme"));
   });
-  matchMedia("(prefers-color-scheme: light)").addEventListener("change", sync);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", sync);
   sync();
   document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
 })();

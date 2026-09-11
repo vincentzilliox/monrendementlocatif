@@ -1650,11 +1650,11 @@ $("copy").addEventListener("click", async () => {
 
 // L'interrupteur reflète le thème réellement affiché, y compris quand aucun choix
 // n'a été fait et que c'est le système qui décide.
-// Sombre par défaut : seule une préférence système explicitement claire, ou
-// un choix manuel, fait basculer en clair.
+// Clair par défaut, sombre si le navigateur le préfère ; un choix manuel
+// l'emporte, et le <head> l'a déjà posé avant la première peinture.
 function estSombre(){
   const t = document.documentElement.getAttribute("data-theme");
-  return t ? t === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
 }
 function syncTheme(){
   const nuit = estSombre();
@@ -1668,14 +1668,10 @@ $("theme").addEventListener("click", () => {
   syncTheme();
   render();
 });
-try{
-  const t = localStorage.getItem("rentaloc.theme");
-  if(t) document.documentElement.setAttribute("data-theme", t);
-}catch(e){}
 
 let rid;
 addEventListener("resize", () => { clearTimeout(rid); rid = setTimeout(render, 140); });
-matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { syncTheme(); render(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { syncTheme(); render(); });
 
 /* ---------- exemples, régime, lien, export ---------- */
 function appliquerRegime(rg){
