@@ -559,6 +559,18 @@ def main():
                            if re.search(r"(?<![\d.])%g(?![\d.])" % defauts[cle], assistant_src)})
         controle("l'assistant ne recopie aucune valeur par défaut",
                  not recopies, ", ".join(recopies))
+        # La page de méthode, elle, affiche des chiffres : chacun de ceux qui
+        # viennent du formulaire porte data-defaut et doit en égaler la valeur.
+        # Sans quoi la page annoncerait 8 % de frais quand l'outil en retient 7,5.
+        methode = (RACINE / "pages" / "hypotheses-de-calcul.html").read_text(encoding="utf-8")
+        affiches = re.findall(r'data-defaut="(\w+)"[^>]*>([^<]+)<', methode)
+        lu = lambda t: float(re.search(r"-?\d+(?:\.\d+)?",
+                                       re.sub(r"\s", "", t).replace("−", "-").replace(",", ".")).group())
+        derives = ["%s %s" % (cle, texte.strip()) for cle, texte in affiches
+                   if cle not in defauts or abs(lu(texte) - defauts[cle]) > 1e-9]
+        controle("hypothèses de calcul : chiffres affichés = valeurs par défaut",
+                 bool(affiches) and not derives,
+                 ", ".join(derives)[:60] or "%d chiffres vérifiés" % len(affiches))
 
         print("\nCONFIDENTIALITÉ ET POIDS")
         textes = css + "".join(f.read_text(encoding="utf-8") for _, f in pages)

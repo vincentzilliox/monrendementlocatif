@@ -45,8 +45,8 @@
   <nav class="nav" aria-label="Navigation principale">
     <a href="/calculatrice/">Calculatrice</a>
     <a href="/guides/">Guides</a>
-    <a href="/questions-frequentes/">Questions fréquentes</a>
     <a href="/hypotheses-de-calcul/" aria-current="page">Hypothèses de calcul</a>
+    <a href="/questions-frequentes/">Questions fréquentes</a>
   </nav>
   <span class="spacer"></span>
   <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
@@ -62,44 +62,319 @@
 </header>
 <div class="page">
 <p class="crumbs"><a href="/">Accueil</a> › Hypothèses de calcul</p>
-<article class="prose">
-  <h1>Hypothèses de calcul</h1>
-  <p class="chapo">Un simulateur ne vaut que par ce qu'il modélise, et par ce qu'il avoue ne pas modéliser. Voici la méthode complète, dans le désordre où les questions se posent : ce que le rendement mesure, comment la fiscalité est appliquée, comment les placements sont comparés, et où s'arrête l'exercice.</p>
+<article class="methode">
+  <header class="mhead">
+    <p class="eyebrow">La méthode, sans boîte noire</p>
+    <h1>Hypothèses de calcul</h1>
+    <p class="chapo">Un simulateur ne vaut que par ce qu'il modélise, et par ce qu'il avoue ne pas modéliser. Voici chaque règle appliquée par la calculatrice : d'abord ce qu'il faut en retenir, puis le détail.</p>
+  </header>
 
-  <ul>
-    <li><b>Rendement annualisé</b> — c'est un TRI : le taux qui, appliqué chaque année à l'argent que vous avez réellement sorti de votre poche, reproduit exactement la chronique de vos flux. Il tient compte du moment où chaque euro entre et sort, contrairement à une simple moyenne.</li>
-    <li><b>Effet de levier</b> — le rendement porte sur l'apport et les mensualités payées de votre poche, pas sur le prix du bien. Un apport faible amplifie le résultat dans les deux sens.</li>
-    <li><b>Assurance emprunteur</b> — la prime est calculée sur le <b>capital initial</b> et reste donc constante sur toute la durée du prêt. C'est le fonctionnement du contrat groupe proposé par la banque. Une assurance déléguée, souvent moins chère, calcule fréquemment sa prime sur le capital restant dû : elle coûte alors nettement moins sur la seconde moitié du crédit, et le calcul la surestime ici. Le taux se saisit en pourcentage annuel du capital emprunté.</li>
-    <li><b>Placements comparés</b> — à mise de fonds identique. Les quatre scénarios démarrent sur le même apport et exigent les mêmes versements : chaque euro d'effort d'épargne réclamé par le bien est, ailleurs, investi au taux du placement. Sans quoi on comparerait un capital qui travaille à un capital qui dort. Les taux sont saisis <b>hors inflation</b>, comme le rendement réel du bien ; ils sont reconvertis en euros courants pour capitaliser dans la même monnaie que les flux du bien, et l'équivalent nominal s'affiche sous chaque champ. Les valeurs par défaut retiennent 4 % réels pour la bourse, un fonds euros qui suit l'inflation, et un Livret A légèrement en dessous — à 2 % d'inflation, cela redonne 1,7 % nominal, soit précisément son taux actuel. La comparaison est nette d'impôt des deux côtés : le bien supporte sa fiscalité année par année et à la revente ; la bourse et le fonds euros supportent, à la sortie, le taux que vous indiquez sur leurs gains. Depuis le 1<sup>er</sup> janvier 2026, le prélèvement forfaitaire unique atteint <b>31,4 %</b> (12,8 % d'impôt sur le revenu et 18,6 % de prélèvements sociaux, la CSG sur les revenus du capital étant passée de 9,2 % à 10,6 %) ; un PEA de plus de cinq ans supporte les seuls prélèvements sociaux, soit 18,6 %. L'assurance-vie, le PEL et le PEP échappent par exception à cette hausse et restent à 17,2 %, soit 30 % avant huit ans et 24,7 % après. Le Livret A est exonéré. La ligne de référence du premier graphique est le rendement annualisé de ce portefeuille boursier net d'impôt, alimenté par exactement les mêmes versements que le bien. Une réserve : la trésorerie dégagée par le bien une fois le crédit soldé est replacée au taux de la bourse et imposée de la même façon, si bien que relever cette référence déplace légèrement la courbe immobilière.</li>
-    <li><b>Rendement réel</b> — tous les montants de la page sont en euros courants. Le rendement en pouvoir d'achat retire l'inflation du rendement annualisé : à 2 % d'inflation, 4 % nominal ne valent que 2 % réels. Par défaut, prix du bien, loyers et charges sont supposés suivre l'inflation : la pierre conserve sa valeur sans en créer, et le rendement vient alors du levier du crédit et des loyers, pas d'une plus-value réelle. Décocher la case fait réapparaître les trois taux et permet de les régler séparément — utile pour tenir compte de l'IRL, qui plafonne l'indexation des loyers et suit l'inflation avec un peu de retard, ou de charges de copropriété qui dérivent plus vite que les prix. Les taux des placements comparés sont eux aussi nominaux, la comparaison reste donc cohérente.</li>
-    <li><b>CFE</b> — due dès la deuxième année d'activité en location meublée, entre 100 et 700 € selon la commune, avec une base minimale de 247 à 589 € pour des recettes inférieures à 10 000 €. Exonérée la première année et si les recettes ne dépassent pas 5 000 €. Elle ne concerne pas la location nue : le champ se met à zéro si vous choisissez un régime foncier.</li>
-    <li><b>Deux taux de prélèvements sociaux</b> — la loi de financement de la Sécurité sociale pour 2026 a porté la CSG sur les revenus du capital de 9,2 % à 10,6 %, dès l'imposition des revenus 2025. Les revenus de location meublée supportent donc 18,6 %, tandis que la location nue reste à 17,2 % : les revenus fonciers ont été explicitement écartés de la hausse, comme les plus-values immobilières des particuliers. Le taux sur les loyers s'ajuste automatiquement quand vous changez de régime ; les deux restent modifiables. Cette différenciation étant récente et inhabituelle — deux revenus du patrimoine traités différemment —, il est prudent de la reconfirmer auprès de la doctrine fiscale avant la campagne déclarative de printemps.</li>
-    <li><b>Frais d'acquisition</b> — les droits de mutation ont augmenté : depuis avril 2025 et jusqu'en avril 2028, les départements peuvent porter leur part de 4,50 % à 5 %, ce que 89 d'entre eux sur 101 appliquent. Les frais de notaire d'un investissement locatif dans l'ancien tournent donc autour de 8 % du prix, contre 7,5 % auparavant — les primo-accédants achetant leur résidence principale en sont exonérés, ce qui ne concerne pas un achat locatif. La valeur par défaut retient 8 %.</li>
-      <li><b>Plus-value</b> — calculée sur le prix de cession net des frais d'agence supportés par le vendeur. Abattements pour durée de détention appliqués : exonération d'impôt sur le revenu à 22 ans, de prélèvements sociaux à 30 ans. Prix d'acquisition majoré des frais de notaire réels ou du forfait de 7,5 %, et du forfait travaux de 15 % au-delà de 5 ans de détention lorsqu'il est plus favorable. Surtaxe au-delà de 50 000 € de plus-value imposable.</li>
-    <li><b>Les ruptures de pente sont réelles</b> — la fiscalité française avance par seuils, pas continûment, et les courbes le montrent. Le décrochage de l'année 6 en cumule deux : les abattements pour durée de détention démarrent, et le forfait travaux de 15 % devient accessible. Viennent ensuite l'accélération de l'abattement social à partir de la 23<sup>e</sup> année (9 % par an contre 1,65 %), puis les deux exonérations. Au régime réel foncier s'ajoute l'année 4, fin de la période où revendre ferait reprendre le déficit imputé. Ces dates sont repérées en bas des graphiques : ce sont des moments de décision, pas des artefacts.</li>
-    <li><b>LMNP au réel</b> — amortissement du bâti sur 30 ans (85 % du prix et des frais), des travaux sur 15 ans, du mobilier sur 7 ans, sans création de déficit ; l'excédent est reporté sans limite de durée. Un déficit hors amortissement (charges et intérêts supérieurs aux loyers) se reporte dix ans sur les bénéfices de même nature et s'impute avant l'amortissement. Depuis la loi de finances 2025, les amortissements du bâti et des travaux effectivement déduits sont réintégrés dans le calcul de la plus-value ; ceux du mobilier ne le sont pas, le mobilier n'entrant pas dans la cession immobilière. La loi de finances pour 2026 (loi n° 2026-103 du 19 février 2026) n'a pas modifié ce régime : le plafonnement de l'amortissement à 2 % qui avait été proposé n'a pas été retenu, et aucun plafond ne limite la réintégration.</li>
-    <li><b>Dépréciation des travaux</b> — chaque poste ajoute son montant à la valeur du bien au départ, puis en perd le pourcentage indiqué chaque année, pendant la durée indiquée. Au-delà, la valeur restante ne bouge plus : un poste à 3 %/an pendant 10 ans conserve 70 % de son apport indéfiniment. Ce qui subsiste suit ensuite la revalorisation du marché. C'est une hypothèse d'usure, distincte de l'amortissement comptable du LMNP : elle ne change pas votre impôt, seulement le prix auquel vous revendrez. Les travaux restent en revanche intégralement comptés dans le coût d'acquisition et dans le prix de revient retenu pour la plus-value — vous les avez payés en entier.</li>
-    <li><b>Travaux au réel foncier</b> — déduits en totalité l'année de leur paiement, et non étalés. Seuls l'entretien, la réparation et l'amélioration ouvrent droit à déduction : la construction, la reconstruction et l'agrandissement en sont exclus. La part déductible se règle poste par poste, une peinture et une extension n'ayant pas le même traitement. Des travaux déduits ne peuvent plus majorer le prix d'acquisition au moment de la plus-value ; seule la fraction non déduite y contribue.</li>
-    <li><b>Déficit foncier</b> — la part hors intérêts d'emprunt s'impute sur le revenu global à hauteur de 10 700 € par an ; l'excédent et la part liée aux intérêts sont reportables sur les revenus fonciers des <b>10 années suivantes</b>, après quoi ils sont perdus. Revendre avant le 31 décembre de la 3<sup>e</sup> année qui suit une imputation la fait reprendre : le calcul en tient compte. Le plafond monte à 21 400 € pour la rénovation énergétique d'un logement classé E, F ou G amené au moins en D, un dispositif que la loi de finances pour 2026 a prolongé jusqu'au 31 décembre 2027 — le champ est modifiable, mais les conditions de ce doublement ne sont pas vérifiées par le calcul.</li>
-    <li><b>Ce qui n'est pas modélisé</b> — IFI, changements de législation, gros travaux ponctuels, revente en cours de mois, régimes Pinel/Denormandie/Malraux. Les plafonds du micro-foncier (15 000 €) et du micro-BIC (77 700 €) sont signalés mais pas imposés.</li>
+  <!-- Chaque chiffre marqué data-defaut est comparé à la valeur par défaut du
+       formulaire par outils/verifier.py : la page ne peut pas dériver de l'outil. -->
+  <ul class="mchiffres" aria-label="Les chiffres retenus par défaut">
+    <li><b data-defaut="notairePct">8 %</b><span>de frais de notaire dans l'ancien</span></li>
+    <li><b data-defaut="inflation">2 %</b><span>d'inflation par an, suivie par prix, loyers et charges</span></li>
+    <li><b data-defaut="bourse">4 %</b><span>par an hors inflation pour la bourse comparée</span></li>
+    <li><b data-defaut="fiscBourse">31,4 %</b><span>de prélèvement forfaitaire sur les gains boursiers</span></li>
+    <li><b data-defaut="plafondDeficit">10 700 €</b><span>de déficit foncier imputable chaque année</span></li>
+    <li><b>22 · 30 ans</b><span>pour exonérer la plus-value d'impôt, puis de prélèvements sociaux</span></li>
   </ul>
 
-  <div class="encadre">
-    <p><b>Outil d'aide à la décision.</b> Les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal. Une simulation favorable ne garantit ni l'accord d'une banque, ni la location effective du bien, ni la stabilité de la fiscalité sur vingt-cinq ans.</p>
-  </div>
+  <div class="mcorps">
+    <nav class="msommaire" aria-label="Sommaire">
+      <p>Sommaire</p>
+      <ol>
+        <li><a href="#rendement"><span>01</span>Ce que mesure le rendement</a></li>
+        <li><a href="#achat"><span>02</span>Achat et crédit</a></li>
+        <li><a href="#loyers"><span>03</span>Fiscalité des loyers</a></li>
+        <li><a href="#revente"><span>04</span>Revente et plus-value</a></li>
+        <li><a href="#placements"><span>05</span>Placements comparés</a></li>
+        <li><a href="#limites"><span>06</span>Limites</a></li>
+      </ol>
+    </nav>
 
-  <div class="cta">
-    <p><b>Toutes ces règles sont appliquées à votre projet</b>Chaque paramètre de cette page est un champ modifiable dans le panneau d'hypothèses de la calculatrice.</p>
-    <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
-  </div>
+    <div class="mchapitres">
 
-  <section class="lire">
-    <h2>Pour aller plus loin</h2>
-    <ul>
-      <li><a href="/questions-frequentes/">Questions fréquentes<span>Quand revendre, nominal ou réel, immobilier ou bourse, quel régime choisir.</span></a></li>
-      <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué<span>Pourquoi le rendement annualisé est la seule mesure comparable à un placement financier.</span></a></li>
-    </ul>
-  </section>
+      <section class="mchap" id="rendement">
+        <div class="mchap-tete">
+          <span class="mnum">01</span>
+          <h2>Ce que mesure le rendement</h2>
+          <p>Un seul chiffre résume la calculatrice. Voici ce qu'il contient, et ce qu'il laisse de côté.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>Rendement annualisé</h3>
+            <p class="messentiel">Un TRI, calculé sur l'argent réellement sorti de votre poche.</p>
+          </div>
+          <div class="mdetail">
+            <p>C'est le taux qui, appliqué chaque année à cet argent, reproduit exactement la chronique de vos flux. Il tient compte du moment où chaque euro entre et sort, contrairement à une simple moyenne.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Effet de levier</h3>
+            <p class="messentiel">Le rendement porte sur votre apport, pas sur le prix du bien.</p>
+          </div>
+          <div class="mdetail">
+            <p>Il se calcule sur l'apport et les mensualités payées de votre poche. Un apport faible amplifie le résultat dans les deux sens.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Rendement réel</h3>
+            <p class="messentiel">Tout est en euros courants ; le rendement en pouvoir d'achat retire l'inflation.</p>
+          </div>
+          <div class="mdetail">
+            <p>À 2 % d'inflation, 4 % nominal ne valent qu'environ 2 % réels. Par défaut, prix du bien, loyers et charges suivent l'inflation : la pierre conserve sa valeur sans en créer, et le rendement vient du levier du crédit et des loyers, pas d'une plus-value réelle.</p>
+            <p>Décocher la case fait réapparaître les trois taux et permet de les régler séparément — utile pour tenir compte de l'IRL, qui plafonne l'indexation des loyers et suit l'inflation avec un peu de retard, ou de charges de copropriété qui dérivent plus vite que les prix. Les placements comparés sont eux aussi capitalisés en euros courants : la comparaison reste cohérente.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mchap" id="achat">
+        <div class="mchap-tete">
+          <span class="mnum">02</span>
+          <h2>Achat et crédit</h2>
+          <p>Ce que coûte l'opération le premier jour, et ce que coûte l'argent emprunté.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>Frais d'acquisition</h3>
+            <p class="messentiel">Environ 8 % du prix dans l'ancien : c'est la valeur retenue par défaut.</p>
+          </div>
+          <div class="mdetail">
+            <p>Les droits de mutation ont augmenté : depuis avril 2025 et jusqu'en avril 2028, les départements peuvent porter leur part de 4,50 % à 5 %, ce que 89 d'entre eux sur 101 appliquent. Les frais de notaire d'un investissement locatif dans l'ancien tournent donc autour de 8 % du prix, contre 7,5 % auparavant.</p>
+            <p>Les primo-accédants qui achètent leur résidence principale en sont exonérés, ce qui ne concerne pas un achat locatif.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Assurance emprunteur</h3>
+            <p class="messentiel">Une prime calculée sur le capital initial, donc constante jusqu'à la dernière mensualité.</p>
+          </div>
+          <div class="mdetail">
+            <p>C'est le fonctionnement du contrat groupe proposé par la banque. Une assurance déléguée, souvent moins chère, calcule fréquemment sa prime sur le capital restant dû : elle coûte alors nettement moins sur la seconde moitié du crédit, et le calcul la surestime ici.</p>
+            <p>Le taux se saisit en pourcentage annuel du capital emprunté.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mchap" id="loyers">
+        <div class="mchap-tete">
+          <span class="mnum">03</span>
+          <h2>Fiscalité des loyers</h2>
+          <p>Quatre régimes, deux familles : ce que chacun déduit, reporte ou amortit.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>Deux taux de prélèvements sociaux</h3>
+            <p class="messentiel">18,6 % sur les loyers meublés, 17,2 % sur les loyers nus.</p>
+          </div>
+          <div class="mdetail">
+            <dl class="mvaleurs">
+              <div><dt>Location meublée</dt><dd><span data-defaut="ps">18,6 %</span></dd></div>
+              <div><dt>Location nue</dt><dd>17,2 %</dd></div>
+              <div><dt>Plus-value immobilière</dt><dd><span data-defaut="psPV">17,2 %</span></dd></div>
+            </dl>
+            <p>La loi de financement de la Sécurité sociale pour 2026 a porté la CSG sur les revenus du capital de 9,2 % à 10,6 %, dès l'imposition des revenus 2025. Les revenus fonciers ont été explicitement écartés de la hausse, comme les plus-values immobilières des particuliers.</p>
+            <p>Le taux sur les loyers s'ajuste automatiquement quand vous changez de régime ; les deux restent modifiables. Cette différenciation étant récente et inhabituelle — deux revenus du patrimoine traités différemment —, il est prudent de la reconfirmer auprès de la doctrine fiscale avant la campagne déclarative de printemps.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>LMNP au réel</h3>
+            <p class="messentiel">Le bien s'amortit sans jamais créer de déficit ; l'excédent se reporte sans limite de durée.</p>
+          </div>
+          <div class="mdetail">
+            <ul class="mdurees" aria-label="Durées d'amortissement par défaut">
+              <li style="--ans:30"><span>Bâti<small><span data-defaut="partBati">85 %</span> du prix et des frais</small></span><i></i><b data-defaut="amortBatiAns">30 ans</b></li>
+              <li style="--ans:15"><span>Travaux</span><i></i><b data-defaut="amortTvxAns">15 ans</b></li>
+              <li style="--ans:7"><span>Mobilier</span><i></i><b data-defaut="amortMobAns">7 ans</b></li>
+            </ul>
+            <p>Un déficit hors amortissement — charges et intérêts supérieurs aux loyers — se reporte dix ans sur les bénéfices de même nature et s'impute avant l'amortissement.</p>
+            <p>Depuis la loi de finances 2025, les amortissements du bâti et des travaux effectivement déduits sont réintégrés dans le calcul de la plus-value ; ceux du mobilier ne le sont pas, le mobilier n'entrant pas dans la cession immobilière. La loi de finances pour 2026 (loi n° 2026-103 du 19 février 2026) n'a pas modifié ce régime : le plafonnement de l'amortissement à 2 % qui avait été proposé n'a pas été retenu, et aucun plafond ne limite la réintégration.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Déficit foncier</h3>
+            <p class="messentiel">Jusqu'à 10 700 € par an déduits du revenu global, le reste reporté dix ans.</p>
+          </div>
+          <div class="mdetail">
+            <p>La part hors intérêts d'emprunt s'impute sur le revenu global dans cette limite ; l'excédent et la part liée aux intérêts sont reportables sur les revenus fonciers des <b>10 années suivantes</b>, après quoi ils sont perdus.</p>
+            <p>Revendre avant le 31 décembre de la 3<sup>e</sup> année qui suit une imputation la fait reprendre : le calcul en tient compte.</p>
+            <p>Le plafond monte à 21 400 € pour la rénovation énergétique d'un logement classé E, F ou G amené au moins en D, un dispositif que la loi de finances pour 2026 a prolongé jusqu'au 31 décembre 2027 — le champ est modifiable, mais les conditions de ce doublement ne sont pas vérifiées par le calcul.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Travaux au réel foncier</h3>
+            <p class="messentiel">Déduits en totalité l'année de leur paiement, pas étalés.</p>
+          </div>
+          <div class="mdetail">
+            <p>Seuls l'entretien, la réparation et l'amélioration ouvrent droit à déduction : la construction, la reconstruction et l'agrandissement en sont exclus. La part déductible se règle poste par poste, une peinture et une extension n'ayant pas le même traitement.</p>
+            <p>Des travaux déduits ne peuvent plus majorer le prix d'acquisition au moment de la plus-value ; seule la fraction non déduite y contribue.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>CFE</h3>
+            <p class="messentiel">Due en meublé dès la deuxième année, jamais en location nue.</p>
+          </div>
+          <div class="mdetail">
+            <p>Entre 100 et 700 € selon la commune, avec une base minimale de 247 à 589 € pour des recettes inférieures à 10 000 €. Exonérée la première année, et tant que les recettes ne dépassent pas 5 000 €.</p>
+            <p>Elle ne concerne pas la location nue : le champ se met à zéro si vous choisissez un régime foncier.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mchap" id="revente">
+        <div class="mchap-tete">
+          <span class="mnum">04</span>
+          <h2>Revente et plus-value</h2>
+          <p>La fiscalité française avance par seuils : l'année de revente change tout.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>Plus-value</h3>
+            <p class="messentiel">Calculée sur le prix de cession net des frais d'agence supportés par le vendeur.</p>
+          </div>
+          <div class="mdetail">
+            <p>Des abattements pour durée de détention s'appliquent : exonération d'impôt sur le revenu à 22 ans, de prélèvements sociaux à 30 ans.</p>
+            <p>Le prix d'acquisition est majoré des frais de notaire réels ou du forfait de 7,5 %, et du forfait travaux de 15 % au-delà de 5 ans de détention lorsqu'il est plus favorable. Une surtaxe s'applique au-delà de 50 000 € de plus-value imposable.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Les ruptures de pente sont réelles</h3>
+            <p class="messentiel">Les courbes décrochent à dates fixes : ce sont des moments de décision, pas des artefacts.</p>
+          </div>
+          <div class="mdetail">
+            <ol class="mfrise">
+              <li><b>Année 4</b><span>Au réel foncier, fin de la période où revendre ferait reprendre le déficit imputé.</span></li>
+              <li><b>Année 6</b><span>Les abattements pour durée de détention démarrent, et le forfait travaux de 15 % devient accessible.</span></li>
+              <li><b>Année 22</b><span>Exonération d'impôt sur le revenu.</span></li>
+              <li><b>Année 23</b><span>L'abattement social accélère : 9 % par an, contre 1,65 % jusque-là.</span></li>
+              <li><b>Année 30</b><span>Exonération de prélèvements sociaux.</span></li>
+            </ol>
+            <p>Ces dates sont repérées en bas des graphiques de la calculatrice.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Dépréciation des travaux</h3>
+            <p class="messentiel">Une hypothèse d'usure : elle change le prix de revente, pas votre impôt.</p>
+          </div>
+          <div class="mdetail">
+            <p>Chaque poste ajoute son montant à la valeur du bien au départ, puis en perd le pourcentage indiqué chaque année, pendant la durée indiquée. Au-delà, la valeur restante ne bouge plus : un poste à 3 %/an pendant 10 ans conserve 70 % de son apport indéfiniment. Ce qui subsiste suit ensuite la revalorisation du marché.</p>
+            <p>Elle est distincte de l'amortissement comptable du LMNP. Les travaux restent en revanche intégralement comptés dans le coût d'acquisition et dans le prix de revient retenu pour la plus-value — vous les avez payés en entier.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mchap" id="placements">
+        <div class="mchap-tete">
+          <span class="mnum">05</span>
+          <h2>Placements comparés</h2>
+          <p>Battre la bourse n'a de sens qu'à mêmes sommes, mêmes dates et même impôt.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>À mise de fonds identique</h3>
+            <p class="messentiel">Les quatre scénarios engagent exactement les mêmes sommes aux mêmes dates.</p>
+          </div>
+          <div class="mdetail">
+            <p>Ils démarrent sur le même apport et exigent les mêmes versements : chaque euro d'effort d'épargne réclamé par le bien est, ailleurs, investi au taux du placement. Sans quoi on comparerait un capital qui travaille à un capital qui dort.</p>
+            <p>La ligne de référence du premier graphique est le rendement annualisé de ce portefeuille boursier net d'impôt, alimenté par exactement les mêmes versements que le bien.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Des taux saisis hors inflation</h3>
+            <p class="messentiel">Comme le rendement réel du bien, puis reconvertis en euros courants pour capitaliser.</p>
+          </div>
+          <div class="mdetail">
+            <dl class="mvaleurs">
+              <div><dt>Bourse</dt><dd><span data-defaut="bourse">4 %</span> réels<small>6,1 % en euros courants</small></dd></div>
+              <div><dt>Fonds euros</dt><dd><span data-defaut="fondsEuros">0 %</span> réel<small>suit l'inflation : 2 %</small></dd></div>
+              <div><dt>Livret A</dt><dd><span data-defaut="livretA">−0,3 %</span> réel<small>1,7 %, son taux actuel</small></dd></div>
+            </dl>
+            <p>L'équivalent en euros courants s'affiche sous chaque champ. À 2 % d'inflation, le Livret A retenu redonne 1,7 % nominal : précisément son taux actuel.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Nette d'impôt des deux côtés</h3>
+            <p class="messentiel">Le bien paie sa fiscalité chaque année et à la revente ; les placements paient la leur à la sortie.</p>
+          </div>
+          <div class="mdetail">
+            <dl class="mvaleurs">
+              <div><dt>Compte-titres</dt><dd><span data-defaut="fiscBourse">31,4 %</span><small>retenu pour la bourse</small></dd></div>
+              <div><dt>PEA de plus de 5 ans</dt><dd>18,6 %</dd></div>
+              <div><dt>Assurance-vie avant 8 ans</dt><dd><span data-defaut="fiscFonds">30 %</span><small>retenu pour le fonds euros</small></dd></div>
+              <div><dt>Assurance-vie après 8 ans</dt><dd>24,7 %</dd></div>
+              <div><dt>Livret A</dt><dd>exonéré</dd></div>
+            </dl>
+            <p>Depuis le 1<sup>er</sup> janvier 2026, le prélèvement forfaitaire unique atteint <b>31,4 %</b> : 12,8 % d'impôt sur le revenu et 18,6 % de prélèvements sociaux, la CSG sur les revenus du capital étant passée de 9,2 % à 10,6 %. Un PEA de plus de cinq ans ne supporte que les prélèvements sociaux.</p>
+            <p>L'assurance-vie, le PEL et le PEP échappent par exception à cette hausse et restent à 17,2 % de prélèvements sociaux, soit 30 % avant huit ans et 24,7 % après. Le taux appliqué aux gains de la bourse et du fonds euros se règle dans le panneau d'hypothèses.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Une réserve</h3>
+            <p class="messentiel">Relever le taux de la bourse déplace légèrement la courbe immobilière.</p>
+          </div>
+          <div class="mdetail">
+            <p>La trésorerie dégagée par le bien une fois le crédit soldé est replacée au taux de la bourse et imposée de la même façon.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mchap" id="limites">
+        <div class="mchap-tete">
+          <span class="mnum">06</span>
+          <h2>Limites</h2>
+          <p>Où s'arrête l'exercice.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>Ce qui n'est pas modélisé</h3>
+            <p class="messentiel">Ce que la calculatrice laisse volontairement de côté.</p>
+          </div>
+          <div class="mdetail">
+            <ul class="mpuces">
+              <li>IFI</li>
+              <li>Changements de législation</li>
+              <li>Gros travaux ponctuels</li>
+              <li>Revente en cours de mois</li>
+              <li>Pinel, Denormandie, Malraux</li>
+            </ul>
+            <p>Les plafonds du micro-foncier (15 000 €) et du micro-BIC (77 700 €) sont signalés, mais pas imposés.</p>
+          </div>
+        </article>
+      </section>
+
+      <div class="prose mfin">
+        <div class="encadre">
+          <p><b>Outil d'aide à la décision.</b> Les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal. Une simulation favorable ne garantit ni l'accord d'une banque, ni la location effective du bien, ni la stabilité de la fiscalité sur vingt-cinq ans.</p>
+        </div>
+
+        <div class="cta">
+          <p><b>Toutes ces règles sont appliquées à votre projet</b>Chaque paramètre de cette page est un champ modifiable dans le panneau d'hypothèses de la calculatrice.</p>
+          <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
+        </div>
+
+        <section class="lire">
+          <h2>Pour aller plus loin</h2>
+          <ul>
+            <li><a href="/questions-frequentes/">Questions fréquentes<span>Quand revendre, nominal ou réel, immobilier ou bourse, quel régime choisir.</span></a></li>
+            <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué<span>Pourquoi le rendement annualisé est la seule mesure comparable à un placement financier.</span></a></li>
+          </ul>
+        </section>
+      </div>
+
+    </div>
+  </div>
 </article>
 </div>
 <footer class="footer">
@@ -123,8 +398,8 @@
       <b>À propos</b>
       <ul>
         <li><a href="/calculatrice/">La calculatrice</a></li>
-        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
         <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a></li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
         <li><a href="/mentions-legales/">Mentions légales</a></li>
         <li><a href="#" class="mail" data-u="contact" data-d="monrendementlocatif.fr">Nous écrire</a></li>
       </ul>
