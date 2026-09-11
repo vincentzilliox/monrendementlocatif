@@ -2,8 +2,9 @@
    assistant — l'accroche pose les questions, la calculatrice répond.
    Aucun chiffre n'est écrit ici : tout se déduit de DEFAUTS, de
    OPTIONS et de TVX_DEFAUT, à proportion du prix saisi. Répondre par
-   les valeurs proposées produit donc un lien sans fragment, c'est-à-dire
-   très exactement le scénario que la vitrine affiche plus bas.
+   les valeurs proposées produit donc un lien qui ne fixe aucune
+   hypothèse, c'est-à-dire très exactement le scénario que la vitrine
+   affiche plus bas.
    ═════════════════════════════════════════════════════════════════ */
 (function(){
 const racine = document.getElementById("assistant");
@@ -124,8 +125,11 @@ function valeurs(r){
 const touches = new Set();
 let etape = 0, demarre = false;
 
+// Le lien est complet : les réponses décrivent un projet entier. Sans cela, tout
+// ce que le visiteur laisse à sa valeur proposée garderait, dans la calculatrice,
+// la saisie de sa visite précédente.
 function majLiens(r){
-  const cible = "/calculatrice/" + lienHypotheses(valeurs(r), DEFAUTS, r.items);
+  const cible = "/calculatrice/" + lienHypotheses(valeurs(r), DEFAUTS, r.items, true);
   el("qGo").setAttribute("href", cible);
   el("qSauter").setAttribute("href", cible);
 }

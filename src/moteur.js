@@ -409,10 +409,17 @@ const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
   .map(v => encodeURIComponent(String(v).replace(/[|:]/g, " "))).join(":");
 
 // `valeurs` : les hypothèses à transmettre, `defauts` : celles de l'ouverture.
-// Seul ce qui diffère voyage — un lien sans fragment est donc exactement le
+// Seul ce qui diffère voyage — un fragment vide est donc exactement le
 // scénario par défaut, celui que la page d'accueil affiche.
-function lienHypotheses(valeurs, defauts, items){
-  const q = [];
+//
+// Un lien ordinaire se pose sur ce que le visiteur a déjà saisi : un guide ouvre
+// son projet au régime réel sans lui faire tout ressaisir. `complet` dit
+// l'inverse : le lien décrit un projet entier, et ce qu'il ne fixe pas reprend la
+// valeur d'ouverture, pas celle qu'une visite précédente a laissée dans le
+// navigateur. Il porte alors un marqueur, et n'est donc jamais vide.
+const LIEN_COMPLET = "complet=1";
+function lienHypotheses(valeurs, defauts, items, complet){
+  const q = complet ? [LIEN_COMPLET] : [];
   Object.keys(valeurs).forEach(k => {
     const v = valeurs[k];
     if(typeof v === "boolean"){

@@ -663,9 +663,13 @@ function versHash(){
 function depuisHash(){
   const h = location.hash.slice(1);
   if(!h || h.indexOf("=") < 0) return false;
+  const parts = h.split("&");
+  // Un lien complet repart de l'ouverture avant de s'appliquer ; un lien ordinaire
+  // se pose sur ce que load() vient de relire.
+  if(parts.includes(LIEN_COMPLET)) retablirDefauts();
   const vus = new Set();
   let regime = null;
-  h.split("&").forEach(part => {
+  parts.forEach(part => {
     const i = part.indexOf("="); if(i < 0) return;
     const k = part.slice(0, i), v = decodeURIComponent(part.slice(i+1));
     if(k === "tvx"){

@@ -135,8 +135,11 @@ Trois règles, et ce sont des contrôles, pas des conventions :
   champs.
 - `src/assistant.js` ne connaît aucun chiffre : il propose des valeurs déduites
   de `DEFAUTS` à proportion du prix saisi. Accepter toutes ses propositions doit
-  donc rendre un lien *sans fragment*, c'est-à-dire le scénario même de la
-  vitrine — et c'est un contrôle.
+  donc rendre un lien qui ne fixe aucune hypothèse, `/calculatrice/#complet=1`,
+  c'est-à-dire le scénario même de la vitrine — et c'est un contrôle. Le
+  marqueur `complet` fait repartir la calculatrice des valeurs d'ouverture,
+  quoi qu'une visite précédente ait laissé dans le navigateur ; un lien de
+  guide, lui, se pose sur la saisie du visiteur.
 - `index.html` ne porte que du balisage, délimité par des marqueurs appariés
   `<!-- entete:début -->` / `<!-- entete:fin -->` : `build.py` refuse de
   construire s'ils manquent, sont dupliqués ou se croisent.

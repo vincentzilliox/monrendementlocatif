@@ -410,10 +410,17 @@ const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
   .map(v => encodeURIComponent(String(v).replace(/[|:]/g, " "))).join(":");
 
 // `valeurs` : les hypothèses à transmettre, `defauts` : celles de l'ouverture.
-// Seul ce qui diffère voyage — un lien sans fragment est donc exactement le
+// Seul ce qui diffère voyage — un fragment vide est donc exactement le
 // scénario par défaut, celui que la page d'accueil affiche.
-function lienHypotheses(valeurs, defauts, items){
-  const q = [];
+//
+// Un lien ordinaire se pose sur ce que le visiteur a déjà saisi : un guide ouvre
+// son projet au régime réel sans lui faire tout ressaisir. `complet` dit
+// l'inverse : le lien décrit un projet entier, et ce qu'il ne fixe pas reprend la
+// valeur d'ouverture, pas celle qu'une visite précédente a laissée dans le
+// navigateur. Il porte alors un marqueur, et n'est donc jamais vide.
+const LIEN_COMPLET = "complet=1";
+function lienHypotheses(valeurs, defauts, items, complet){
+  const q = complet ? [LIEN_COMPLET] : [];
   Object.keys(valeurs).forEach(k => {
     const v = valeurs[k];
     if(typeof v === "boolean"){
@@ -1151,8 +1158,9 @@ vitrine();
    assistant — l'accroche pose les questions, la calculatrice répond.
    Aucun chiffre n'est écrit ici : tout se déduit de DEFAUTS, de
    OPTIONS et de TVX_DEFAUT, à proportion du prix saisi. Répondre par
-   les valeurs proposées produit donc un lien sans fragment, c'est-à-dire
-   très exactement le scénario que la vitrine affiche plus bas.
+   les valeurs proposées produit donc un lien qui ne fixe aucune
+   hypothèse, c'est-à-dire très exactement le scénario que la vitrine
+   affiche plus bas.
    ═════════════════════════════════════════════════════════════════ */
 (function(){
 const racine = document.getElementById("assistant");
@@ -1273,8 +1281,11 @@ function valeurs(r){
 const touches = new Set();
 let etape = 0, demarre = false;
 
+// Le lien est complet : les réponses décrivent un projet entier. Sans cela, tout
+// ce que le visiteur laisse à sa valeur proposée garderait, dans la calculatrice,
+// la saisie de sa visite précédente.
 function majLiens(r){
-  const cible = "/calculatrice/" + lienHypotheses(valeurs(r), DEFAUTS, r.items);
+  const cible = "/calculatrice/" + lienHypotheses(valeurs(r), DEFAUTS, r.items, true);
   el("qGo").setAttribute("href", cible);
   el("qSauter").setAttribute("href", cible);
 }

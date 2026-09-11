@@ -317,6 +317,21 @@ setTimeout(function(){
   r.vitrine   = (document.getElementById("vTri")||{}).textContent || "";
   r.vcourbes  = document.querySelectorAll("#vPlotNet path[stroke]").length;
   r.vsens     = document.querySelectorAll("#vPlotSens svg rect").length;
+  // Un lien complet efface la saisie d'une visite precedente ; un lien de guide
+  // s'y superpose. Mesure en dernier : elle modifie le formulaire.
+  var tx = document.getElementById("taux");
+  if(typeof depuisHash === "function" && tx){
+    var essai = function(fragment){
+      tx.value = "9.99";
+      history.replaceState(null, "", location.pathname + fragment);
+      depuisHash();
+      return tx.value;
+    };
+    r.lienComplet = essai("#complet=1&loyer=1234") === DEFAULTS.taux
+                    && document.getElementById("loyer").value === "1234";
+    r.lienGuide = essai("#regime=reel-foncier") === "9.99"
+                  && document.getElementById("regime").value === "reel-foncier";
+  }
   document.getElementById("sonde").textContent = "SONDE::" + JSON.stringify(r);
 }, 1800);
 </script>"""
@@ -561,9 +576,9 @@ def main():
                              "%s clics → %s" % (r.get("qEtapes"), r.get("qFin") or "—"))
                     # L'assistant ne doit inventer aucune hypothèse : tout accepter
                     # doit rendre le scénario que la vitrine affiche juste au-dessus,
-                    # c'est-à-dire un lien sans le moindre fragment.
+                    # c'est-à-dire un lien qui ne porte que son marqueur « complet ».
                     controle("assistant : les valeurs proposées rejouent le scénario par défaut",
-                             r.get("qLienDefaut") == "/calculatrice/", r.get("qLienDefaut") or "—")
+                             r.get("qLienDefaut") == "/calculatrice/#complet=1", r.get("qLienDefaut") or "—")
                     manquants = [c for c in ("prix=", "loyer=", "apport=", "tf=", "copro=", "mobilier=")
                                  if c not in (r.get("qLienModifie") or "")]
                     controle("assistant : le prix entraîne loyer, apport et charges",
@@ -598,6 +613,12 @@ def main():
                     # « ouvre au focus », « les flèches déplacent », « se ferme au blur »
                     controle("infobulle pilotable au clavier", r.get("clavier") == "111",
                              r.get("clavier") or "sonde muette")
+                    # Le lien de l'assistant décrit un projet entier : ce qu'il ne
+                    # fixe pas ne doit pas garder la saisie d'une visite précédente.
+                    controle("lien complet : repart des valeurs d'ouverture",
+                             r.get("lienComplet") is True, str(r.get("lienComplet")))
+                    controle("lien de guide : conserve la saisie du visiteur",
+                             r.get("lienGuide") is True, str(r.get("lienGuide")))
                     controle("aucun graphique ne piège le défilement",
                              not r.get("piege"), r.get("piege") or "")
                     controle("les graphiques suivent la bascule de thème",
