@@ -82,12 +82,37 @@ button,input,select{font-family:inherit}
 .brand{display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:var(--text)}
 .brand:hover{text-decoration:none}
 .brand .mark{width:26px; height:26px; color:var(--text); flex:none}
-@media (max-width:560px){ .brand span{display:none} .nav{margin-left:0} }
+@media (max-width:560px){ .topbar:not(.menu-pret) .brand span{display:none} .nav{margin-left:0} }
+@media (max-width:359px){ .brand span{display:none} }
 .nav{display:flex; gap:2px; margin-left:8px; min-width:0; overflow-x:auto; scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
 .nav a{flex:none; padding:6px 10px; border-radius:var(--radius); color:var(--text-muted); font-size:14px; white-space:nowrap}
 .nav a:hover{color:var(--text); text-decoration:none; background:var(--surface-2)}
 .nav a[aria-current]{color:var(--text); font-weight:500}
+/* Le menu : sous 860 px, les quatre liens ne tiennent plus dans la barre et
+   « Questions fréquentes » disparaissait hors de l'écran. Le script de l'en-tête
+   pose .menu-pret ; sans lui, la barre défile comme avant. */
+.burger{
+  flex:none; width:38px; height:32px; padding:0; display:grid; place-items:center; cursor:pointer;
+  color:var(--text); background:var(--btn-bg); border:1px solid var(--border); border-radius:var(--radius);
+}
+.burger:hover{border-color:var(--text-muted)}
+.burger svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round}
+.burger .croix,.topbar.ouvert .burger .traits{display:none}
+.topbar.ouvert .burger .croix{display:block}
+@media (min-width:861px){ .burger{display:none} }
+@media (max-width:860px){
+  .topbar{position:relative; gap:12px}
+  .topbar.menu-pret .nav{
+    display:none; position:absolute; top:100%; left:0; right:0; z-index:30; margin:0;
+    flex-direction:column; gap:0; overflow:visible;
+    padding:4px clamp(16px,3vw,32px) 8px; background:var(--surface); border-bottom:1px solid var(--border);
+  }
+  .topbar.menu-pret.ouvert .nav{display:flex}
+  .topbar.menu-pret .nav a{padding:13px 2px; font-size:15px; border-radius:0; border-bottom:1px solid var(--border)}
+  .topbar.menu-pret .nav a:last-child{border-bottom:0}
+  .topbar.menu-pret .nav a:hover{background:transparent}
+}
 .spacer{flex:1}
 /* interrupteur jour / nuit */
 .tsw{
@@ -118,14 +143,27 @@ button,input,select{font-family:inherit}
 .canvas{padding:0 clamp(16px,3vw,34px) 64px; display:flex; flex-direction:column; gap:22px; min-width:0}
 
 .subnav{
-  position:sticky; top:0; z-index:8; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none;
+  position:sticky; top:0; z-index:8; display:flex; align-items:center; gap:10px;
   margin:0 calc(-1*clamp(16px,3vw,34px)); padding:0 clamp(16px,3vw,34px);
   background:var(--bg); border-bottom:1px solid var(--border);
 }
-.subnav::-webkit-scrollbar{display:none}
+/* Les liens défilent dans leur propre bande : la bascule Net | Brut reste à côté,
+   jamais par-dessus. La bande descend d'un pixel pour que le soulignement du lien
+   actif recouvre la bordure de la barre. */
+.subliens{
+  display:flex; gap:2px; flex:1; min-width:0; align-self:stretch; margin-bottom:-1px;
+  overflow-x:auto; overflow-y:hidden; scrollbar-width:none;
+  /* Un fondu signale qu'il reste des sections à droite ; quand tout tient, il ne
+     touche que le vide en bout de bande. La marge finale laisse le dernier lien
+     sortir du fondu une fois la bande défilée au bout. */
+  -webkit-mask-image:linear-gradient(to right,var(--text) calc(100% - 28px),transparent);
+  mask-image:linear-gradient(to right,var(--text) calc(100% - 28px),transparent);
+}
+.subliens::-webkit-scrollbar{display:none}
+.subliens::after{content:""; flex:none; width:20px}
 .subnav a{
   flex:none; padding:12px 10px 10px; font-size:13px; color:var(--text-muted);
-  border-bottom:2px solid transparent; margin-bottom:-1px;
+  border-bottom:2px solid transparent;
 }
 .subnav a:hover{color:var(--text); text-decoration:none}
 .subnav a[aria-current]{color:var(--text); border-bottom-color:var(--text); font-weight:500}
@@ -262,7 +300,7 @@ input[type=number]{-moz-appearance:textfield}
   margin:13px 0 0; padding:6px 11px; border-radius:var(--radius); background:var(--surface-2);
   font-size:13px; color:var(--text-muted); display:inline-flex; align-items:center; gap:6px;
 }
-.reel b{font-size:15px; font-weight:600; color:var(--up-ink); font-variant-numeric:tabular-nums}
+.reel b{font-size:15px; font-weight:600; color:var(--up-ink); font-variant-numeric:tabular-nums; white-space:nowrap}
 .reel b.bad{color:var(--down-ink)}
 /* Les trois chiffres qui accompagnent le verdict : ce qu'on engage, ce qu'on
    gagne, et à partir de quand. Ils remplacent deux phrases entières. */
@@ -342,9 +380,8 @@ details.fold>summary:hover .foldtitle{text-decoration:underline}
   font-variant-numeric:tabular-nums;
 }
 .navtri:empty{display:none}
-/* Net ou brut : la bascule reste au bord droit de la sous-navigation, même quand
-   les liens défilent dessous sur petit écran. */
-.subnav .seg.fisc{align-self:center; position:sticky; right:0; margin-left:8px; background:var(--bg)}
+/* Net ou brut : au bout de la sous-navigation, hors de la bande qui défile. */
+.subnav .seg.fisc{flex:none}
 .navtri b{color:var(--text); font-weight:600}
 @media (max-width:1040px){ .navtri{display:none} }
 

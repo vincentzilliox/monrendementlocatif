@@ -42,13 +42,17 @@
     </svg>
     <span>Mon rendement locatif</span>
   </a>
-  <nav class="nav" aria-label="Navigation principale">
+  <nav class="nav" id="menu" aria-label="Navigation principale">
     <a href="/calculatrice/" aria-current="page">Calculatrice</a>
     <a href="/guides/">Guides</a>
     <a href="/hypotheses-de-calcul/">Hypothèses de calcul</a>
     <a href="/questions-frequentes/">Questions fréquentes</a>
   </nav>
   <span class="spacer"></span>
+  <button class="burger" type="button" aria-controls="menu" aria-expanded="false" aria-label="Ouvrir le menu" hidden>
+    <svg class="traits" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+    <svg class="croix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+  </button>
   <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
     <span class="knob"></span>
     <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -213,14 +217,15 @@
 
   <main class="canvas">
     <nav class="subnav" aria-label="Sections de la page">
-      <a href="#verdict">Verdict</a>
-      <a href="#rendement">Rendement</a>
-      <a href="#placements">Placements</a>
-      <a href="#regimes">Régimes</a>
-      <a href="#analyse">Analyse détaillée</a>
-      <a href="#detail">Tableau annuel</a>
-      <a href="#suite">Pour aller plus loin</a>
-      <span class="spacer"></span>
+      <div class="subliens">
+        <a href="#verdict">Verdict</a>
+        <a href="#rendement">Rendement</a>
+        <a href="#placements">Placements</a>
+        <a href="#regimes">Régimes</a>
+        <a href="#analyse">Analyse détaillée</a>
+        <a href="#detail">Tableau annuel</a>
+        <a href="#suite">Pour aller plus loin</a>
+      </div>
       <span class="navtri" id="navTri" aria-hidden="true"></span>
       <div class="seg fisc" role="group" aria-label="Montants après impôt (net) ou avant impôt (brut)">
         <button type="button" id="fiscNet" aria-pressed="true">Net</button>
@@ -230,7 +235,7 @@
 
     <section class="verdict" id="verdict">
       <div class="vmain">
-        <p class="eyebrow">Rendement annuel <span data-brut="avant impôt">net</span>, revente à <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. <span data-brut="Net de toutes les charges, mais avant impôt sur les loyers et sur la plus-value.">Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></span></p>
+        <p class="eyebrow"><span data-brut="Rendement annuel avant impôt, revente à">Rendement annuel net, revente à</span> <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. <span data-brut="Net de toutes les charges, mais avant impôt sur les loyers et sur la plus-value.">Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></span></p>
         <div class="hero">
           <span class="big num" id="heroTri">—</span>
           <span class="pill num" id="benchPill">—</span>
@@ -239,7 +244,7 @@
         <p class="reel"><b class="num" id="heroReel">—</b> <span id="heroReelTxt">en pouvoir d'achat</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le même rendement une fois l'inflation retirée. C'est ce chiffre qui dit si vous vous enrichissez : un capital qui progresse moins vite que les prix achète moins de choses à l'arrivée.</span></span></p>
         <dl class="facts">
           <dt>Sorti de votre poche<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'apport du premier jour, plus chaque euro que le bien vous a réclamé ensuite quand les loyers ne couvraient pas tout.</span></span></dt><dd id="vdMise">—</dd>
-          <dt><span data-brut="Gain avant impôt">Gain net</span> à la revente</dt><dd id="vdGain">—</dd>
+          <dt><span data-brut="Gain avant impôt à la revente">Gain net à la revente</span></dt><dd id="vdGain">—</dd>
           <dt>Point mort<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La première année où revendre cesse de laisser une perte. Avant cette date, la vente ne couvre pas les frais de notaire et d'agence payés à l'achat.</span></span></dt><dd id="vdMort">—</dd>
         </dl>
         <div class="avis" id="avisBox" hidden>

@@ -24,3 +24,21 @@
   sync();
   document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
 })();
+
+(function(){
+  const barre = document.querySelector(".topbar");
+  const bouton = barre && barre.querySelector(".burger");
+  if(!bouton) return;
+  const ouvrir = oui => {
+    barre.classList.toggle("ouvert", oui);
+    bouton.setAttribute("aria-expanded", oui ? "true" : "false");
+    bouton.setAttribute("aria-label", oui ? "Fermer le menu" : "Ouvrir le menu");
+  };
+  bouton.hidden = false;
+  barre.classList.add("menu-pret");
+  bouton.addEventListener("click", () => ouvrir(!barre.classList.contains("ouvert")));
+  document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && barre.classList.contains("ouvert")){ ouvrir(false); bouton.focus(); }
+  });
+  document.addEventListener("click", e => { if(!barre.contains(e.target)) ouvrir(false); });
+})();

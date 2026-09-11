@@ -43,13 +43,17 @@
     </svg>
     <span>Mon rendement locatif</span>
   </a>
-  <nav class="nav" aria-label="Navigation principale">
+  <nav class="nav" id="menu" aria-label="Navigation principale">
     <a href="/calculatrice/">Calculatrice</a>
     <a href="/guides/">Guides</a>
     <a href="/hypotheses-de-calcul/">Hypothèses de calcul</a>
     <a href="/questions-frequentes/">Questions fréquentes</a>
   </nav>
   <span class="spacer"></span>
+  <button class="burger" type="button" aria-controls="menu" aria-expanded="false" aria-label="Ouvrir le menu" hidden>
+    <svg class="traits" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+    <svg class="croix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+  </button>
   <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
     <span class="knob"></span>
     <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">

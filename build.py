@@ -253,6 +253,30 @@ SITE_JS = """"use strict";
 """
 
 
+# Le menu de l'en-tête sur petit écran. Écrit une fois ici, ajouté à site.js comme
+# à app.js : la calculatrice ne charge pas site.js. Sans ce script, le bouton
+# reste caché et la barre défile, si bien que les liens restent atteignables.
+MENU_JS = """
+(function(){
+  const barre = document.querySelector(".topbar");
+  const bouton = barre && barre.querySelector(".burger");
+  if(!bouton) return;
+  const ouvrir = oui => {
+    barre.classList.toggle("ouvert", oui);
+    bouton.setAttribute("aria-expanded", oui ? "true" : "false");
+    bouton.setAttribute("aria-label", oui ? "Fermer le menu" : "Ouvrir le menu");
+  };
+  bouton.hidden = false;
+  barre.classList.add("menu-pret");
+  bouton.addEventListener("click", () => ouvrir(!barre.classList.contains("ouvert")));
+  document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && barre.classList.contains("ouvert")){ ouvrir(false); bouton.focus(); }
+  });
+  document.addEventListener("click", e => { if(!barre.contains(e.target)) ouvrir(false); });
+})();
+"""
+
+
 def _meta(fragment, chemin):
     m = re.search(r'<script type="application/json" id="meta">(.*?)</script>', fragment, re.S)
     if not m:
@@ -443,14 +467,14 @@ def main():
             chemin.rmdir()
 
     (SITE / "css" / "style.css").write_text(style + "\n", encoding="utf-8")
-    (SITE / "js" / "site.js").write_text(SITE_JS, encoding="utf-8")
+    (SITE / "js" / "site.js").write_text(SITE_JS + MENU_JS, encoding="utf-8")
     # Un seul moteur, un seul jeu de graphiques, deux pilotes. La calculatrice et
     # la vitrine ne peuvent donc pas afficher deux chiffres différents des mêmes
     # hypothèses — et la vitrine reçoit les valeurs par défaut relues dans le
     # balisage, jamais recopiées.
     prelude = '"use strict";\n'
     (SITE / "js" / "app.js").write_text(
-        prelude + "\n".join((moteur, graphiques, calculatrice)) + "\n", encoding="utf-8")
+        prelude + "\n".join((moteur, graphiques, calculatrice, MENU_JS)) + "\n", encoding="utf-8")
     marqueur = "const DEFAUTS = {/* build.py : valeurs par défaut */};"
     if marqueur not in vitrine:
         raise SystemExit("src/vitrine.js : ligne DEFAUTS introuvable")

@@ -318,6 +318,18 @@ setTimeout(function(){
   r.vitrine   = (document.getElementById("vTri")||{}).textContent || "";
   r.vcourbes  = document.querySelectorAll("#vPlotNet path[stroke]").length;
   r.vsens     = document.querySelectorAll("#vPlotSens svg rect").length;
+  // Petit ecran : le menu doit s'ouvrir sur les quatre liens, tous a l'ecran.
+  var burger = document.querySelector(".topbar .burger");
+  if(burger && largeur < 500){
+    burger.click();
+    var dansEcran = Array.prototype.filter.call(document.querySelectorAll(".topbar .nav a"), function(a){
+      var b = a.getBoundingClientRect(); return b.width > 0 && b.left >= -1 && b.right <= largeur + 1; }).length;
+    r.menu = (burger.offsetParent !== null ? "1" : "0") + (dansEcran === 4 ? "1" : "0");
+    burger.click();
+  }
+  // La bande des sections s'arrete avant la bascule Net | Brut : rien ne passe dessous.
+  var bande = document.querySelector(".subliens"), bascule = document.querySelector(".subnav .seg.fisc");
+  if(bande && bascule) r.subnavLibre = bande.getBoundingClientRect().right <= bascule.getBoundingClientRect().left + 0.5;
   // Brut : le meme projet avant impot. Le rendement change, les colonnes d'impot
   // quittent le tableau, le verdict le dit, et revenir en net rend le chiffre de depart.
   var bBrut = document.getElementById("fiscBrut"), bNet = document.getElementById("fiscNet");
@@ -602,6 +614,10 @@ def main():
                 controle("accueil %d px : aucun NaN affiché" % largeur, not r["suspects"],
                          ", ".join(r["suspects"])[:40])
                 controle("accueil %d px : aucun débordement" % largeur, not r["deborde"])
+                if largeur < 500:
+                    # « bouton menu visible », « quatre liens à l'écran une fois ouvert »
+                    controle("accueil %d px : le menu montre les quatre liens" % largeur,
+                             r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
                     controle("accueil : deux graphiques tracés", r["graphes"] == 2, str(r["graphes"]))
                     controle("accueil : quatre placements comparés", r["vcourbes"] == 4, str(r["vcourbes"]))
@@ -644,6 +660,11 @@ def main():
                 controle("calculatrice %d px : aucun débordement" % largeur, not r["deborde"])
                 controle("calculatrice %d px : aucun débordement, panneau complet" % largeur,
                          not r.get("debordeTout"))
+                controle("calculatrice %d px : aucune section sous la bascule Net | Brut" % largeur,
+                         r.get("subnavLibre") is True, str(r.get("subnavLibre")))
+                if largeur < 500:
+                    controle("calculatrice %d px : le menu montre les quatre liens" % largeur,
+                             r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
                     # La vitrine rejoue le scénario par défaut : le moindre écart
                     # signalerait qu'elle a cessé de suivre le moteur.
