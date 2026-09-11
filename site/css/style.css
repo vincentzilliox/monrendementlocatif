@@ -16,6 +16,7 @@
   --up:#00a878; --down:#e5254f; --up-bg:rgba(0,168,120,.14); --down-bg:rgba(229,37,79,.14);
   --up-ink:#007352; --down-ink:#be173b;
   --d1:#ff6a00; --d2:#0077ff; --d3:#8a2be2; --d4:#c9a800; --d-neutral:var(--text-muted);
+  --voile:rgba(0,0,0,.32);
   --radius:6px; --radius-lg:8px;
   --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Helvetica,Arial,sans-serif;
 }
@@ -28,6 +29,7 @@
   --up:#00e5a0; --down:#ff3b6b; --up-bg:rgba(0,229,160,.16); --down-bg:rgba(255,59,107,.16);
   --up-ink:var(--up); --down-ink:var(--down);
   --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a;
+  --voile:rgba(0,0,0,.6);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -39,6 +41,7 @@
     --up:#00e5a0; --down:#ff3b6b; --up-bg:rgba(0,229,160,.16); --down-bg:rgba(255,59,107,.16);
     --up-ink:var(--up); --down-ink:var(--down);
     --d1:#ff7a1a; --d2:#00b8ff; --d3:#b76bff; --d4:#ffd60a;
+    --voile:rgba(0,0,0,.6);
   }
 }
 
@@ -137,9 +140,26 @@ button,input,select{font-family:inherit}
 .pagehead p{margin:6px 0 0; font-size:14px; color:var(--text-muted); max-width:76ch; line-height:1.5}
 
 /* ---------- structure ---------- */
-.shell{display:grid; grid-template-columns:352px minmax(0,1fr); align-items:start}
+.shell{display:grid; grid-template-columns:352px minmax(0,1fr); align-items:start; transition:grid-template-columns .22s ease}
+/* Rabattu : la colonne se referme contre le bord gauche et les résultats prennent
+   la place. Le panneau garde sa largeur et glisse sous le bord, sans se tasser. */
+.shell.panneau-replie{grid-template-columns:0 minmax(0,1fr)}
+.shell.panneau-replie .rail{overflow:hidden; border-right-color:transparent; visibility:hidden; transition:visibility 0s .22s}
+@media (min-width:1041px){ .railbox{width:351px} }
 .rail{border-right:1px solid var(--border); background:var(--surface); position:sticky; top:0; max-height:100vh; overflow-y:auto}
-.railbox>summary{display:none}
+/* L'en-tête du panneau reste en haut quand on fait défiler les réglages. */
+.railtete{
+  position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:10px;
+  padding:10px clamp(16px,2vw,22px); background:var(--surface); border-bottom:1px solid var(--border);
+}
+.railtete b{font-size:14px; font-weight:600}
+.railtri{display:none; font-size:13px; font-weight:600; color:var(--text)}
+.railfermer{
+  margin-left:auto; flex:none; width:30px; height:30px; padding:0; display:grid; place-items:center; cursor:pointer;
+  color:var(--text-muted); background:transparent; border:1px solid var(--border); border-radius:var(--radius);
+}
+.railfermer:hover{color:var(--text); border-color:var(--text-muted)}
+.railfermer svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
 .canvas{padding:0 clamp(16px,3vw,34px) 64px; display:flex; flex-direction:column; gap:22px; min-width:0}
 
 .subnav{
@@ -176,14 +196,16 @@ button,input,select{font-family:inherit}
   .canvas>#verdict{order:1; margin-top:18px}
   .canvas>#indicateurs{order:2}
   .canvas>#warnBox{order:2}
-  .rail{order:3; position:static; max-height:none; border-right:0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-top:4px}
-  .railbox>summary{
-    display:flex; align-items:center; justify-content:space-between; list-style:none; cursor:pointer;
-    padding:14px clamp(16px,3vw,24px); font-weight:600; font-size:14px;
+  /* Le panneau devient un tiroir : il glisse depuis la gauche par-dessus la page,
+     et son en-tête montre le rendement pendant qu'on règle. */
+  .rail{
+    position:fixed; inset:0 auto 0 0; z-index:40; width:min(88vw,380px); max-height:none;
+    border-right:1px solid var(--border); transform:translateX(-100%); visibility:hidden;
+    transition:transform .22s ease, visibility 0s .22s;
   }
-  .railbox>summary::-webkit-details-marker{display:none}
-  .railbox>summary::after{content:"Ouvrir"; font-size:12px; font-weight:500; color:var(--text-muted); border:1px solid var(--border); border-radius:999px; padding:3px 10px}
-  .railbox[open]>summary::after{content:"Replier"}
+  .shell.panneau-ouvert .rail{transform:none; visibility:visible; transition:transform .22s ease}
+  .railtri{display:block; margin-left:auto}
+  .railfermer{margin-left:0}
 }
 
 /* ---------- panneau de saisie ---------- */
@@ -382,6 +404,19 @@ details.fold>summary:hover .foldtitle{text-decoration:underline}
 .navtri:empty{display:none}
 /* Net ou brut : au bout de la sous-navigation, hors de la bande qui défile. */
 .subnav .seg.fisc{flex:none}
+/* Le bouton qui montre et cache le panneau d'hypothèses, en tête de la barre des
+   sections : collant, il reste à portée quel que soit l'endroit de la page. */
+.railbtn{
+  flex:none; display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 11px; cursor:pointer;
+  font:inherit; font-size:12.5px; font-weight:500; color:var(--text);
+  background:var(--btn-bg); border:1px solid var(--border); border-radius:var(--radius);
+}
+.railbtn:hover{border-color:var(--text-muted)}
+.railbtn[aria-expanded="true"]{background:var(--surface-2)}
+.railbtn svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round}
+/* Derrière le tiroir ouvert : un voile qui le referme, et une page qui ne défile plus. */
+.voile{position:fixed; inset:0; z-index:39; background:var(--voile)}
+html.tiroir, html.tiroir body{overflow:hidden}
 .navtri b{color:var(--text); font-weight:600}
 @media (max-width:1040px){ .navtri{display:none} }
 

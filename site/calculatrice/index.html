@@ -70,10 +70,16 @@
   <p>Le rendement net d'impôt, le meilleur moment pour revendre et la comparaison avec la bourse, recalculés à chaque frappe.</p>
 </div>
 
-<div class="shell">
-  <aside class="rail" aria-label="Hypothèses de calcul">
-  <details class="railbox essentiel" id="railbox" open>
-    <summary>Vos hypothèses</summary>
+<div class="shell" id="shell">
+  <aside class="rail" id="rail" aria-label="Hypothèses de calcul">
+  <div class="railbox essentiel" id="railbox">
+    <div class="railtete">
+      <b>Vos hypothèses</b>
+      <span class="railtri num" id="railTri"></span>
+      <button type="button" class="railfermer" id="railFermer" aria-label="Replier le panneau d'hypothèses" title="Replier le panneau">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+      </button>
+    </div>
 
     <div class="railmode">
       <div class="seg" role="group" aria-label="Niveau de détail du panneau">
@@ -212,11 +218,16 @@
       <button type="button" class="btn sm" id="reset">Réinitialiser</button>
       <button type="button" class="btn sm" id="share">Copier le lien</button>
     </div>
-  </details>
+  </div>
   </aside>
+  <div class="voile" id="voile" hidden></div>
 
   <main class="canvas">
     <nav class="subnav" aria-label="Sections de la page">
+      <button type="button" class="railbtn" id="railToggle" aria-controls="rail" aria-expanded="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg>
+        <span>Hypothèses</span>
+      </button>
       <div class="subliens">
         <a href="#verdict">Verdict</a>
         <a href="#rendement">Rendement</a>

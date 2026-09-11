@@ -104,6 +104,8 @@ function render(){
   const heroEl = $("heroTri");
   heroEl.textContent = triF===null ? "—" : sPct(triF);
   heroEl.classList.toggle("bad", triF!==null && triF<0);
+  // Dans le tiroir du téléphone, le rendement suit la saisie : les résultats sont dessous.
+  $("railTri").textContent = triF===null ? "" : sPct(triF) + " par an";
   $("heroAns").textContent = p.horizon + " ans";
 
   // Le pouvoir d'achat tenait en trois phrases ; il tient en un nombre étiqueté.
@@ -805,11 +807,47 @@ if("IntersectionObserver" in window){
   }, {rootMargin:"-48px 0px -55% 0px", threshold:[0, .05]});
   sections.forEach(s => io.observe(s));
 }
-// Sur petit écran le panneau d'hypothèses se replie sous le verdict ; sur grand
-// écran il est toujours déployé.
+// Le panneau d'hypothèses. Sur grand écran, il tient la colonne de gauche et se
+// rabat contre le bord ; le choix est retenu. Sur petit écran, il vient en tiroir
+// par-dessus la page, fermé à l'ouverture : le verdict passe d'abord. Un seul
+// bouton, en tête de la barre des sections, l'ouvre et le ferme partout.
 const mqEtroit = matchMedia("(max-width:1040px)");
-$("railbox").open = !mqEtroit.matches;
-mqEtroit.addEventListener("change", () => { if(!mqEtroit.matches) $("railbox").open = true; });
+let panneauReplie = false, tiroirOuvert = false;
+try{ panneauReplie = localStorage.getItem("rentaloc.panneau") === "replie"; }catch(e){}
+function syncPanneau(){
+  const etroit = mqEtroit.matches;
+  const visible = etroit ? tiroirOuvert : !panneauReplie;
+  $("shell").classList.toggle("panneau-replie", !etroit && panneauReplie);
+  $("shell").classList.toggle("panneau-ouvert", etroit && tiroirOuvert);
+  $("voile").hidden = !(etroit && tiroirOuvert);
+  document.documentElement.classList.toggle("tiroir", etroit && tiroirOuvert);
+  // Un panneau hors de vue ne doit plus recevoir le focus clavier.
+  $("rail").inert = !visible;
+  $("railToggle").setAttribute("aria-expanded", visible ? "true" : "false");
+}
+function basculerPanneau(ouvrir){
+  if(mqEtroit.matches){
+    tiroirOuvert = ouvrir;
+    syncPanneau();
+    (ouvrir ? $("railFermer") : $("railToggle")).focus();
+    return;
+  }
+  panneauReplie = !ouvrir;
+  try{ localStorage.setItem("rentaloc.panneau", panneauReplie ? "replie" : "ouvert"); }catch(e){}
+  syncPanneau();
+  if(!ouvrir) $("railToggle").focus();
+  // La colonne des résultats change de largeur : les graphiques se redessinent
+  // une fois le mouvement fini.
+  setTimeout(render, 240);
+}
+$("railToggle").addEventListener("click", () => basculerPanneau($("railToggle").getAttribute("aria-expanded") !== "true"));
+$("railFermer").addEventListener("click", () => basculerPanneau(false));
+$("voile").addEventListener("click", () => basculerPanneau(false));
+addEventListener("keydown", e => {
+  if(e.key === "Escape" && mqEtroit.matches && tiroirOuvert) basculerPanneau(false);
+});
+mqEtroit.addEventListener("change", () => { tiroirOuvert = false; syncPanneau(); });
+syncPanneau();
 document.querySelectorAll("a.mail").forEach(a => { a.href = "mailto:" + a.dataset.u + "@" + a.dataset.d; });
 
 load();

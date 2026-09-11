@@ -318,6 +318,19 @@ setTimeout(function(){
   r.vitrine   = (document.getElementById("vTri")||{}).textContent || "";
   r.vcourbes  = document.querySelectorAll("#vPlotNet path[stroke]").length;
   r.vsens     = document.querySelectorAll("#vPlotSens svg rect").length;
+  // Le panneau d'hypotheses : le bouton de la barre des sections le montre et le
+  // cache. Ferme a l'ouverture sur petit ecran (le verdict d'abord), ouvert sur
+  // grand ecran. Un panneau cache est inerte : le clavier n'y entre plus.
+  var bPanneau = document.getElementById("railToggle"), railEl = document.getElementById("rail");
+  if(bPanneau && railEl){
+    var montre = function(){ return !railEl.inert && bPanneau.getAttribute("aria-expanded") === "true"; };
+    var auDepart = montre();
+    bPanneau.click();
+    var change = montre() !== auDepart;
+    bPanneau.click();
+    r.panneau = (change ? "1" : "0") + (montre() === auDepart ? "1" : "0")
+      + (auDepart === (largeur >= 500) ? "1" : "0");
+  }
   // Petit ecran : le menu doit s'ouvrir sur les quatre liens, tous a l'ecran.
   var burger = document.querySelector(".topbar .burger");
   if(burger && largeur < 500){
@@ -636,6 +649,12 @@ def main():
                     controle("accueil : quatre placements comparés", r["vcourbes"] == 4, str(r["vcourbes"]))
                     controle("accueil : sensibilité tracée", r["vsens"] >= 6, "%d barres" % r["vsens"])
                     controle("accueil : rendement affiché", "%" in r["vitrine"], r["vitrine"])
+                    # L'image de partage montre le scénario de l'accueil. Quand ce
+                    # chiffre bouge, elle se corrige puis se régénère avec
+                    # outils/og_image.py — sinon les réseaux sociaux affichent l'ancien.
+                    og = (RACINE / "outils" / "og-image.html").read_text(encoding="utf-8")
+                    controle("image de partage : même rendement que l'accueil",
+                             bool(r["vitrine"]) and ">%s<" % r["vitrine"] in og, r["vitrine"])
                     controle("accueil : avis éditorial rendu",
                              len(r.get("vAvis") or "") > 20, r.get("vAvis") or "absent")
                     controle("accueil : aucun graphique ne piège le défilement",
@@ -675,6 +694,10 @@ def main():
                          not r.get("debordeTout"))
                 controle("calculatrice %d px : aucune section sous la bascule Net | Brut" % largeur,
                          r.get("subnavLibre") is True, str(r.get("subnavLibre")))
+                # « le bouton bascule », « un second clic rétablit », « fermé sur
+                # téléphone, ouvert sur grand écran au départ »
+                controle("calculatrice %d px : le bouton Hypothèses montre et cache le panneau" % largeur,
+                         r.get("panneau") == "111", r.get("panneau") or "sonde muette")
                 if largeur < 500:
                     controle("calculatrice %d px : le menu montre les quatre liens" % largeur,
                              r.get("menu") == "11", r.get("menu") or "sonde muette")

@@ -74,7 +74,11 @@ lesquels il n'y a pas de projet. « Tous les réglages » découvre les vingt-ci
 autres, qui n'ont jamais cessé d'entrer dans le calcul. De même côté résultats :
 le verdict, les indicateurs et les trois graphiques qui décident restent à
 l'écran ; trésorerie, cascade, patrimoine, sensibilité et tableau annuel attendent
-d'être dépliés — tracés quand même, et redessinés à l'ouverture.
+d'être dépliés — tracés quand même, et redessinés à l'ouverture. Le panneau
+lui-même se range : sur grand écran il se rabat contre le bord gauche, et le
+choix est retenu ; sur téléphone il vient en tiroir par-dessus la page, fermé à
+l'ouverture. Le bouton « Hypothèses », en tête de la barre des sections, l'ouvre
+et le ferme partout.
 
 ## Charte graphique
 
