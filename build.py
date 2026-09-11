@@ -14,7 +14,7 @@ import math
 import pathlib
 import re
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent / "outils"))
 import favicon
@@ -479,6 +479,17 @@ def main():
 
     (SITE / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\n\nSitemap: {DOMAINE}/sitemap.xml\n", encoding="utf-8")
+
+    # RFC 9116 : à qui signaler une faille. Le contact renvoie aux mentions
+    # légales plutôt qu'à l'adresse elle-même, que le site masque aux robots.
+    # Un fichier expiré ne vaut plus rien : chaque construction repousse
+    # l'échéance d'un an, comme elle date le sitemap.
+    (SITE / ".well-known").mkdir(exist_ok=True)
+    (SITE / ".well-known" / "security.txt").write_text(
+        f"Contact: {DOMAINE}/mentions-legales/\n"
+        f"Expires: {(date.today() + timedelta(days=365)).isoformat()}T00:00:00Z\n"
+        f"Preferred-Languages: fr, en\n"
+        f"Canonical: {DOMAINE}/.well-known/security.txt\n", encoding="utf-8")
 
     aujourdhui = date.today().isoformat()
     urls = [(CALCULATRICE, aujourdhui, "weekly", "0.9"),

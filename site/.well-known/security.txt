@@ -1,0 +1,4 @@
+Contact: https://monrendementlocatif.fr/mentions-legales/
+Expires: 2027-09-11T00:00:00Z
+Preferred-Languages: fr, en
+Canonical: https://monrendementlocatif.fr/.well-known/security.txt

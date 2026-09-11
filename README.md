@@ -90,7 +90,7 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `pages/accueil.html` | La page d'accueil, servie sur `/`. |
 | `pages/*.html` | Questions fréquentes, hypothèses de calcul, mentions légales, 404. |
 | `guides/*.html` | Les six guides : un bloc `meta` JSON puis un `<article class="prose">`. |
-| `build.py` | Produit `site/` : concatène les sources, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère JSON-LD, sitemap, robots, en-têtes Cloudflare. |
+| `build.py` | Produit `site/` : concatène les sources, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère JSON-LD, sitemap, robots, `security.txt`, en-têtes Cloudflare. |
 | `outils/favicon.py` | Le logotype et les icônes qu'on en tire, rastérisées sans dépendance. |
 | `outils/_local.py` | Le serveur local et la détection de Chrome, partagés par les trois outils. |
 | `outils/hooks/pre-commit` | Refuse un commit dont `site/` n'a pas été régénéré. |

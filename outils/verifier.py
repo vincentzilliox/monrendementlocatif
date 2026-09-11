@@ -20,6 +20,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from datetime import date
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import _local
@@ -383,12 +384,22 @@ def main():
                        "/hypotheses-de-calcul/", "/mentions-legales/", "/404.html",
                        "/css/style.css", "/js/app.js", "/js/site.js", "/js/vitrine.js",
                        "/favicon.ico", "/assets/favicon.svg", "/assets/og-image.png",
-                       "/assets/apple-touch-icon.png", "/robots.txt", "/sitemap.xml"):
+                       "/assets/apple-touch-icon.png", "/robots.txt", "/sitemap.xml",
+                       "/.well-known/security.txt"):
             try:
                 with urllib.request.urlopen(base + chemin, timeout=10) as r:
                     controle(chemin, r.status == 200, "%d o" % len(r.read()))
             except urllib.error.HTTPError as e:
                 controle(chemin, False, "HTTP %d" % e.code)
+        # RFC 9116 : Contact et Expires sont obligatoires, et un fichier expiré
+        # vaut absence.
+        securite = SITE / ".well-known" / "security.txt"
+        securite = securite.read_text(encoding="utf-8") if securite.is_file() else ""
+        expire = re.search(r"^Expires: (\d{4}-\d\d-\d\d)T", securite, re.M)
+        controle("security.txt : un contact, une échéance à venir",
+                 re.search(r"^Contact: https://", securite, re.M) is not None
+                 and expire is not None and expire.group(1) > date.today().isoformat(),
+                 expire.group(1) if expire else "Expires absent")
 
         print("\nRÉFÉRENCEMENT")
         sitemap = (SITE / "sitemap.xml").read_text(encoding="utf-8")
