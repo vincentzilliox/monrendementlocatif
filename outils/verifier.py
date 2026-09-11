@@ -344,6 +344,19 @@ setTimeout(function(){
     r.brut += document.getElementById("heroTri").textContent === triNet
       && document.getElementById("tbl").tHead.textContent.indexOf("Imp") >= 0 ? "1" : "0";
   }
+  // Le lien partage porte tout le scenario : ouvert chez quelqu'un qui a sa propre
+  // saisie, il doit rendre exactement le formulaire de l'auteur, travaux compris.
+  if(typeof valeursFormulaire === "function" && typeof lienHypotheses === "function"){
+    var scenario = JSON.stringify(valeursFormulaire()) + JSON.stringify(items);
+    var lienPartage = lienHypotheses(valeursFormulaire(), null, items, true);
+    document.getElementById("apport").value = "123456";
+    document.getElementById("tmi").value = "45";
+    document.getElementById("ira").checked = !document.getElementById("ira").checked;
+    items = [];
+    history.replaceState(null, "", location.pathname + lienPartage);
+    depuisHash();
+    r.partage = JSON.stringify(valeursFormulaire()) + JSON.stringify(items) === scenario;
+  }
   // Un lien complet efface la saisie d'une visite precedente ; un lien de guide
   // s'y superpose. Mesure en dernier : elle modifie le formulaire.
   var tx = document.getElementById("taux");
@@ -690,6 +703,9 @@ def main():
                     # s'ouvre toujours en net), « retour net identique »
                     controle("bascule brut/net : rendement, tableau et libellés suivent",
                              r.get("brut") == "11111", r.get("brut") or "sonde muette")
+                    # Le lien de « Copier le lien », ouvert par-dessus une autre saisie.
+                    controle("lien partagé : rend le scénario exact, même chez qui a sa propre saisie",
+                             r.get("partage") is True, str(r.get("partage")))
                     controle("aucun graphique ne piège le défilement",
                              not r.get("piege"), r.get("piege") or "")
                     controle("les graphiques suivent la bascule de thème",
@@ -842,6 +858,10 @@ var fb=bb.final, sommeBrute=fb.cumulLoyers-fb.cumulCharges-fb.cumulCredit
   -(bb.notaire+bb.p.fraisAcq+bb.p.fraisDossier)-(bb.p.travaux+bb.mobilier)
   +(fb.valeur-bb.p.prix)-(fb.fraisVente+fb.ira);
 lignes.push('brut : cascade sans marches d impot = gain|'+(Math.abs(sommeBrute-fb.gain)<1?1:0)+'|ecart '+(sommeBrute-fb.gain).toFixed(2)+' EUR');
+// Le lien partage porte chaque hypothese, meme egale a sa valeur d'ouverture, et
+// ses travaux meme vides : il ne depend plus des valeurs par defaut du site.
+var lp = lienHypotheses({prix:'200000', ira:true}, null, [], true);
+lignes.push('lien partage : tout voyage, marqueur compris|'+(lp === '#complet=1&prix=200000&ira=1&tvx=' ?1:0)+'|'+lp);
 // Surtaxe de plus-value (art. 1609 nonies G) : chaque palier s'ouvre par une
 // bande de 10 000 EUR ou une decote lisse la marche. Sans elle, le code
 // surestimait de 79 % juste au-dessus de 50 000 EUR.

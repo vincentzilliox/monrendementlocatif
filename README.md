@@ -147,7 +147,10 @@ Trois règles, et ce sont des contrôles, pas des conventions :
   c'est-à-dire le scénario même de la vitrine — et c'est un contrôle. Le
   marqueur `complet` fait repartir la calculatrice des valeurs d'ouverture,
   quoi qu'une visite précédente ait laissé dans le navigateur ; un lien de
-  guide, lui, se pose sur la saisie du visiteur.
+  guide, lui, se pose sur la saisie du visiteur. « Copier le lien » va plus
+  loin : il inscrit chaque hypothèse, pour qu'un scénario partagé rende la même
+  chose chez n'importe qui, et ne change pas quand les valeurs par défaut du site
+  évoluent — c'est aussi un contrôle.
 - `index.html` ne porte que du balisage, délimité par des marqueurs appariés
   `<!-- entete:début -->` / `<!-- entete:fin -->` : `build.py` refuse de
   construire s'ils manquent, sont dupliqués ou se croisent.

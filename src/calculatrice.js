@@ -689,11 +689,18 @@ function retablirDefauts(){
 const BOOLS = ["ira","prixSuitInflation"];
 // Le format du lien vit dans le moteur : l'assistant de la page d'accueil en
 // produit un sans jamais voir ce formulaire. Ici on ne fait que lire les champs.
-function versHash(){
+function valeursFormulaire(){
   const valeurs = {};
   FIELDS.concat(SELECTS).forEach(k => valeurs[k] = $(k).value);
   BOOLS.forEach(k => valeurs[k] = $(k).checked);
-  const h = lienHypotheses(valeurs, DEFAULTS, items);
+  return valeurs;
+}
+// L'adresse de la page reste courte : seuls les écarts à l'ouverture. Mais dès
+// qu'il y en a, elle porte le marqueur complet : copiée à la main et ouverte
+// chez quelqu'un qui a sa propre saisie, elle rend ce scénario, pas un mélange.
+function versHash(){
+  const ecarts = lienHypotheses(valeursFormulaire(), DEFAULTS, items);
+  const h = ecarts ? lienHypotheses(valeursFormulaire(), DEFAULTS, items, true) : "";
   const actuel = location.hash.indexOf("=") >= 0 ? location.hash : "";
   if(h !== actuel) history.replaceState(null, "", location.pathname + location.search + h);
 }
@@ -735,10 +742,19 @@ function depuisHash(){
 }
 let hashTimer;
 function planifierHash(){ clearTimeout(hashTimer); hashTimer = setTimeout(versHash, 250); }
+// Un lien collé dans l'onglet où la calculatrice est déjà ouverte ne recharge pas
+// la page : seul le fragment change. On l'applique comme à l'ouverture. Réécrire
+// l'adresse avec replaceState ne déclenche pas cet évènement.
+addEventListener("hashchange", () => { if(depuisHash()){ renderItems(); render(); } });
 
+// Le lien copié se suffit à lui-même : il inscrit chaque hypothèse, même égale à
+// sa valeur d'ouverture. Le destinataire repart de ce lien seul, quoi que son
+// navigateur ait retenu, et le scénario ne bouge pas si les valeurs par défaut
+// du site évoluent après le partage.
 $("share").addEventListener("click", async () => {
   versHash();
-  try{ await navigator.clipboard.writeText(location.href); toast("Lien copié — il contient toutes vos hypothèses"); }
+  const lien = location.origin + location.pathname + lienHypotheses(valeursFormulaire(), null, items, true);
+  try{ await navigator.clipboard.writeText(lien); toast("Lien copié — il contient toutes vos hypothèses"); }
   catch(e){ toast("Copie impossible dans ce contexte : copiez l'adresse de la page"); }
 });
 

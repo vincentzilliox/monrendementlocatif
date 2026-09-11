@@ -416,7 +416,9 @@ const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
 
 // `valeurs` : les hypothèses à transmettre, `defauts` : celles de l'ouverture.
 // Seul ce qui diffère voyage — un fragment vide est donc exactement le
-// scénario par défaut, celui que la page d'accueil affiche.
+// scénario par défaut, celui que la page d'accueil affiche. Sans `defauts`,
+// tout voyage, travaux compris : c'est le lien qu'on partage, qui ne doit pas
+// changer de sens le jour où une valeur d'ouverture évolue.
 //
 // Un lien ordinaire se pose sur ce que le visiteur a déjà saisi : un guide ouvre
 // son projet au régime réel sans lui faire tout ressaisir. `complet` dit
@@ -426,17 +428,18 @@ const codeItem = it => [it.nom, it.montant, it.taux, it.duree, it.deduc]
 const LIEN_COMPLET = "complet=1";
 function lienHypotheses(valeurs, defauts, items, complet){
   const q = complet ? [LIEN_COMPLET] : [];
+  const tout = !defauts;
   Object.keys(valeurs).forEach(k => {
     const v = valeurs[k];
     if(typeof v === "boolean"){
-      if(v !== defauts[k]) q.push(k + "=" + (v ? 1 : 0));
-    } else if(String(v) !== String(defauts[k])){
+      if(tout || v !== defauts[k]) q.push(k + "=" + (v ? 1 : 0));
+    } else if(tout || String(v) !== String(defauts[k])){
       q.push(k + "=" + encodeURIComponent(v));
     }
   });
   if(items){
     const tvx = items.map(codeItem).join("|");
-    if(tvx !== TVX_DEFAUT.map(codeItem).join("|")) q.push("tvx=" + tvx);
+    if(tout || tvx !== TVX_DEFAUT.map(codeItem).join("|")) q.push("tvx=" + tvx);
   }
   return q.length ? "#" + q.join("&") : "";
 }
