@@ -957,10 +957,12 @@ function cfgGainNet(p, R, opts){
     // rendraient les zones d'intersection illisibles. Les trois placements
     // forment une rampe ordonnée du plus risqué au plus sûr, doublée d'un
     // motif de trait distinct : l'identité ne repose jamais sur la seule couleur.
+    // La bourse garde le tiret du graphique de rendement, où elle sert déjà de
+    // référence ; le fonds euros passe au trait mixte pour ne pas s'y confondre.
     series: [
       {color:"--d1", nom:"Immobilier", values: rows.map(r=>r.gainImmo), width:2.4},
-      {color:"--d2", nom:"Bourse", values: rows.map(r=>r.gainBourse)},
-      {color:"--d3", nom:"Fonds euros", values: rows.map(r=>r.gainFonds), dash:"7 4"},
+      {color:"--d2", nom:"Bourse", values: rows.map(r=>r.gainBourse), dash:true},
+      {color:"--d3", nom:"Fonds euros", values: rows.map(r=>r.gainFonds), dash:"9 3 2 3"},
       {color:"--d4", nom:"Livret A", values: rows.map(r=>r.gainLivret), dash:"2 3"}
     ],
     tip: i => {

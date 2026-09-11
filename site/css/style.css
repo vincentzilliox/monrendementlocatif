@@ -354,7 +354,7 @@ details.fold>summary:hover .foldtitle{text-decoration:underline}
 .liens a{font-weight:500; text-decoration:underline; text-underline-offset:2px}
 .swatch{width:14px; height:3px; border-radius:2px; flex:none; background:currentColor}
 .swatch.dash{background:linear-gradient(90deg,currentColor 55%,transparent 55%) 0 0/6px 3px}
-.swatch.tirets{background:linear-gradient(90deg,currentColor 62%,transparent 62%) 0 0/8px 3px}
+.swatch.mixte{background:linear-gradient(90deg,currentColor 0 53%,transparent 53% 71%,currentColor 71% 82%,transparent 82%) 0 0/12px 3px}
 .swatch.points{background:linear-gradient(90deg,currentColor 42%,transparent 42%) 0 0/5px 3px}
 .swatch.sq{width:10px; height:10px; border-radius:2px}
 .plot{position:relative; margin-top:8px}
