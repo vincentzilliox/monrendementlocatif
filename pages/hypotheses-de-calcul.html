@@ -15,7 +15,7 @@
        formulaire par outils/verifier.py : la page ne peut pas dériver de l'outil. -->
   <ul class="mchiffres" aria-label="Les chiffres retenus par défaut">
     <li><b data-defaut="notairePct">8 %</b><span>de frais de notaire dans l'ancien</span></li>
-    <li><b data-defaut="inflation">2 %</b><span>d'inflation par an, suivie par prix, loyers et charges</span></li>
+    <li><b data-defaut="inflation">2,5 %</b><span>d'inflation par an : le taux directeur de la BCE</span></li>
     <li><b data-defaut="bourse">4 %</b><span>par an hors inflation pour la bourse comparée</span></li>
     <li><b data-defaut="fiscBourse">31,4 %</b><span>de prélèvement forfaitaire sur les gains boursiers</span></li>
     <li><b data-defaut="plafondDeficit">10 700 €</b><span>de déficit foncier imputable chaque année</span></li>
@@ -67,7 +67,7 @@
             <p class="messentiel">Tout est en euros courants ; le rendement en pouvoir d'achat retire l'inflation.</p>
           </div>
           <div class="mdetail">
-            <p>À 2 % d'inflation, 4 % nominal ne valent qu'environ 2 % réels. Par défaut, prix du bien, loyers et charges suivent l'inflation : la pierre conserve sa valeur sans en créer, et le rendement vient du levier du crédit et des loyers, pas d'une plus-value réelle.</p>
+            <p>À 2 % d'inflation, 4 % nominal ne valent qu'environ 2 % réels. Par défaut, l'inflation retenue est le taux directeur de la BCE — celui de la facilité de dépôt, 2,50 % depuis le 16 septembre 2026 —, et prix du bien, loyers et charges la suivent : la pierre conserve sa valeur sans en créer, et le rendement vient du levier du crédit et des loyers, pas d'une plus-value réelle.</p>
             <p>Décocher la case fait réapparaître les trois taux et permet de les régler séparément — utile pour tenir compte de l'IRL, qui plafonne l'indexation des loyers et suit l'inflation avec un peu de retard, ou de charges de copropriété qui dérivent plus vite que les prix. Les placements comparés sont eux aussi capitalisés en euros courants : la comparaison reste cohérente.</p>
           </div>
         </article>
@@ -237,11 +237,11 @@
           </div>
           <div class="mdetail">
             <dl class="mvaleurs">
-              <div><dt>Bourse</dt><dd><span data-defaut="bourse">4 %</span> réels<small>6,1 % en euros courants</small></dd></div>
-              <div><dt>Fonds euros</dt><dd><span data-defaut="fondsEuros">0 %</span> réel<small>suit l'inflation : 2 %</small></dd></div>
-              <div><dt>Livret A</dt><dd><span data-defaut="livretA">−0,3 %</span> réel<small>1,7 %, son taux actuel</small></dd></div>
+              <div><dt>Bourse</dt><dd><span data-defaut="bourse">4 %</span> réels<small>6,6 % en euros courants</small></dd></div>
+              <div><dt>Fonds euros</dt><dd><span data-defaut="fondsEuros">0 %</span> réel<small>suit l'inflation : 2,5 %</small></dd></div>
+              <div><dt>Livret A</dt><dd><span data-defaut="livretA">−0,8 %</span> réel<small>1,7 %, son taux actuel</small></dd></div>
             </dl>
-            <p>L'équivalent en euros courants s'affiche sous chaque champ. À 2 % d'inflation, le Livret A retenu redonne 1,7 % nominal : précisément son taux actuel.</p>
+            <p>L'équivalent en euros courants s'affiche sous chaque champ. À 2,5 % d'inflation, le Livret A retenu redonne 1,7 % nominal : précisément son taux depuis août 2026.</p>
           </div>
         </article>
         <article class="mfiche">

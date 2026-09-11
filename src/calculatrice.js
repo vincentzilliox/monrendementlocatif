@@ -70,11 +70,11 @@ try{
 }catch(e){}
 // « net » : tout s'affiche après impôt, comme le verdict l'a toujours fait.
 // « brut » : le même projet avant impôt, pour mesurer ce que coûte la fiscalité.
+// La page s'ouvre toujours en net : le brut se consulte, il ne se retient pas.
+// Un visiteur revenu lire un rendement avant impôt le prendrait pour le sien.
+// Une version précédente retenait ce choix : on efface ce qu'elle a laissé.
 let fiscalite = "net";
-try{
-  const f = localStorage.getItem("rentaloc.fiscalite");
-  if(f === "net" || f === "brut") fiscalite = f;
-}catch(e){}
+try{ localStorage.removeItem("rentaloc.fiscalite"); }catch(e){}
 
 function render(){
   oublierTheme();
@@ -619,7 +619,6 @@ function setFiscalite(v){
   $("fiscNet").setAttribute("aria-pressed", v === "net" ? "true" : "false");
   $("fiscBrut").setAttribute("aria-pressed", v === "brut" ? "true" : "false");
   libellesFiscaux.forEach(el => { el.textContent = v === "brut" ? el.dataset.brut : el.dataset.net; });
-  try{ localStorage.setItem("rentaloc.fiscalite", v); }catch(e){}
 }
 $("fiscNet").addEventListener("click", () => { setFiscalite("net"); render(); });
 $("fiscBrut").addEventListener("click", () => { setFiscalite("brut"); render(); });

@@ -326,7 +326,8 @@ setTimeout(function(){
     bBrut.click();
     r.brut = (document.getElementById("heroTri").textContent !== triNet ? "1" : "0")
       + (document.getElementById("tbl").tHead.textContent.indexOf("Imp") < 0 ? "1" : "0")
-      + (/avant imp/.test(document.querySelector("#verdict .eyebrow").textContent) ? "1" : "0");
+      + (/avant imp/.test(document.querySelector("#verdict .eyebrow").textContent) ? "1" : "0")
+      + (localStorage.getItem("rentaloc.fiscalite") === null ? "1" : "0");
     bNet.click();
     r.brut += document.getElementById("heroTri").textContent === triNet
       && document.getElementById("tbl").tHead.textContent.indexOf("Imp") >= 0 ? "1" : "0";
@@ -664,9 +665,10 @@ def main():
                     controle("lien de guide : conserve la saisie du visiteur",
                              r.get("lienGuide") is True, str(r.get("lienGuide")))
                     # « rendement change », « colonnes d'impôt retirées »,
-                    # « verdict avant impôt », « retour net identique »
+                    # « verdict avant impôt », « brut jamais retenu » (la page
+                    # s'ouvre toujours en net), « retour net identique »
                     controle("bascule brut/net : rendement, tableau et libellés suivent",
-                             r.get("brut") == "1111", r.get("brut") or "sonde muette")
+                             r.get("brut") == "11111", r.get("brut") or "sonde muette")
                     controle("aucun graphique ne piège le défilement",
                              not r.get("piege"), r.get("piege") or "")
                     controle("les graphiques suivent la bascule de thème",

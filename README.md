@@ -42,7 +42,8 @@ travaux) introduite par la loi de finances 2025.
 du fonds euros imposés à la sortie au taux choisi, Livret A exonéré ; le
 rendement annualisé du portefeuille boursier net d'impôt sert de référence.
 
-**Monnaie** — inflation explicite. Par défaut, prix, loyers et charges la suivent :
+**Monnaie** — inflation explicite, fixée par défaut au taux directeur de la BCE
+(facilité de dépôt). Prix, loyers et charges la suivent :
 le rendement vient alors du levier du crédit et des loyers, pas d'un pari sur les
 prix.
 
@@ -54,7 +55,8 @@ annuelle, patrimoine net et dette, sensibilité du TRI aux six paramètres clés
 calculatrice avant impôt : verdict, graphiques, tableau et export CSV. Seule la
 fiscalité disparaît (impôt sur les loyers, plus-value, reprise de déficit,
 impôt des placements comparés) ; charges, crédit, taxe foncière et CFE restent
-dus. L'écart entre les deux affichages est donc ce que coûte l'impôt.
+dus. L'écart entre les deux affichages est donc ce que coûte l'impôt. La
+calculatrice s'ouvre toujours en net : le mode brut n'est jamais retenu.
 
 ## Deux règles d'interface
 
