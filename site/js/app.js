@@ -143,7 +143,10 @@ function compute(p){
   const valeur0 = (detenu ? p.valeur : p.prix) + p.travaux;
   const besoin = detenu ? p.travaux : p.prix + notaire + p.travaux + fraisAcq + mobilier + fraisDossier;
   const emprunt = comptant ? 0 : detenu ? Math.max(0, p.crd) : Math.max(0, besoin - p.apport);
-  const sch = schedule(emprunt, p.taux, detenu ? p.dureeRestante : p.duree, p.assur);
+  // Un capital encore dû se rembourse : « 0 an restant » vaut une dernière année,
+  // sans quoi la dette retranchée de la mise disparaîtrait sans jamais être payée.
+  const dureePret = detenu ? Math.max(emprunt > 0 ? 1 : 0, p.dureeRestante) : p.duree;
+  const sch = schedule(emprunt, p.taux, dureePret, p.assur);
   const tauxImpot = (p.tmi + p.ps)/100;
   // Affichage brut : le même projet sans aucun impôt — ni sur les loyers, ni sur
   // la plus-value, ni sur les gains des placements comparés. Charges, crédit,
@@ -1509,6 +1512,8 @@ function render(){
       : "Sans apport ni frais payés comptant, le rendement sur fonds propres n'a pas de sens mathématique. Ajoutez au moins les frais de dossier.");
   if(dureePret > 0 && R.emprunt > 0 && p.horizon < dureePret)
     warns.push(`Votre horizon (${p.horizon} ans) est plus court que le prêt (${dureePret} ans${detenu ? " restants" : ""}) : chaque revente simulée solde le capital restant dû.`);
+  if(detenu && R.emprunt > 0 && p.dureeRestante < 1)
+    warns.push("Un capital reste dû sans durée restante : le calcul le rembourse en totalité la première année. Indiquez les années de remboursement qu'il reste.");
   if(detenu && R.deja >= 30)
     warns.push(`Détenu depuis ${R.deja} ans : la plus-value est déjà exonérée d'impôt et de prélèvements sociaux, revendre ne coûte plus que les frais d'agence.`);
   $("warnBox").innerHTML = warns.map(w=>`<div class="warn">${w}</div>`).join("");

@@ -1070,6 +1070,28 @@ lignes.push('bien detenu : sans credit, ni mensualite ni dette|'
     return isFinite(z.final.tri) && z.rows.every(function(x){ return x.annuite===0 && x.crd===0; }) ? 1 : 0; })()+'|');
 lignes.push('bien detenu : comptant l emporte sur le capital restant du|'
   +(run({situation:'detenu', comptant:true, valeur:200000, crd:90000, depuis:3, prixAchat:180000, dureeRestante:10}).emprunt===0?1:0)+'|');
+// Bien detenu : des cas dont la reponse est connue d'avance. Sans loyer, sans
+// impot, sans frais et sans dette, garder ne rapporte rien ; avec la seule
+// revalorisation, le rendement est exactement cette revalorisation ; avec les
+// seuls loyers, exactement le loyer rapporte a la valeur.
+var rien = {situation:'detenu', regime:'micro-foncier', ps:17.2, cfe:0, abattement:30, valeur:200000,
+  prixAchat:160000, depuis:8, travauxPasses:0, loyer:0, copro:0, tf:0, pno:0, entretien:0, vacance:0,
+  indexPrix:0, indexLoyer:0, crd:0, dureeRestante:0, avantImpot:true, fraisVente:0, ira:false, items:[]};
+var tousA = function(R, cible){ return R.rows.every(function(r){ return r.tri !== null && Math.abs(r.tri - cible) < 1e-9; }); };
+lignes.push('bien detenu : rien ne bouge, rendement nul|'+(tousA(run(rien), 0)?1:0)+'|');
+lignes.push('bien detenu : seule la revalorisation, rendement = revalorisation|'
+  +(tousA(run(Object.assign({}, rien, {indexPrix:2.5})), 0.025)?1:0)+'|');
+lignes.push('bien detenu : seuls les loyers, rendement = loyer / valeur|'
+  +(tousA(run(Object.assign({}, rien, {loyer:500})), 0.03)?1:0)+'|');
+lignes.push('bien detenu : frais de vente deja dans la mise, sans effet sur le rendement|'
+  +(tousA(run(Object.assign({}, rien, {indexPrix:2.5, fraisVente:5})), 0.025)?1:0)+'|');
+var lev = run(Object.assign({}, rien, {indexPrix:5, crd:100000, dureeRestante:25, assur:0}));
+lignes.push('bien detenu : dette a 3,4 % sur un bien a 5 %, levier positif et decroissant|'
+  +(lev.rows[0].tri > 0.05 && lev.rows.every(function(r,i){ return i===0 || r.tri <= lev.rows[i-1].tri + 1e-9; })?1:0)
+  +'|'+(lev.rows[0].tri*100).toFixed(2)+' % puis '+(lev.final.tri*100).toFixed(2)+' %');
+var z0 = run({situation:'detenu', valeur:200000, crd:90000, depuis:8, prixAchat:160000, dureeRestante:0, travauxPasses:0, items:[]});
+lignes.push('bien detenu : 0 an restant mais capital du, la dette est remboursee|'
+  +(z0.rows[0].annuite > 90000 && z0.rows[0].crd < 0.01?1:0)+'|annuite '+z0.rows[0].annuite.toFixed(0)+' EUR');
 // Les quatre regimes se comparent aussi dans le temps : une serie par regime,
 // aussi longue que l'horizon, dont le dernier point est le rendement a l'horizon.
 var cmp = comparerRegimes(base(), run({}));

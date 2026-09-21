@@ -142,7 +142,10 @@ function compute(p){
   const valeur0 = (detenu ? p.valeur : p.prix) + p.travaux;
   const besoin = detenu ? p.travaux : p.prix + notaire + p.travaux + fraisAcq + mobilier + fraisDossier;
   const emprunt = comptant ? 0 : detenu ? Math.max(0, p.crd) : Math.max(0, besoin - p.apport);
-  const sch = schedule(emprunt, p.taux, detenu ? p.dureeRestante : p.duree, p.assur);
+  // Un capital encore dû se rembourse : « 0 an restant » vaut une dernière année,
+  // sans quoi la dette retranchée de la mise disparaîtrait sans jamais être payée.
+  const dureePret = detenu ? Math.max(emprunt > 0 ? 1 : 0, p.dureeRestante) : p.duree;
+  const sch = schedule(emprunt, p.taux, dureePret, p.assur);
   const tauxImpot = (p.tmi + p.ps)/100;
   // Affichage brut : le même projet sans aucun impôt — ni sur les loyers, ni sur
   // la plus-value, ni sur les gains des placements comparés. Charges, crédit,
