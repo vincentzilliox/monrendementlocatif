@@ -17,6 +17,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from _local import CHROME, RACINE, SITE, premier_existant, servir_en_fond
+import _local
 TAILLES = ((1360, 4800), (390, 6500))
 # Chrome sans fenêtre refuse une fenêtre de moins de 500 px : pour les largeurs
 # inférieures, on contraint la page elle-même et on recadre la capture.
@@ -49,7 +50,7 @@ def main():
                     temoins.append(temoin)
                     url = base + "/" + str(temoin.relative_to(SITE))
                     cible = sortie / f"{nom}-{largeur}-{theme}.png"
-                    subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                    subprocess.run([chrome, "--headless=new", *_local.options_chrome(chrome), "--disable-gpu", "--hide-scrollbars",
                                     "--virtual-time-budget=5000", f"--window-size={largeur},{hauteur}",
                                     f"--screenshot={cible}", url],
                                    capture_output=True, timeout=120)

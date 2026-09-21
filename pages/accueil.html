@@ -4,7 +4,7 @@
  "priorite": "1.0",
  "script": "/js/vitrine.js",
  "description": "Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleure année de revente, comparaison bourse à mise égale.",
- "maj": "2026-09-11"}
+ "maj": "2026-09-21"}
 </script>
 <section class="accroche">
   <div class="accroche-in">
@@ -13,6 +13,10 @@
     <p class="pitch">La plupart des simulateurs répondent par un rendement brut : les loyers divisés par le prix. Celui-ci calcule le rendement de <b>l'argent que vous sortez réellement de votre poche</b>, année après année, net d'impôt et corrigé de l'inflation — puis vous dit quelle année revendre, et ce que les mêmes versements auraient donné en bourse.</p>
     <section class="quiz" id="assistant" aria-labelledby="qTitre">
       <h2 id="qTitre" class="visually-hidden">Votre projet en quelques questions</h2>
+      <div class="seg qsitu" role="group" aria-label="Votre situation">
+        <button type="button" id="qSituAchat" aria-pressed="true">J'achète un bien</button>
+        <button type="button" id="qSituDetenu" aria-pressed="false">Je possède déjà un bien</button>
+      </div>
       <p class="qprog">
         <span class="qnum" id="qCompteur" aria-live="polite">Question 1 sur 7</span>
         <span class="qbar" aria-hidden="true"><i id="qJauge"></i></span>
@@ -27,6 +31,24 @@
           <label><input type="radio" name="qNeuf" value="neuf"><span>Neuf</span></label>
         </div>
         <p class="qaide" id="qNotaireAide"></p>
+      </div>
+
+      <div class="qstep" id="qEtapeValeur" hidden>
+        <h3 class="qtitre" tabindex="-1">Que vaut le bien aujourd'hui&nbsp;?</h3>
+        <div class="qchamp"><input id="qValeur" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qValeurAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="qValeurAide">Ce qu'il se vendrait aujourd'hui : regardez les ventes récentes du quartier pour un bien comparable.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeAchat" hidden>
+        <h3 class="qtitre" tabindex="-1">Combien l'aviez-vous payé&nbsp;?</h3>
+        <div class="qchamp"><input id="qPrixAchat" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qPrixAchatAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="qPrixAchatAide">Le prix d'acquisition, hors frais. C'est lui qui fixe l'impôt sur la plus-value le jour de la revente.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeDepuis" hidden>
+        <h3 class="qtitre" tabindex="-1">Depuis combien d'années le possédez-vous&nbsp;?</h3>
+        <div class="qchamp"><input id="qDepuis" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qDepuisAide"><span class="qunit">ans</span></div>
+        <p class="qaide" id="qDepuisAide">Les années déjà écoulées comptent pour les abattements de plus-value : exonération d'impôt à 22 ans, de prélèvements sociaux à 30.</p>
       </div>
 
       <div class="qstep" id="qEtapeLoyer" hidden>
@@ -56,8 +78,14 @@
 
       <div class="qstep" id="qEtapeApport" hidden>
         <h3 class="qtitre" tabindex="-1">Quel apport pouvez-vous engager&nbsp;?</h3>
-        <div class="qchamp"><input id="qApport" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qApportAide"><span class="qunit">€</span></div>
-        <p class="qaide" id="qApportAide">Le reste est emprunté. Tout ce que vous sortez de votre poche, apport compris, sert de base au rendement.</p>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Financement">
+          <label><input type="radio" name="qFinancement" value="credit" checked><span>Avec un crédit<small>le reste est emprunté</small></span></label>
+          <label><input type="radio" name="qFinancement" value="comptant"><span>Comptant, sans crédit<small>tout le coût de l'opération sort de votre poche</small></span></label>
+        </div>
+        <div id="qApportChamps">
+          <div class="qchamp"><input id="qApport" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qApportAide"><span class="qunit">€</span></div>
+          <p class="qaide" id="qApportAide">Tout ce que vous sortez de votre poche, apport compris, sert de base au rendement.</p>
+        </div>
       </div>
 
       <div class="qstep" id="qEtapeDuree" hidden>
@@ -68,6 +96,20 @@
           <label><input type="radio" name="qDuree" value="25"><span>25 ans</span></label>
         </div>
         <p class="qaide">Plus le prêt est long, plus la trésorerie respire — et plus le crédit coûte cher.</p>
+      </div>
+
+      <div class="qstep" id="qEtapeCredit" hidden>
+        <h3 class="qtitre" tabindex="-1">Un crédit est-il en cours&nbsp;?</h3>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Crédit en cours">
+          <label><input type="radio" name="qCredit" value="oui" checked><span>Oui<small>il reste du capital à rembourser</small></span></label>
+          <label><input type="radio" name="qCredit" value="non"><span>Non<small>prêt soldé, ou bien payé comptant</small></span></label>
+        </div>
+        <div id="qCreditChamps">
+          <div class="qchamp"><input id="qCrd" type="text" inputmode="numeric" autocomplete="off" aria-label="Capital restant dû" aria-describedby="qCrdAide"><span class="qunit">€</span></div>
+          <p class="qaide" id="qCrdAide">Le capital restant dû aujourd'hui, sur votre dernier tableau d'amortissement.</p>
+          <div class="qchamp"><input id="qDureeRestante" type="text" inputmode="numeric" autocomplete="off" aria-label="Années de remboursement restantes" aria-describedby="qDureeRestanteAide"><span class="qunit">ans</span></div>
+          <p class="qaide" id="qDureeRestanteAide">Les années de remboursement qu'il reste.</p>
+        </div>
       </div>
 
       <div class="qstep" id="qEtapeTmi" hidden>
@@ -93,6 +135,7 @@
     <ul class="trust">
       <li>Gratuit, sans inscription</li>
       <li>Quatre régimes fiscaux, à jour des règles 2026</li>
+      <li>À crédit, comptant, ou pour un bien déjà à vous</li>
       <li>Ni publicité, ni service tiers</li>
     </ul>
   </div>
@@ -173,6 +216,24 @@
   <section class="panel">
     <div class="phead">
       <div>
+        <h2>Le même bien sous les quatre régimes, année après année</h2>
+        <p>Le rendement annualisé de chaque régime selon l'année de revente : le bon choix dépend de la date de la vente.</p>
+      </div>
+    </div>
+    <div class="legend">
+      <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Nu, micro-foncier</span></span>
+      <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Nu, au réel</span></span>
+      <span style="color:var(--d3)"><i class="swatch"></i><span style="color:var(--text-muted)">Meublé, micro-BIC</span></span>
+      <span style="color:var(--d4)"><i class="swatch"></i><span style="color:var(--text-muted)">Meublé, LMNP au réel</span></span>
+      <span style="color:var(--text-muted)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Bourse, nette d'impôt</span></span>
+    </div>
+    <div class="plot" id="vPlotReg"><div class="tip" id="vTipReg"></div></div>
+    <p class="axisnote" id="vRegNote"></p>
+  </section>
+
+  <section class="panel">
+    <div class="phead">
+      <div>
         <h2>Ce qui fait vraiment bouger le rendement</h2>
         <p>Variation du rendement annualisé quand un seul paramètre change, les autres restant fixes. Les barres les plus longues désignent les hypothèses à vérifier en priorité avant de signer — ici, <span id="vSens">la revalorisation du bien</span>.</p>
       </div>
@@ -199,7 +260,8 @@
       <li><b>Plus-value réelle</b> — prix de cession net des frais, abattements par paliers, forfait travaux de 15 %, surtaxe au-delà de 50 000 €.</li>
       <li><b>Travaux qui vieillissent</b> — chaque poste ajoute sa valeur au bien puis la perd au rythme que vous choisissez.</li>
       <li><b>Inflation explicite</b> — rendement en euros courants et en pouvoir d'achat, indexation séparée des prix, loyers et charges.</li>
-      <li><b>Sept graphiques</b> — rendement par année de revente, comparatif des régimes, placements, cascade du gain, trésorerie, patrimoine, sensibilité.</li>
+      <li><b>Achat à crédit, comptant, ou bien déjà détenu</b> — pour un bien que vous possédez, la mise est ce qu'une vente aujourd'hui rendrait : le rendement répond à « garder ou vendre ? ».</li>
+      <li><b>Huit graphiques</b> — rendement par année de revente, régimes à l'horizon et année par année, placements, cascade du gain, trésorerie, patrimoine, sensibilité.</li>
       <li><b>Tableau annuel complet</b> — loyers, charges, intérêts, impôt, trésorerie, valeur, dette, net si revente — exportable en CSV.</li>
       <li><b>Lien partageable</b> — toutes vos hypothèses tiennent dans l'adresse de la page : un lien suffit à transmettre une simulation.</li>
     </ul>
@@ -221,7 +283,7 @@
 
   <section class="final">
     <h2>Votre projet, vos chiffres, en deux minutes</h2>
-    <p>Sept questions, chacune préremplie d'une valeur raisonnable, et la calculatrice s'ouvre réglée sur votre projet. Rien n'est figé : les trente-six hypothèses restent modifiables une fois dedans.</p>
+    <p>Sept questions, chacune préremplie d'une valeur raisonnable, et la calculatrice s'ouvre réglée sur votre projet — ou sur le bien que vous possédez déjà. Rien n'est figé : toutes les hypothèses restent modifiables une fois dedans.</p>
     <a class="btn primary" href="#assistant">Répondre aux questions</a>
   </section>
 

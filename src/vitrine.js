@@ -62,6 +62,12 @@ function vitrine(){
 
   drawChart(g("vPlotNet"), g("vTipNet"), cfgGainNet(p, R, {height: 280}));
 
+  // Les quatre régimes dans le temps, tracés comme sur la calculatrice.
+  const regs = comparerRegimes(p, R);
+  drawChart(g("vPlotReg"), g("vTipReg"), cfgRegimesTemps(p, R, regs,
+    {height: 280, floor: plancherLisible(regs.map(r => r.tris), false)}));
+  ecrire("vRegNote", meneurRegimes(regs, p.horizon));
+
   const sens = sensibilite(p, f.tri);
   drawTornado(g("vPlotSens"), g("vTipSens"), cfgSensibilite(sens, f.tri));
   if(sens.length) ecrire("vSens", sens[0].nom.toLowerCase());

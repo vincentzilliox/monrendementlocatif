@@ -68,8 +68,20 @@
         <button type="button" id="railEssentiel" aria-pressed="true">Essentiel</button>
         <button type="button" id="railTout" aria-pressed="false">Tous les réglages</button>
       </div>
-      <span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« Essentiel » ne montre que les onze réglages auxquels le rendement est le plus sensible. Les vingt-cinq autres gardent leur valeur et continuent d'entrer dans le calcul : « Tous les réglages » les rend modifiables.</span></span>
+      <span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« Essentiel » ne montre que les douze réglages auxquels le rendement est le plus sensible. Les autres gardent leur valeur et continuent d'entrer dans le calcul : « Tous les réglages » les rend modifiables.</span></span>
     </div>
+
+    <details class="group" open>
+      <summary>Votre situation</summary>
+      <div class="fields">
+        <div class="f stack key"><div class="fl"><label for="situation">Le bien</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« J'achète un bien » : la mise est votre apport, le crédit part de zéro et les frais d'acquisition entrent dans le coût. « Je possède déjà le bien » : les frais sont payés, le crédit est en cours, et la mise est ce qu'une vente aujourd'hui vous rendrait — l'argent que vous choisissez de laisser dans le bien. Le rendement répond alors à « garder ou vendre ? ».</span></span></div>
+          <select id="situation">
+            <option value="achat" selected>J'achète un bien</option>
+            <option value="detenu">Je possède déjà le bien</option>
+          </select>
+        </div>
+      </div>
+    </details>
 
     <details class="group" open>
       <summary>Régime fiscal<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>C'est le paramètre le plus décisif : à situation identique, l'impôt cumulé sur vingt-cinq ans varie d'un facteur sept d'un régime à l'autre. Les questions posées ensuite s'adaptent au régime choisi, et le comparatif des quatre régimes les chiffre tous sur votre projet.</span></span></summary>
@@ -108,34 +120,48 @@
     <details class="group" open>
       <summary>Le bien</summary>
       <div class="fields">
-        <div class="f key"><div class="fl"><label for="prix">Prix d'achat</label></div><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
-        <div class="f"><div class="fl"><label for="notairePct">Frais de notaire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation. 2 à 3 % dans le neuf.</span></span></div><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
-        <div class="f"><div class="fl"><label for="fraisAcq">Frais d'agence à l'achat</label></div><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
+        <div class="f key" id="fPrix"><div class="fl"><label for="prix">Prix d'achat</label></div><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <div class="f key" id="fValeur" hidden><div class="fl"><label for="valeur">Valeur actuelle du bien</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que le bien se vendrait aujourd'hui : regardez les ventes récentes du quartier. C'est le point de départ de la revalorisation et de la revente.</span></span></div><div class="wrap"><input id="valeur" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <div class="f key" id="fPrixAchat" hidden><div class="fl"><label for="prixAchat">Prix payé à l'achat</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le prix d'acquisition, hors frais. Il sert d'assiette à la plus-value — majoré de 7,5 % de frais forfaitaires et, après cinq ans, de 15 % de travaux forfaitaires — et à l'amortissement en LMNP au réel.</span></span></div><div class="wrap"><input id="prixAchat" type="number" step="1000" value="160000"><span class="unit">€</span></div></div>
+        <div class="f key" id="fDepuis" hidden><div class="fl"><label for="depuis">Détenu depuis</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les années déjà écoulées depuis l'achat. Elles comptent pour les abattements de plus-value — exonération d'impôt à 22 ans, de prélèvements sociaux à 30 — et pour l'amortissement déjà pratiqué en LMNP au réel.</span></span></div><div class="wrap uw"><input id="depuis" type="number" step="1" min="0" max="60" value="8"><span class="unit">ans</span></div></div>
+        <div class="f" id="fTravauxPasses" hidden><div class="fl"><label for="travauxPasses">Travaux déjà réalisés</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que vous avez dépensé en travaux depuis l'achat, factures à l'appui : ils majorent le prix d'acquisition dans le calcul de la plus-value. Après cinq ans de détention, le forfait de 15 % s'applique s'il est plus favorable.</span></span></div><div class="wrap"><input id="travauxPasses" type="number" step="1000" min="0" value="0"><span class="unit">€</span></div></div>
+        <div class="f" id="fNotaire"><div class="fl"><label for="notairePct">Frais de notaire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation. 2 à 3 % dans le neuf.</span></span></div><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
+        <div class="f" id="fFraisAcq"><div class="fl"><label for="fraisAcq">Frais d'agence à l'achat</label></div><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
         <div class="f" id="fMobilier"><div class="fl"><label for="mobilier">Mobilier</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Meubles, électroménager, literie : environ 4 % du prix pour un appartement entièrement meublé. Amortissable au LMNP réel, et neutralisé si vous repassez en location nue.</span></span></div><div class="wrap"><input id="mobilier" type="number" step="500" value="8000"><span class="unit">€</span></div></div>
       </div>
     </details>
 
     <details class="group" open>
-      <summary>Le financement</summary>
+      <summary><span data-detenu="Le crédit en cours">Le financement</span></summary>
       <div class="fields">
-        <div class="f key"><div class="fl"><label for="apport">Apport personnel</label></div><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
-        <dl class="derived">
+        <label class="check" id="fComptant"><input id="comptant" type="checkbox"> <span data-detenu="Aucun crédit en cours">Achat comptant, sans crédit</span></label>
+        <div class="f key" id="fApport"><div class="fl"><label for="apport">Apport personnel</label></div><div class="wrap"><input id="apport" type="number" step="1000" value="35000"><span class="unit">€</span></div></div>
+        <dl class="derived" id="dFinancement">
           <dt>Coût total de l'opération</dt><dd id="dCout">—</dd>
           <dt>Votre apport</dt><dd id="dApport">—</dd>
           <dt class="tot">Montant emprunté<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCap" hidden></span></span></dt><dd class="tot" id="dEmprunt">—</dd>
         </dl>
-        <div class="f key"><div class="fl"><label for="duree">Durée du prêt</label></div><div class="wrap uw"><input id="duree" type="number" step="1" min="1" max="40" value="20"><span class="unit">ans</span></div></div>
-        <div class="f key"><div class="fl"><label for="taux">Taux d'intérêt</label></div><div class="wrap"><input id="taux" type="number" step="0.05" value="3.4"><span class="unit">%</span></div></div>
-        <div class="f"><div class="fl"><label for="assur">Assurance emprunteur</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>En pourcentage du capital emprunté, par an.</span></span></div><div class="wrap"><input id="assur" type="number" step="0.01" value="0.34"><span class="unit">%</span></div></div>
-        <dl class="derived">
+        <div class="f key" id="fCrd" hidden><div class="fl"><label for="crd">Capital restant dû</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le capital qu'il vous reste à rembourser aujourd'hui : il figure sur votre dernier tableau d'amortissement. L'assurance est comptée sur ce montant.</span></span></div><div class="wrap"><input id="crd" type="number" step="1000" min="0" value="90000"><span class="unit">€</span></div></div>
+        <div class="f key" id="fDureeRestante" hidden><div class="fl"><label for="dureeRestante">Durée restante du prêt</label></div><div class="wrap uw"><input id="dureeRestante" type="number" step="1" min="0" max="40" value="12"><span class="unit">ans</span></div></div>
+        <div class="f key" id="fDuree"><div class="fl"><label for="duree">Durée du prêt</label></div><div class="wrap uw"><input id="duree" type="number" step="1" min="1" max="40" value="20"><span class="unit">ans</span></div></div>
+        <div class="f key" id="fTaux"><div class="fl"><label for="taux">Taux d'intérêt</label></div><div class="wrap"><input id="taux" type="number" step="0.05" value="3.4"><span class="unit">%</span></div></div>
+        <div class="f" id="fAssur"><div class="fl"><label for="assur">Assurance emprunteur</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>En pourcentage du capital emprunté, par an.</span></span></div><div class="wrap"><input id="assur" type="number" step="0.01" value="0.34"><span class="unit">%</span></div></div>
+        <dl class="derived" id="dCredit">
           <dt>Mensualité, assurance incluse</dt><dd id="dMens">—</dd>
           <dt>Coût total du crédit<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCap2" hidden></span></span></dt><dd id="dCout2">—</dd>
         </dl>
-        <details class="more">
+        <dl class="derived" id="dVente" hidden>
+          <dt>Valeur du bien</dt><dd id="dvValeur">—</dd>
+          <dt>Frais d'agence et pénalités</dt><dd id="dvFrais">—</dd>
+          <dt>Capital restant dû</dt><dd id="dvCrd">—</dd>
+          <dt>Impôt sur la plus-value</dt><dd id="dvPV">—</dd>
+          <dt class="tot">Net si vente aujourd'hui<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dvCap" hidden></span></span></dt><dd class="tot" id="dvNet">—</dd>
+        </dl>
+        <details class="more" id="mCredit">
           <summary>Frais de dossier et remboursement anticipé</summary>
           <div class="fields">
-            <div class="f"><div class="fl"><label for="fraisDossier">Frais de dossier + garantie</label></div><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
-            <label class="check"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
+            <div class="f" id="fFraisDossier"><div class="fl"><label for="fraisDossier">Frais de dossier + garantie</label></div><div class="wrap"><input id="fraisDossier" type="number" step="100" value="2500"><span class="unit">€</span></div></div>
+            <label class="check" id="fIra"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
           </div>
         </details>
       </div>
@@ -175,7 +201,7 @@
     <details class="group" open>
       <summary>Projection &amp; revente</summary>
       <div class="fields">
-        <div class="f key"><div class="fl"><label for="horizon">Horizon d'analyse</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La durée simulée. Le rendement affiché en haut est celui d'une revente à cette date — mais chaque année de revente est calculée, et la meilleure vous est indiquée.</span></span></div><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
+        <div class="f key"><div class="fl"><label for="horizon"><span data-detenu="Garder encore">Horizon d'analyse</span></label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La durée simulée. Le rendement affiché en haut est celui d'une revente à cette date — mais chaque année de revente est calculée, et la meilleure vous est indiquée.</span></span></div><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="25"><span class="unit">ans</span></div></div>
         <div class="f"><div class="fl"><label for="inflation">Inflation <small>taux directeur BCE</small></label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Par défaut, le taux directeur de la BCE : celui de la facilité de dépôt, porté à 2,50 % le 16 septembre 2026. Ce n'est pas l'inflation constatée, mais le niveau que la banque centrale juge adapté pour ramener l'inflation vers son objectif de 2 % — une référence publique et stable pour une simulation sur vingt-cinq ans. Remplacez-la par votre propre estimation si vous en avez une.</span></span></div><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
         <label class="souscheck"><input id="prixSuitInflation" type="checkbox" checked> Prix, loyers et charges suivent l'inflation</label>
         <div class="f" id="fIndexPrix"><div class="fl"><label for="indexPrix">Revalorisation du bien</label></div><div class="wrap uw"><input id="indexPrix" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
@@ -228,7 +254,7 @@
 
     <section class="verdict" id="verdict">
       <div class="vmain">
-        <p class="eyebrow"><span data-brut="Rendement annuel avant impôt, revente à">Rendement annuel net, revente à</span> <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. <span data-brut="Net de toutes les charges, mais avant impôt sur les loyers et sur la plus-value.">Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></span></p>
+        <p class="eyebrow"><span data-brut="Rendement annuel avant impôt, revente">Rendement annuel net, revente</span> <span data-detenu="dans">à</span> <b id="heroAns">25 ans</b><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le taux de rendement interne : ce que rapporte, chaque année en moyenne, l'argent réellement sorti de votre poche — apport et effort d'épargne compris. <span data-brut="Net de toutes les charges, mais avant impôt sur les loyers et sur la plus-value.">Net de toutes les charges, de l'impôt sur les loyers et de l'impôt sur la plus-value.</span></span></span></p>
         <div class="hero">
           <span class="big num" id="heroTri">—</span>
           <span class="pill num" id="benchPill">—</span>
@@ -236,9 +262,9 @@
         </div>
         <p class="reel"><b class="num" id="heroReel">—</b> <span id="heroReelTxt">en pouvoir d'achat</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le même rendement une fois l'inflation retirée. C'est ce chiffre qui dit si vous vous enrichissez : un capital qui progresse moins vite que les prix achète moins de choses à l'arrivée.</span></span></p>
         <dl class="facts">
-          <dt>Sorti de votre poche<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'apport du premier jour, plus chaque euro que le bien vous a réclamé ensuite quand les loyers ne couvraient pas tout.</span></span></dt><dd id="vdMise">—</dd>
+          <dt><span data-detenu="Laissé dans le bien">Sorti de votre poche</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden data-detenu="Ce qu'une vente aujourd'hui vous rendrait — net de frais d'agence, de crédit et d'impôt de plus-value —, plus chaque euro que le bien vous réclame ensuite quand les loyers ne couvrent pas tout.">L'apport du premier jour, plus chaque euro que le bien vous a réclamé ensuite quand les loyers ne couvraient pas tout.</span></span></dt><dd id="vdMise">—</dd>
           <dt><span data-brut="Gain avant impôt à la revente">Gain net à la revente</span></dt><dd id="vdGain">—</dd>
-          <dt>Point mort<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La première année où revendre cesse de laisser une perte. Avant cette date, la vente ne couvre pas les frais de notaire et d'agence payés à l'achat.</span></span></dt><dd id="vdMort">—</dd>
+          <dt>Point mort<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden data-detenu="La première année où garder le bien rapporte au moins autant que l'avoir vendu aujourd'hui, une fois les frais de revente et l'impôt de plus-value de cette année-là payés.">La première année où revendre cesse de laisser une perte. Avant cette date, la vente ne couvre pas les frais de notaire et d'agence payés à l'achat.</span></span></dt><dd id="vdMort">—</dd>
         </dl>
         <div class="avis" id="avisBox" hidden>
           <p id="avisText"></p>
@@ -301,6 +327,24 @@
       </div>
       <div class="plot" id="plotReg"><div class="tip" id="tipReg"></div></div>
       <p class="axisnote" id="regNote"></p>
+    </section>
+
+    <section class="panel" id="regimesTemps">
+      <div class="phead">
+        <div>
+          <h2>Les quatre régimes, année après année<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le rendement annualisé de chaque régime selon l'année de revente, sur vos hypothèses. Les courbes se croisent : l'amortissement du LMNP au réel pèse peu les premières années puis creuse l'écart, avant d'être réintégré dans la plus-value ; le déficit foncier joue tôt, puis s'épuise. La bourse, en tirets, est la même que sur le graphique de rendement.</span></span></h2>
+          <p>Le régime le plus favorable dépend de la date à laquelle vous revendrez.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Nu, micro-foncier</span></span>
+        <span style="color:var(--d2)"><i class="swatch"></i><span style="color:var(--text-muted)">Nu, au réel</span></span>
+        <span style="color:var(--d3)"><i class="swatch"></i><span style="color:var(--text-muted)">Meublé, micro-BIC</span></span>
+        <span style="color:var(--d4)"><i class="swatch"></i><span style="color:var(--text-muted)">Meublé, LMNP au réel</span></span>
+        <span style="color:var(--text-muted)"><i class="swatch dash"></i><span style="color:var(--text-muted)" data-brut="Bourse, avant impôt">Bourse, nette d'impôt</span></span>
+      </div>
+      <div class="plot" id="plotRegT"><div class="tip" id="tipRegT"></div></div>
+      <p class="axisnote" id="regTNote"></p>
     </section>
 
     <details class="panel fold" id="analyse">

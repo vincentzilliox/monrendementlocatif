@@ -11,18 +11,17 @@ import pathlib
 import subprocess
 import sys
 
-RACINE = pathlib.Path(__file__).parent.parent
-CHROME = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          "/Applications/Chromium.app/Contents/MacOS/Chromium",
-          "/usr/bin/google-chrome", "/usr/bin/chromium")
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+import _local
+from _local import CHROME, RACINE, premier_existant
 
 
 def main():
-    chrome = next((c for c in CHROME if pathlib.Path(c).exists()), None)
+    chrome = premier_existant(CHROME)
     if not chrome:
         print("Chrome introuvable"); return 1
     cible = RACINE / "og-image.png"
-    subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+    subprocess.run([chrome, "--headless=new", *_local.options_chrome(chrome), "--disable-gpu", "--hide-scrollbars",
                     "--force-device-scale-factor=1", "--window-size=1200,630",
                     f"--screenshot={cible}", (RACINE / "outils" / "og-image.html").as_uri()],
                    capture_output=True, timeout=60, check=True)

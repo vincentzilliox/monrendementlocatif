@@ -26,7 +26,14 @@ de travaux à durée de vie propre : chacun ajoute sa valeur au bien puis la per
 au rythme indiqué, parce qu'une cuisine de vingt ans ne vaut plus rien.
 
 **Financement** — amortissement mensuel réel, assurance emprunteur, frais de
-dossier, pénalités de remboursement anticipé.
+dossier, pénalités de remboursement anticipé — ou achat comptant, sans crédit.
+
+**Bien déjà détenu** — la calculatrice a deux situations. « J'achète un bien » :
+la mise est l'apport, le crédit part de zéro. « Je possède déjà le bien » : les
+frais d'acquisition sont payés, le crédit est en cours (capital restant dû,
+durée restante), la durée de détention déjà écoulée compte pour les abattements
+de plus-value, et la mise est ce qu'une vente aujourd'hui rendrait — net de
+frais, de crédit et d'impôt. Le rendement répond alors à « garder ou vendre ? ».
 
 **Exploitation** — loyers indexés, vacance locative, charges de copropriété,
 taxe foncière, PNO, gestion, provision d'entretien, CFE.
@@ -48,8 +55,9 @@ le rendement vient alors du levier du crédit et des loyers, pas d'un pari sur l
 prix.
 
 **Graphiques** — rendement annualisé par année de revente, comparatif des quatre
-régimes, gain net face aux trois placements, cascade du gain, trésorerie
-annuelle, patrimoine net et dette, sensibilité du TRI aux six paramètres clés.
+régimes à l'horizon puis année par année, gain net face aux trois placements,
+cascade du gain, trésorerie annuelle, patrimoine net et dette, sensibilité du
+TRI aux six paramètres clés.
 
 **Brut ou net** — une bascule de la barre de navigation passe toute la
 calculatrice avant impôt : verdict, graphiques, tableau et export CSV. Seule la
@@ -68,10 +76,11 @@ contrôles le tiennent : aucun bouton sans texte, et le clavier doit pouvoir ouv
 la bulle puis la refermer. Un troisième plafonne à 120 caractères ce qui reste
 visible sous un titre de graphique.
 
-**Le panneau a deux niveaux.** Il s'ouvre sur les onze réglages marqués `key` dans
-`index.html` — ceux auxquels le rendement est le plus sensible, plus ceux sans
-lesquels il n'y a pas de projet. « Tous les réglages » découvre les vingt-cinq
-autres, qui n'ont jamais cessé d'entrer dans le calcul. De même côté résultats :
+**Le panneau a deux niveaux.** Il s'ouvre sur les douze réglages marqués `key` dans
+`index.html` — la situation, ceux auxquels le rendement est le plus sensible, et
+ceux sans lesquels il n'y a pas de projet. « Tous les réglages » découvre les
+autres, qui n'ont jamais cessé d'entrer dans le calcul. Chaque situation et
+chaque régime n'exposent que les champs qui les concernent. De même côté résultats :
 le verdict, les indicateurs et les trois graphiques qui décident restent à
 l'écran ; trésorerie, cascade, patrimoine, sensibilité et tableau annuel attendent
 d'être dépliés — tracés quand même, et redessinés à l'ouverture. Le panneau
@@ -104,7 +113,7 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `guides/*.html` | Les six guides : un bloc `meta` JSON puis un `<article class="prose">`. |
 | `build.py` | Produit `site/` : concatène les sources, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère JSON-LD, sitemap, robots, `security.txt`, en-têtes Cloudflare. |
 | `outils/favicon.py` | Le logotype et les icônes qu'on en tire, rastérisées sans dépendance. |
-| `outils/_local.py` | Le serveur local et la détection de Chrome, partagés par les trois outils. |
+| `outils/_local.py` | Le serveur local et la détection de Chrome et du moteur JavaScript (JavaScriptCore, ou node), partagés par les trois outils. |
 | `outils/hooks/pre-commit` | Refuse un commit dont `site/` n'a pas été régénéré. |
 | `outils/servir.py` | Construit, sert et ouvre le site en local. |
 | `outils/verifier.py` | Contrôles avant publication. |
@@ -120,9 +129,11 @@ pages annexes détaillent la méthode : `/questions-frequentes/` et
 `/hypotheses-de-calcul/`.
 
 L'accroche de `/` ne renvoie pas vers un formulaire vide : elle pose sept
-questions — prix, loyer, nu ou meublé, travaux, apport, durée du prêt, tranche
-d'imposition — chacune préremplie, chacune dotée d'un « je ne sais pas encore »
-quand elle s'y prête. Le régime fiscal, lui, n'est pas demandé : le moteur
+questions — prix, loyer, nu ou meublé, travaux, apport ou achat comptant, durée
+du prêt, tranche d'imposition — chacune préremplie, chacune dotée d'un « je ne
+sais pas encore » quand elle s'y prête. Une bascule en tête, « Je possède déjà
+un bien », change le jeu de questions : valeur actuelle, prix payé, années de
+détention, loyer, nu ou meublé, crédit en cours, tranche d'imposition. Le régime fiscal, lui, n'est pas demandé : le moteur
 départage les régimes de la famille choisie et retient le plus favorable. Les
 réponses partent dans le fragment de `/calculatrice/`, où tout reste modifiable.
 
@@ -148,7 +159,8 @@ Trois règles, et ce sont des contrôles, pas des conventions :
 - `src/assistant.js` ne connaît aucun chiffre : il propose des valeurs déduites
   de `DEFAUTS` à proportion du prix saisi. Accepter toutes ses propositions doit
   donc rendre un lien qui ne fixe aucune hypothèse, `/calculatrice/#complet=1`,
-  c'est-à-dire le scénario même de la vitrine — et c'est un contrôle. Le
+  c'est-à-dire le scénario même de la vitrine — et c'est un contrôle. Pour un
+  bien déjà détenu, le lien ne porte que la situation et l'absence de travaux. Le
   marqueur `complet` fait repartir la calculatrice des valeurs d'ouverture,
   quoi qu'une visite précédente ait laissé dans le navigateur ; un lien de
   guide, lui, se pose sur la saisie du visiteur. « Copier le lien » va plus

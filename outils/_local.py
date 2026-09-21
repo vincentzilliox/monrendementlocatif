@@ -17,10 +17,20 @@ import threading
 RACINE = pathlib.Path(__file__).parent.parent
 SITE = RACINE / "site"
 
+# Chrome, Chromium, ou à défaut le Chromium que Playwright a pu installer.
 CHROME = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
           "/Applications/Chromium.app/Contents/MacOS/Chromium",
-          "/usr/bin/google-chrome", "/usr/bin/chromium")
-JSC = ("/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc",)
+          "/usr/bin/google-chrome", "/usr/bin/chromium") + tuple(
+    str(c) for c in sorted(pathlib.Path.home().glob(".cache/ms-playwright/chromium-*/chrome-linux*/chrome"), reverse=True))
+# JavaScriptCore sur macOS ; à défaut, node fait tourner le même harnais.
+JSC = ("/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc",
+       "/usr/bin/node", "/usr/local/bin/node")
+
+
+# Le Chromium de Playwright n'a pas de bac à sable setuid : sans ce drapeau, il
+# plante au démarrage. Chrome et Chromium du système n'en ont pas besoin.
+def options_chrome(chrome):
+    return ["--no-sandbox"] if "ms-playwright" in str(chrome) else []
 
 
 def premier_existant(chemins):
@@ -40,16 +50,17 @@ def port_libre(depart=0, essais=20):
     return None
 
 
-def serveur(port, journal=None):
+def serveur(port, journal=None, hote="127.0.0.1"):
     """Un serveur de site/ prêt à démarrer. `journal` reçoit chaque requête, ou
-    None pour ne rien afficher."""
+    None pour ne rien afficher. `hote` : 0.0.0.0 pour être joint depuis le
+    réseau (une autre machine du VPN, un téléphone)."""
     classe = type("Handler", (http.server.SimpleHTTPRequestHandler,),
                   {"__init__": lambda self, *a, **k:
                    http.server.SimpleHTTPRequestHandler.__init__(
                        self, *a, directory=str(SITE), **k),
                    "log_message": (lambda self, f, *a: journal(f % a)) if journal
                    else (lambda *a: None)})
-    return socketserver.ThreadingTCPServer(("127.0.0.1", port), classe)
+    return socketserver.ThreadingTCPServer((hote, port), classe)
 
 
 def servir_en_fond():

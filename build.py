@@ -78,7 +78,8 @@ def _jsonld(corps):
         "Taux de rendement interne année par année",
         "Rendement réel net d'inflation",
         "Point mort et meilleure année de revente",
-        "Quatre régimes fiscaux : micro-foncier, réel, micro-BIC, LMNP au réel",
+        "Quatre régimes fiscaux : micro-foncier, réel, micro-BIC, LMNP au réel, comparés année par année",
+        "Achat à crédit ou comptant, ou bien déjà détenu : garder ou vendre",
         "Comparaison avec le Livret A, un fonds euros et la bourse",
     ],
     }
@@ -137,7 +138,8 @@ def _defauts(src, script):
         bloc = re.search(r'<select id="%s">(.*?)</select>' % cle, src, re.S).group(1)
         choisi = re.search(r'<option value="([^"]*)"[^>]*selected', bloc).group(1)
         valeurs[cle] = float(choisi) if cle == "tmi" else choisi
-    valeurs["ira"] = 'id="ira" type="checkbox" checked' in src
+    for case in ("ira", "comptant"):
+        valeurs[case] = 'id="%s" type="checkbox" checked' % case in src
     return json.dumps(valeurs, ensure_ascii=False, indent=2)
 
 

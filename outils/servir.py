@@ -9,6 +9,7 @@ c'est un fichier source, pas une page.
     python3 outils/servir.py            ->  http://127.0.0.1:8000
     python3 outils/servir.py 8080       ->  sur le port indiqué
     python3 outils/servir.py --sans-navigateur
+    python3 outils/servir.py --reseau   ->  joignable depuis le réseau (Tailscale, téléphone)
 
 Ctrl+C pour arrêter.
 """
@@ -25,8 +26,9 @@ PORT_PAR_DEFAUT = 8000
 
 
 def main():
-    args = [a for a in sys.argv[1:] if a != "--sans-navigateur"]
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
     ouvrir = "--sans-navigateur" not in sys.argv
+    reseau = "--reseau" in sys.argv
     depart = int(args[0]) if args else PORT_PAR_DEFAUT
 
     print("Construction…")
@@ -41,11 +43,13 @@ def main():
         print("Aucun port libre entre %d et %d." % (depart, depart + 19))
         return 1
 
-    serveur = _local.serveur(port, journal=lambda l: print("  " + l))
+    serveur = _local.serveur(port, journal=lambda l: print("  " + l),
+                             hote="0.0.0.0" if reseau else "127.0.0.1")
     serveur.daemon_threads = True
     url = "http://127.0.0.1:%d/" % port
 
-    print("\n  %s\n  Ctrl+C pour arrêter.\n" % url)
+    print("\n  %s%s\n  Ctrl+C pour arrêter.\n"
+          % (url, "  (et sur toutes les adresses de la machine)" if reseau else ""))
     if ouvrir:
         threading.Timer(0.4, webbrowser.open, [url]).start()
     try:

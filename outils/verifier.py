@@ -13,6 +13,7 @@ dont une erreur ne se voit pas à l'écran.
 Sortie : une ligne par contrôle, et un code de sortie non nul si l'un échoue.
 """
 
+import html
 import json
 import pathlib
 import re
@@ -199,7 +200,7 @@ setTimeout(function(){
   // a l'horizon, puis a la premiere annee, et on verifie que le verdict ne bouge pas.
   var curseur = document.getElementById("cascAnnee");
   var totalCascade = function(){
-    var t = document.querySelectorAll("#plotCasc svg text.valeur");
+    var t = document.querySelectorAll("#plotCasc svg text.chiffre");
     return t.length ? t[t.length - 1].textContent : "";
   };
   if(curseur){
@@ -284,6 +285,41 @@ setTimeout(function(){
     select.dispatchEvent(new Event("change", {bubbles:true}));
   }
   if(bEss) bEss.click();
+  // Achat comptant : les champs du crédit s'effacent, le rendement change, et
+  // décocher rend le chiffre de départ.
+  var cComptant = document.getElementById("comptant");
+  if(cComptant && select){
+    var triAvantComptant = document.getElementById("heroTri").textContent;
+    var cache = function(id){ var e = document.getElementById(id); return !!(e && e.hidden); };
+    cComptant.checked = true; cComptant.dispatchEvent(new Event("change", {bubbles:true}));
+    r.comptant = (cache("fDuree") && cache("fTaux") && cache("fApport") ? "1" : "0")
+      + (document.getElementById("heroTri").textContent !== triAvantComptant ? "1" : "0")
+      + (/Aucun crédit/.test(document.getElementById("indicateurs").textContent) ? "1" : "0");
+    cComptant.checked = false; cComptant.dispatchEvent(new Event("change", {bubbles:true}));
+    r.comptant += document.getElementById("heroTri").textContent === triAvantComptant && !cache("fDuree") ? "1" : "0";
+  }
+  // Bien déjà détenu : un autre jeu de champs, un rendement calculé, et le
+  // retour à l'achat rend le chiffre de départ.
+  var situ = document.getElementById("situation");
+  if(situ){
+    var triAchat = document.getElementById("heroTri").textContent;
+    var visible = function(id){ var e = document.getElementById(id); return !!(e && !e.hidden && e.offsetParent !== null); };
+    situ.value = "detenu"; situ.dispatchEvent(new Event("change", {bubbles:true}));
+    if(bTout) bTout.click();
+    r.detenuChamps = ["fValeur","fPrixAchat","fDepuis","fTravauxPasses","fCrd","fDureeRestante","dVente"].filter(visible).join(",");
+    r.detenuMasques = ["fPrix","fNotaire","fApport","fDuree","dFinancement","fMobilier"].filter(visible).join(",");
+    r.detenuTri = document.getElementById("heroTri").textContent;
+    r.detenuNet = document.getElementById("dvNet").textContent;
+    r.detenuLibelle = document.querySelector("#verdict .eyebrow").textContent;
+    r.detenuCascade = document.querySelectorAll("#plotCasc svg text.chiffre").length;
+    r.detenuNaN = (document.body.innerText.match(/NaN|undefined|Infinity/g)||[]).length;
+    situ.value = "achat"; situ.dispatchEvent(new Event("change", {bubbles:true}));
+    if(bEss) bEss.click();
+    r.detenuRetour = document.getElementById("heroTri").textContent === triAchat
+      && /revente à/.test(document.querySelector("#verdict .eyebrow").textContent);
+  }
+  r.regT = document.querySelectorAll("#plotRegT path[stroke]").length;
+  r.regTNote = (document.getElementById("regTNote") || {}).textContent || "";
   // L'assistant de l'accroche : une question a l'ecran, sept questions, puis le
   // recapitulatif. On le parcourt deux fois — en acceptant tout, puis en doublant
   // le prix — et on lit la cible du bouton final sans quitter la page.
@@ -301,15 +337,41 @@ setTimeout(function(){
     r.qDeborde = largeur < 500
       ? Array.prototype.some.call(q.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e) && !cache(e); })
       : false;
-    var modifier = q.querySelector('.qmod[data-etape="0"]');
+    var modifier = q.querySelector('.qmod[data-etape="qEtapeBien"]');
     if(modifier){
       modifier.click();
       var prix = document.getElementById("qPrix");
-      prix.value = (parseInt(prix.value.replace(/[^\d]/g, ""), 10) || 0) * 2;
+      prix.value = (parseInt(prix.value.replace(/[^0-9]/g, ""), 10) || 0) * 2;
       prix.dispatchEvent(new Event("input", {bubbles:true}));
       n = 0;
       while(!suivant.hidden && n < 12){ suivant.click(); n++; }
       r.qLienModifie = document.getElementById("qGo").getAttribute("href");
+    }
+    // Payer comptant : la question de la durée du prêt disparaît, le lien le dit.
+    var bAchat = document.getElementById("qSituAchat"), bDetenu = document.getElementById("qSituDetenu");
+    if(bAchat && bDetenu){
+      bAchat.click();
+      var comptant = q.querySelector('input[name="qFinancement"][value="comptant"]');
+      if(comptant){ comptant.checked = true; comptant.dispatchEvent(new Event("change", {bubbles:true})); }
+      n = 0;
+      while(!suivant.hidden && n < 12){ suivant.click(); n++; }
+      r.qComptantEtapes = n;
+      r.qLienComptant = document.getElementById("qGo").getAttribute("href");
+      var credit = q.querySelector('input[name="qFinancement"][value="credit"]');
+      if(credit){ credit.checked = true; credit.dispatchEvent(new Event("change", {bubbles:true})); }
+      // Bien déjà détenu : sept autres questions, et un lien qui ne fixe que la
+      // situation et l'absence de travaux.
+      bDetenu.click();
+      r.qDetenuVisibles = pasVus().length;
+      n = 0;
+      while(!suivant.hidden && n < 12){ suivant.click(); n++; }
+      r.qDetenuEtapes = n;
+      r.qDetenuFin = pasVus().length === 1 ? pasVus()[0].id : "";
+      r.qLienDetenu = document.getElementById("qGo").getAttribute("href");
+      bAchat.click();
+      n = 0;
+      while(!suivant.hidden && n < 12){ suivant.click(); n++; }
+      r.qLienRetour = document.getElementById("qGo").getAttribute("href");
     }
   }
   r.lignes    = document.querySelectorAll("#tbl tbody tr").length;
@@ -318,6 +380,7 @@ setTimeout(function(){
   r.vitrine   = (document.getElementById("vTri")||{}).textContent || "";
   r.vcourbes  = document.querySelectorAll("#vPlotNet path[stroke]").length;
   r.vsens     = document.querySelectorAll("#vPlotSens svg rect").length;
+  r.vregT     = document.querySelectorAll("#vPlotReg path[stroke]").length;
   // Le panneau d'hypotheses : le bouton de la barre des sections le montre et le
   // cache. Ferme a l'ouverture sur petit ecran (le verdict d'abord), ouvert sur
   // grand ecran. Un panneau cache est inerte : le clavier n'y entre plus.
@@ -404,11 +467,12 @@ def sonde_navigateur(chrome, base, fichier, largeur):
     try:
         url = base + "/" + temoin.relative_to(SITE).as_posix()
         dom = subprocess.run(
-            [chrome, "--headless=new", "--disable-gpu", "--virtual-time-budget=9000",
+            [chrome, "--headless=new", *_local.options_chrome(chrome), "--disable-gpu", "--virtual-time-budget=9000",
              f"--window-size={max(500, largeur)},1000", "--dump-dom", url],
             capture_output=True, text=True, timeout=120).stdout
         trouve = re.search(r"SONDE::(\{.*?\})</div>", dom, re.S)
-        return json.loads(trouve.group(1)) if trouve else None
+        # --dump-dom sérialise le texte en HTML : un « & » de lien ressort en &amp;.
+        return json.loads(html.unescape(trouve.group(1))) if trouve else None
     finally:
         temoin.unlink(missing_ok=True)
 
@@ -594,7 +658,7 @@ def main():
         assistant_src = sans_commentaires((SRC / "assistant.js").read_text(encoding="utf-8"))
         defauts = json.loads(build._defauts(balisage, calc_src))
         recopies = sorted({"%s = %g" % (cle, defauts[cle])
-                           for cle in ("prix", "loyer", "apport", "tf", "mobilier")
+                           for cle in ("prix", "loyer", "apport", "tf", "mobilier", "valeur", "prixAchat", "crd")
                            if re.search(r"(?<![\d.])%g(?![\d.])" % defauts[cle], assistant_src)})
         controle("l'assistant ne recopie aucune valeur par défaut",
                  not recopies, ", ".join(recopies))
@@ -645,8 +709,10 @@ def main():
                     controle("accueil %d px : le menu montre les quatre liens" % largeur,
                              r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
-                    controle("accueil : deux graphiques tracés", r["graphes"] == 2, str(r["graphes"]))
+                    controle("accueil : trois graphiques tracés", r["graphes"] == 3, str(r["graphes"]))
                     controle("accueil : quatre placements comparés", r["vcourbes"] == 4, str(r["vcourbes"]))
+                    controle("accueil : quatre régimes et la bourse dans le temps",
+                             r.get("vregT") == 5, "%s courbes" % r.get("vregT"))
                     controle("accueil : sensibilité tracée", r["vsens"] >= 6, "%d barres" % r["vsens"])
                     controle("accueil : rendement affiché", "%" in r["vitrine"], r["vitrine"])
                     # L'image de partage montre le scénario de l'accueil. Quand ce
@@ -676,6 +742,21 @@ def main():
                                  if c not in (r.get("qLienModifie") or "")]
                     controle("assistant : le prix entraîne loyer, apport et charges",
                              not manquants, ", ".join(manquants) or (r.get("qLienModifie") or "—")[-58:])
+                    lc = r.get("qLienComptant") or ""
+                    controle("assistant : payer comptant saute la durée du prêt et voyage dans le lien",
+                             r.get("qComptantEtapes") == 6 and "comptant=1" in lc and "duree=" not in lc,
+                             "%s clics → %s" % (r.get("qComptantEtapes"), lc[-50:] or "—"))
+                    controle("assistant : bien détenu, sept questions puis le récapitulatif",
+                             r.get("qDetenuVisibles") == 1 and r.get("qDetenuEtapes") == 7
+                             and r.get("qDetenuFin") == "qEtapeRecap",
+                             "%s clics → %s" % (r.get("qDetenuEtapes"), r.get("qDetenuFin") or "—"))
+                    controle("assistant : bien détenu, les valeurs proposées ne fixent que la situation",
+                             r.get("qLienDetenu") == "/calculatrice/#complet=1&situation=detenu&tvx=",
+                             r.get("qLienDetenu") or "—")
+                    # La saisie faite avant de basculer (le prix doublé) survit au retour.
+                    controle("assistant : revenir à l'achat retrouve la saisie du visiteur",
+                             bool(r.get("qLienRetour")) and r.get("qLienRetour") == r.get("qLienModifie"),
+                             (r.get("qLienRetour") or "—")[-58:])
                 if not r.get("qDeborde") is None:
                     controle("assistant %d px : le récapitulatif ne déborde pas" % largeur,
                              not r.get("qDeborde"))
@@ -708,10 +789,28 @@ def main():
                              bool(r["tri"]) and r["tri"] == vitrine.get("vitrine"),
                              "%s vs %s" % (vitrine.get("vitrine", "—"), r["tri"]))
                     controle("six tuiles d'indicateurs", r["tuiles"] == 6, str(r["tuiles"]))
-                    controle("sept graphiques tracés", r["graphes"] == 7, str(r["graphes"]))
-                    controle("sept équivalents textuels", r.get("equiv") == 7, str(r.get("equiv")))
-                    controle("sept graphiques atteignables au clavier",
-                             r.get("focalisables") == 7, str(r.get("focalisables")))
+                    controle("huit graphiques tracés", r["graphes"] == 8, str(r["graphes"]))
+                    controle("huit équivalents textuels", r.get("equiv") == 8, str(r.get("equiv")))
+                    controle("huit graphiques atteignables au clavier",
+                             r.get("focalisables") == 8, str(r.get("focalisables")))
+                    controle("quatre régimes et la bourse dans le temps",
+                             r.get("regT") == 5 and len(r.get("regTNote") or "") > 20,
+                             "%s courbes, note : %s" % (r.get("regT"), (r.get("regTNote") or "—")[:40]))
+                    # « champs du crédit masqués », « rendement changé », « bulle du
+                    # loyer couvert : aucun crédit », « décocher rend le départ »
+                    controle("achat comptant : les champs du crédit s'effacent, le rendement suit",
+                             r.get("comptant") == "1111", r.get("comptant") or "sonde muette")
+                    controle("bien détenu : ses champs, et seulement eux",
+                             r.get("detenuChamps") == "fValeur,fPrixAchat,fDepuis,fTravauxPasses,fCrd,fDureeRestante,dVente"
+                             and r.get("detenuMasques") == "",
+                             "%s ; encore visibles : %s" % (r.get("detenuChamps"), r.get("detenuMasques") or "aucun"))
+                    controle("bien détenu : rendement, net d'une vente aujourd'hui, libellés, cascade",
+                             "%" in (r.get("detenuTri") or "") and "€" in (r.get("detenuNet") or "")
+                             and "revente dans" in (r.get("detenuLibelle") or "")
+                             and r.get("detenuCascade") == 9 and r.get("detenuNaN") == 0,
+                             "%s, %s, %s marches" % (r.get("detenuTri"), r.get("detenuNet"), r.get("detenuCascade")))
+                    controle("bien détenu : revenir à l'achat rend le chiffre de départ",
+                             r.get("detenuRetour") is True, str(r.get("detenuRetour")))
                     # « ouvre au focus », « les flèches déplacent », « se ferme au blur »
                     controle("infobulle pilotable au clavier", r.get("clavier") == "111",
                              r.get("clavier") or "sonde muette")
@@ -762,12 +861,12 @@ def main():
                     # un par un sous chaque graphique.
                     controle("descriptions courtes sous chaque titre",
                              not r.get("tropLong"), (r.get("tropLong") or "")[:60])
-                    # Replié ne veut pas dire absent : les sept graphiques sont
+                    # Replié ne veut pas dire absent : les huit graphiques sont
                     # tracés, comptés et atteignables, ouverts ou non.
                     controle("analyse et tableau repliés à l'ouverture",
                              r.get("replie") == "analyse,detail", r.get("replie") or "aucun")
-                    controle("mode Essentiel : onze réglages décisifs",
-                             r.get("champsEssentiel") == 11
+                    controle("mode Essentiel : douze réglages décisifs",
+                             r.get("champsEssentiel") == 12
                              and (r.get("champsTout") or 0) > 20,
                              "%s champs, %s en mode complet"
                              % (r.get("champsEssentiel"), r.get("champsTout")))
@@ -807,7 +906,8 @@ def main():
         # document » ci-dessus vérifiable plutôt que promis en commentaire.
         moteur = (SRC / "moteur.js").read_text(encoding="utf-8")
         essai = RACINE / "outils" / "__moteur.js"
-        essai.write_text(moteur + """
+        # jsc expose print() ; node non. Le harnais s'écrit une fois pour les deux.
+        essai.write_text('if(typeof print==="undefined"){ var print = console.log; }\n' + moteur + """
 function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,
@@ -932,6 +1032,49 @@ var cumulAvec = df.rows.reduce(function(s,r){ return s+r.impot; }, 0);
 var cumulSans = sansDeficit.rows.reduce(function(s,r){ return s+r.impot; }, 0);
 lignes.push('deficit foncier reporte sur les annees suivantes|'+(cumulAvec < cumulSans - 1?1:0)
   +'|impot cumule '+cumulAvec.toFixed(0)+' vs '+cumulSans.toFixed(0)+' EUR');
+// Achat comptant : aucun emprunt, la mise est tout le cout, et les frais de
+// dossier d'un pret qui n'existe pas ne pesent pas.
+var cc = run({comptant:true});
+lignes.push('achat comptant : aucun emprunt, mise = cout total|'
+  +(cc.emprunt===0 && Math.abs(cc.cash0-cc.besoin)<0.01 && cc.rows.every(function(x){ return x.annuite===0; })?1:0)
+  +'|mise '+cc.cash0.toFixed(0)+' EUR');
+lignes.push('achat comptant : frais de dossier sans effet|'
+  +(Math.abs(run({comptant:true, fraisDossier:99999}).final.tri-cc.final.tri)<1e-12?1:0)+'|');
+// Bien detenu : vendre aujourd'hui doit rendre exactement ce que la calculatrice
+// d'achat annonce comme net si revente a la meme date — memes frais (7,5 %),
+// meme credit, meme duree de detention. Regime micro-foncier : sans
+// amortissement, l'invariant est exact.
+var nu = {regime:'micro-foncier', ps:17.2, cfe:0, abattement:30, notairePct:7.5, items:[]};
+var A = run(nu), ecartsDetenu = [];
+[1, 5, 8, 12, 19].forEach(function(k){
+  var r = A.rows[k-1];
+  var D = run(Object.assign({}, nu, {situation:'detenu', valeur:r.valeur, crd:r.crd, depuis:k,
+    prixAchat:200000, dureeRestante:20-k, travauxPasses:0}));
+  if(Math.abs(D.net0 - r.netVente) > 1) ecartsDetenu.push(k+' : '+D.net0.toFixed(0)+' vs '+r.netVente.toFixed(0));
+});
+lignes.push('bien detenu : vendre aujourd hui = net si revente du scenario d achat|'
+  +(ecartsDetenu.length===0?1:0)+'|'+(ecartsDetenu[0] || '5 annees verifiees'));
+// La cascade d'un bien detenu : sans frais d'acquisition, frais de revente et
+// impot de plus-value comptes en plus de ceux d'une vente aujourd'hui.
+var Dd = run({situation:'detenu', valeur:200000, crd:90000, depuis:8, prixAchat:160000, dureeRestante:12, travauxPasses:0});
+var fd = Dd.final, v0 = Dd.vente0;
+var sommeDetenu = fd.cumulLoyers-fd.cumulCharges-fd.cumulCredit-fd.cumulImpot-Dd.p.travaux+fd.revalorisation
+  -(fd.fraisVente+fd.ira-v0.fraisVente-v0.ira)-(fd.impotPV+fd.repriseDF-v0.impotPV);
+lignes.push('bien detenu : cascade = gain|'+(Math.abs(sommeDetenu-fd.gain)<1?1:0)+'|ecart '+(sommeDetenu-fd.gain).toFixed(2)+' EUR');
+lignes.push('bien detenu : mise = net de la vente + travaux|'
+  +(Math.abs(Dd.cash0-(Dd.net0+Dd.p.travaux))<0.01 && Dd.net0>0 && isFinite(fd.tri)?1:0)+'|'+Dd.net0.toFixed(0)+' EUR');
+lignes.push('bien detenu : 30 ans de detention, plus-value exoneree|'
+  +(run({situation:'detenu', valeur:300000, crd:0, depuis:30, prixAchat:100000, dureeRestante:0}).final.impotPV===0?1:0)+'|');
+lignes.push('bien detenu : sans credit, ni mensualite ni dette|'
+  +(function(){ var z = run({situation:'detenu', valeur:200000, crd:0, depuis:3, prixAchat:180000, dureeRestante:0});
+    return isFinite(z.final.tri) && z.rows.every(function(x){ return x.annuite===0 && x.crd===0; }) ? 1 : 0; })()+'|');
+lignes.push('bien detenu : comptant l emporte sur le capital restant du|'
+  +(run({situation:'detenu', comptant:true, valeur:200000, crd:90000, depuis:3, prixAchat:180000, dureeRestante:10}).emprunt===0?1:0)+'|');
+// Les quatre regimes se comparent aussi dans le temps : une serie par regime,
+// aussi longue que l'horizon, dont le dernier point est le rendement a l'horizon.
+var cmp = comparerRegimes(base(), run({}));
+lignes.push('comparatif des regimes : une courbe par regime|'
+  +(cmp.length===4 && cmp.every(function(c){ return c.tris.length===25 && c.tris[24]===c.tri; })?1:0)+'|');
 print(lignes.join('\\n'));
 """, encoding="utf-8")
         try:

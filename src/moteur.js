@@ -119,16 +119,30 @@ const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400",
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
-  const notaire = p.prix * p.notairePct/100;
+  // Deux situations. « achat » : le bien est à acheter, la mise est l'apport et
+  // le crédit part de zéro. « detenu » : le bien est déjà à soi ; les frais
+  // d'acquisition sont payés, le crédit est en cours, et la mise est ce qu'une
+  // vente aujourd'hui rendrait — c'est cet argent-là qu'on choisit de laisser
+  // dans le bien plutôt que de le placer ailleurs.
+  const detenu = p.situation === "detenu";
+  const deja = detenu ? Math.max(0, Math.round(Number(p.depuis) || 0)) : 0;
+  // Achat comptant : pas d'emprunt, donc ni frais de dossier ni assurance.
+  const comptant = p.comptant === true;
+  const notaire = detenu ? 0 : p.prix * p.notairePct/100;
+  const fraisAcq = detenu ? 0 : p.fraisAcq;
+  const fraisDossier = (detenu || comptant) ? 0 : p.fraisDossier;
   // Meublé ou nu : ce qui ne concerne pas le régime choisi est masqué à l'écran,
   // donc neutralisé ici. Un champ masqué ne doit jamais peser sur le résultat.
   const meuble = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
-  const mobilier = meuble ? p.mobilier : 0;
-  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + mobilier + p.fraisDossier;
-  const emprunt = Math.max(0, besoin - p.apport);
-  const cash0 = Math.max(0, besoin - emprunt);
-  const sch = schedule(emprunt, p.taux, p.duree, p.assur);
-  const valeur0 = p.prix + p.travaux;
+  const mobilier = meuble && !detenu ? p.mobilier : 0;
+  // Le prix qui sert d'assiette à la plus-value et à l'amortissement : celui
+  // qui a été payé. La valeur d'aujourd'hui, elle, est le point de départ du
+  // marché et de la revente.
+  const prixRef = detenu ? p.prixAchat : p.prix;
+  const valeur0 = (detenu ? p.valeur : p.prix) + p.travaux;
+  const besoin = detenu ? p.travaux : p.prix + notaire + p.travaux + fraisAcq + mobilier + fraisDossier;
+  const emprunt = comptant ? 0 : detenu ? Math.max(0, p.crd) : Math.max(0, besoin - p.apport);
+  const sch = schedule(emprunt, p.taux, detenu ? p.dureeRestante : p.duree, p.assur);
   const tauxImpot = (p.tmi + p.ps)/100;
   // Affichage brut : le même projet sans aucun impôt — ni sur les loyers, ni sur
   // la plus-value, ni sur les gains des placements comparés. Charges, crédit,
@@ -141,7 +155,10 @@ function compute(p){
   const travauxNonDeduits = p.travaux - travauxDeductibles;
 
   const surAns = (montant, ans) => ans > 0 ? montant/ans : 0;
-  const amortBati = surAns((p.prix + notaire + p.fraisAcq)*(p.partBati/100), p.amortBatiAns);
+  // Bien détenu : la base amortissable est le prix payé et ses frais, retenus au
+  // forfait de 7,5 % faute de les connaître.
+  const baseBati = detenu ? prixRef*1.075 : p.prix + notaire + fraisAcq;
+  const amortBati = surAns(baseBati*(p.partBati/100), p.amortBatiAns);
   const amortTvx = surAns(p.travaux, p.amortTvxAns);
   const amortMob = surAns(mobilier, p.amortMobAns);
   // La CFE relève du BIC : elle ne concerne pas la location nue.
@@ -159,7 +176,10 @@ function compute(p){
   // la plus-value depuis la loi de finances 2025, confirmée en 2026 ; le mobilier
   // non — il n'entre
   // pas dans la cession immobilière.
-  let stockImm = 0, stockMob = 0, amortCumul = 0, amortReintegre = 0;
+  // Bien détenu au LMNP réel : le bâti déjà amorti pendant les années écoulées
+  // sera réintégré à la cession, comme celui des années à venir.
+  const amortAcquis = p.regime === "lmnp-reel" ? amortBati*Math.min(deja, p.amortBatiAns) : 0;
+  let stockImm = 0, stockMob = 0, amortCumul = amortAcquis, amortReintegre = amortAcquis;
   // Comparaison à mise de fonds identique. Les deux scénarios partent du même
   // apport et exigent exactement les mêmes versements : chaque euro d'effort
   // d'épargne que le bien réclame est, côté bourse, investi au taux de référence.
@@ -167,9 +187,9 @@ function compute(p){
   // même taux. Les deux courbes sont donc bien deux capitaux comparables — et,
   // comme le bien, ils sont pris nets de l'impôt dû sur leurs gains à la sortie.
   let cumulCF=0, cumulLoyers=0, cumulCharges=0, cumulCredit=0, cumulImpot=0;
-  let portefeuille=cash0, potImmo=0, surplusCumul=0;
-  let pFonds = cash0, pLivret = cash0;   // mêmes versements, placés ailleurs
-  let miseTotale = cash0; // apport, puis chaque euro d'effort d'épargne versé ensuite
+  let portefeuille, potImmo=0, surplusCumul=0;
+  let pFonds, pLivret;   // mêmes versements, placés ailleurs
+  let miseTotale; // la mise du premier jour, puis chaque euro d'effort d'épargne versé ensuite
   const efforts = [];
   const rows=[], cfHist=[];
   // Les taux de placement sont saisis hors inflation ; on les repasse en nominal
@@ -181,10 +201,40 @@ function compute(p){
   // Capital net de l'impôt sur le gain, le gain étant ce qui dépasse les versements.
   const netDe = (capital, verse, fisc) => capital - Math.max(0, capital - verse)*fisc;
 
+  // Ce que rend une vente à la fin de l'année y (0 : aujourd'hui). La durée de
+  // détention fiscale compte les années déjà écoulées : c'est elle qui fixe les
+  // abattements et le forfait travaux, pas l'année de la simulation.
+  const cession = (valeur, y, crd, reintegre) => {
+    const h = deja + y;
+    const fraisVente = valeur*p.fraisVente/100;
+    const ira = (p.ira && crd>0) ? Math.min(0.03*crd, crd*(p.taux/100)/2) : 0;
+    const notaireRetenu = Math.max(notaire, 0.075*prixRef);
+    const forfaitTvx = h>5 ? 0.15*prixRef : 0;
+    // Des travaux déjà déduits des revenus fonciers ne peuvent pas majorer une
+    // seconde fois le prix d'acquisition. Les travaux réalisés avant aujourd'hui
+    // sur un bien détenu s'ajoutent à ceux de la simulation.
+    const travauxPV = (detenu ? Math.max(0, Number(p.travauxPasses) || 0) : 0)
+      + (y === 0 ? 0 : p.regime === "reel-foncier" ? travauxNonDeduits : p.travaux);
+    let prixAcq = prixRef + notaireRetenu + Math.max(travauxPV, forfaitTvx);
+    if(p.regime === "lmnp-reel") prixAcq -= reintegre;
+    // Les frais supportés par le vendeur viennent en moins du prix de cession.
+    const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
+    const baseIR = pvBrute*(1-abattementIR(h));
+    const basePS = pvBrute*(1-abattementPS(h));
+    const impotPV = avantImpot ? 0 : baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
+    return {fraisVente, ira, impotPV, net: valeur - fraisVente - crd - ira - impotPV};
+  };
+  // Bien détenu : la mise est le produit net d'une vente aujourd'hui, plus les
+  // travaux engagés maintenant. Achat : l'apport, ou tout le coût si comptant.
+  const vente0 = detenu ? cession(valeur0 - p.travaux, 0, emprunt, amortAcquis) : null;
+  const net0 = vente0 ? vente0.net : 0;
+  const cash0 = detenu ? net0 + p.travaux : comptant ? besoin : Math.max(0, besoin - emprunt);
+  portefeuille = pFonds = pLivret = miseTotale = cash0;
+
   for(let y=1; y<=p.horizon; y++){
     const loyers = p.loyer*12*Math.pow(1+p.indexLoyer/100, y-1)*(1-p.vacance/100);
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
-    const cfeAn = (!cfeApplicable || y === 1 || loyers <= 5000) ? 0 : p.cfe;
+    const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
     const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn)*Math.pow(1+p.indexCharges/100, y-1);
     const charges = chargesFixes + loyers*(p.gestion+p.entretien)/100;
     const L = sch.years[y-1] || {int:0,pri:0,ass:0,crd:0};
@@ -219,7 +269,7 @@ function compute(p){
         impot = -impute*(p.tmi/100);
       }
     } else {
-      const dotImm = (y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0);
+      const dotImm = (deja+y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0);
       const dotMob = y<=p.amortMobAns ? amortMob : 0;
       amortAn = dotImm + dotMob;
       let base = loyers - charges - fraisEmprunt;
@@ -253,22 +303,8 @@ function compute(p){
 
     // Le prix du marché progresse, mais les travaux s'usent : seule leur valeur
     // résiduelle s'ajoute encore au bien.
-    const valeur = (p.prix + residuTravaux(p.items, y))*Math.pow(1+p.indexPrix/100, y);
-    const fraisVente = valeur*p.fraisVente/100;
-    const ira = (p.ira && L.crd>0) ? Math.min(0.03*L.crd, L.crd*(p.taux/100)/2) : 0;
-
-    const notaireRetenu = Math.max(notaire, 0.075*p.prix);
-    const forfaitTvx = y>5 ? 0.15*p.prix : 0;
-    // Des travaux déjà déduits des revenus fonciers ne peuvent pas majorer une
-    // seconde fois le prix d'acquisition.
-    const travauxPV = p.regime === "reel-foncier" ? travauxNonDeduits : p.travaux;
-    let prixAcq = p.prix + notaireRetenu + Math.max(travauxPV, forfaitTvx);
-    if(p.regime === "lmnp-reel") prixAcq -= amortReintegre;
-    // Les frais supportés par le vendeur viennent en moins du prix de cession.
-    const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
-    const baseIR = pvBrute*(1-abattementIR(y));
-    const basePS = pvBrute*(1-abattementPS(y));
-    const impotPV = avantImpot ? 0 : baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
+    const valeur = (valeur0 - p.travaux + residuTravaux(p.items, y))*Math.pow(1+p.indexPrix/100, y);
+    const {fraisVente, ira, impotPV} = cession(valeur, y, L.crd, amortReintegre);
 
     // Vendre avant le 31/12 de la 3e année suivant une imputation la fait reprendre.
     const repriseDF = p.regime === "reel-foncier" && !avantImpot
@@ -276,6 +312,9 @@ function compute(p){
       : 0;
 
     const netVente = valeur - fraisVente - L.crd - ira - impotPV - repriseDF;
+    // Revalorisation depuis le départ : du prix payé en achat, de la valeur
+    // d'aujourd'hui pour un bien détenu.
+    const revalorisation = valeur - (valeur0 - p.travaux);
 
     const effort = Math.max(0, -cfNet), surplus = Math.max(0, cfNet);
     portefeuille = portefeuille*(1+bourse) + effort;
@@ -299,7 +338,7 @@ function compute(p){
     const gain = cumulCF + netVente - cash0;
 
     rows.push({y, loyers, charges, interets:L.int, assurance:L.ass, principal:L.pri, annuite,
-      impot, cfNet, cumulCF, valeur, crd:L.crd, fraisVente, ira, impotPV, repriseDF, netVente, tri, triBourse, gain,
+      impot, cfNet, cumulCF, valeur, revalorisation, crd:L.crd, fraisVente, ira, impotPV, repriseDF, netVente, tri, triBourse, gain,
       cumulLoyers, cumulCharges, cumulCredit, cumulImpot,
       patrimoine: valeur - L.crd, recupere: netVente + potImmoNet, potImmo: potImmoNet, portefeuille: portefeuilleNet,
       amortCumul, amortReintegre, mise: miseTotale, pFonds: fondsNet, pLivret,
@@ -321,13 +360,18 @@ function compute(p){
     r.triBourseReel = reel(r.triBourse);
     r.gainConstant = r.gainImmo/Math.pow(1 + p.inflation/100, r.y);
   });
+  // Les rentabilités classiques se rapportent au prix, puis au coût complet de
+  // l'opération ; pour un bien détenu, à sa valeur d'aujourd'hui.
+  const prixRenta = detenu ? valeur0 - p.travaux : p.prix;
+  const coutRenta = detenu ? valeur0 : besoin;
   return {
-    p, rows, best, notaire, mobilier, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
+    p, rows, best, detenu, deja, comptant, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
+    vente0, net0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
-    brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
-    bruteCout: besoin > 0 ? loyerBrutAn/besoin : 0,
-    nette: besoin > 0 ? (r1.loyers - r1.charges)/besoin : 0,
-    netteNette: besoin > 0 ? (r1.loyers - r1.charges - r1.impot)/besoin : 0,
+    brute: prixRenta > 0 ? loyerBrutAn/prixRenta : 0,
+    bruteCout: coutRenta > 0 ? loyerBrutAn/coutRenta : 0,
+    nette: coutRenta > 0 ? (r1.loyers - r1.charges)/coutRenta : 0,
+    netteNette: coutRenta > 0 ? (r1.loyers - r1.charges - r1.impot)/coutRenta : 0,
     cfMensuel1: r1.cfNet/12,
     final: rows[rows.length-1],
     cumulEffort: rows.reduce((s,r)=> s + Math.min(0, r.cfNet), 0)
@@ -354,13 +398,17 @@ function comparerRegimes(p, courant){
     }
     const f = r.final;
     return {rg, label, tri:f.tri, triReel:f.triReel, gain:f.gain,
+      // Le rendement de chaque année de revente : les quatre régimes se
+      // comparent aussi dans le temps, pas seulement à l'horizon.
+      tris: r.rows.map(x => x.tri),
       impots: r.rows.reduce((s,x) => s + x.impot, 0) + f.impotPV + f.repriseDF};
   });
 }
 
 /* ---------- sensibilité ---------- */
+// Pour un bien détenu, c'est la valeur d'aujourd'hui qui joue, pas le prix payé.
 const SENS = [
-  {k:"prix",      nom:"Prix d'achat",            pas:v => v*0.10, txt:"10 %"},
+  {k:"prix",      kDetenu:"valeur", nom:"Prix d'achat", nomDetenu:"Valeur du bien", pas:v => v*0.10, txt:"10 %"},
   {k:"loyer",     nom:"Loyer",                   pas:v => v*0.10, txt:"10 %"},
   {k:"taux",      nom:"Taux du crédit",          pas:() => 1,     txt:"1 pt"},
   {k:"vacance",   nom:"Vacance locative",        pas:() => 5,     txt:"5 pts"},
@@ -368,14 +416,17 @@ const SENS = [
   {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"}
 ];
 function sensibilite(p, triRef){
+  const detenu = p.situation === "detenu";
+  const cle = s => detenu && s.kDetenu ? s.kDetenu : s.k;
   const essai = (s, signe) => {
     const q = Object.assign({}, p);
     if(s.k === "travaux"){
       q.items = p.items.map(it => Object.assign({}, it, {montant: it.montant*(1 + signe*0.2)}));
       q.travaux = q.items.reduce((a,it) => a + it.montant, 0);
     } else {
-      const v = p[s.k] + signe*s.pas(p[s.k]);
-      q[s.k] = s.k === "indexPrix" ? v : Math.max(0, v);
+      const k = cle(s);
+      const v = p[k] + signe*s.pas(p[k]);
+      q[k] = k === "indexPrix" ? v : Math.max(0, v);
     }
     const t = compute(q).final.tri;
     return t === null ? null : t;
@@ -386,7 +437,7 @@ function sensibilite(p, triRef){
     const dm = moins - triRef, dp = plus - triRef;
     const fav = dp >= dm ? {d:dp, tri:plus, s:"+"} : {d:dm, tri:moins, s:"−"};
     const def = dp >= dm ? {d:dm, tri:moins, s:"−"} : {d:dp, tri:plus, s:"+"};
-    return {nom:s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
+    return {nom: detenu && s.nomDetenu ? s.nomDetenu : s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
       amplitude: Math.max(Math.abs(dp), Math.abs(dm))};
   }).filter(r => r && r.amplitude > 1e-6).sort((a,b) => b.amplitude - a.amplitude);
 }

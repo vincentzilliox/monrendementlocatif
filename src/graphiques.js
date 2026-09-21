@@ -301,7 +301,7 @@ function drawColumns(host, tip, cfg){
     }
     const monte = it.to >= it.from;
     const ty = monte ? Math.min(y0,y1) - 7 : Math.max(y0,y1) + 14;
-    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || encre(it.color)), "font-size":"11.5", "font-weight":"600", class:"valeur"});
+    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || encre(it.color)), "font-size":"11.5", "font-weight":"600", class:"chiffre"});
     tv.textContent = it.text;
     svg.appendChild(tv);
     String(it.label).split("\n").forEach((l,k) => {
@@ -485,11 +485,15 @@ function brancherInfobulles(){
 // Les seuils fiscaux créent de vraies ruptures de pente : sans repère, elles
 // passent pour des artefacts de calcul.
 function jalonsFiscaux(p, rows){
+  // Un bien déjà détenu a entamé le compte : les seuils se rapprochent d'autant,
+  // et ceux qui sont déjà franchis n'ont plus rien à marquer.
+  const deja = p.situation === "detenu" ? Math.max(0, Math.round(Number(p.depuis) || 0)) : 0;
   const j = [
     {y:6,  text:"seuil 5 ans"},
     {y:22, text:"exonéré IR"},
     {y:30, text:"exonéré PS"}
-  ].filter(j => j.y <= p.horizon).map(j => ({i:j.y-1, text:j.text}));
+  ].map(j => ({y:j.y - deja, text:j.text}))
+   .filter(j => j.y >= 1 && j.y <= p.horizon).map(j => ({i:j.y-1, text:j.text}));
   if(p.regime === "reel-foncier" && p.horizon >= 4 && rows.some(r => r.repriseDF > 0.5)){
     j.unshift({i:3, text:"fin de reprise"});
   }
@@ -537,6 +541,68 @@ function cfgGainNet(p, R, opts){
         tipRow("transparent","net de la revente", eur.format(r.netVente));
     }
   }, opts || {});
+}
+
+// Les toutes premières années d'un rendement par année de revente sont
+// massivement négatives (frais d'acquisition non amortis). En « zone lisible »
+// on plafonne le bas du graphe sans jamais masquer une année à partir de la
+// 5e ; en « échelle complète » on montre tout.
+function plancherLisible(listes, complete){
+  if(complete) return undefined;
+  const tard = listes.flatMap(l => l.slice(4)).filter(v => v !== null && isFinite(v));
+  return tard.length ? Math.min(-0.30, Math.min.apply(null, tard)) : -0.30;
+}
+
+// Les quatre régimes selon l'année de revente : la calculatrice et la page
+// d'accueil tracent le même graphique. Une couleur par régime, dans l'ordre
+// de REGIMES ; le régime en cours en trait fort ; la bourse en tirets, la même
+// référence que sur le graphique de rendement.
+const COULEURS_REGIMES = ["--d1", "--d2", "--d3", "--d4"];
+function cfgRegimesTemps(p, R, regs, opts){
+  const rows = R.rows;
+  const brut = p.avantImpot === true;
+  const nom = r => r.label.replace("\n", ", ");
+  return Object.assign({
+    x: rows.map(r => String(r.y)),
+    height: 270, zero: true,
+    label: "Rendement annualisé de chaque régime selon l'année de revente",
+    fmtAxis: v => (v*100).toFixed(0)+" %",
+    fmtVal: sPct,
+    milestones: jalonsFiscaux(p, rows),
+    series: regs.map((r, k) => ({color: COULEURS_REGIMES[k], nom: nom(r), values: r.tris,
+        width: r.rg === p.regime ? 2.6 : 1.5}))
+      .concat([{color:"--text-muted", nom: brut ? "Bourse, avant impôt" : "Bourse, nette d'impôt",
+        values: rows.map(r => r.triBourse), dash:true}]),
+    tip: i => {
+      const meilleur = regs.reduce((m, r) =>
+        r.tris[i] !== null && (m === null || r.tris[i] > m.tris[i]) ? r : m, null);
+      return `<div class="th">Revente année ${rows[i].y}</div>` +
+        regs.map((r, k) => tipRow(css(COULEURS_REGIMES[k]),
+          (r === meilleur ? "<b>" + nom(r) + "</b>" : nom(r)) + (r.rg === p.regime ? " · en cours" : ""),
+          r.tris[i] === null ? "—" : sPct(r.tris[i]))).join("") +
+        tipRow(css("--text-muted"), brut ? "Bourse, avant impôt" : "Bourse, nette d'impôt",
+          rows[i].triBourse === null ? "—" : sPct(rows[i].triBourse));
+    }
+  }, opts || {});
+}
+
+// Qui mène, et jusqu'à quand : la phrase sous le graphique des régimes dans le
+// temps. Les quatre premières années ne départagent rien — tout le monde y perd
+// ses frais d'acquisition —, on lit à partir de la cinquième.
+function meneurRegimes(regs, horizon){
+  const nom = r => r.label.replace("\n", " ");
+  const meneurs = [];
+  for(let i = Math.min(4, horizon - 1); i < horizon; i++){
+    const m = regs.reduce((m, r) => r.tris[i] !== null && (m === null || r.tris[i] > m.tris[i]) ? r : m, null);
+    if(!m) continue;
+    if(!meneurs.length || meneurs[meneurs.length-1].r !== m) meneurs.push({r:m, i});
+  }
+  if(!meneurs.length) return "";
+  if(meneurs.length === 1) return `Sur vos hypothèses, ${nom(meneurs[0].r)} reste devant à toute date de revente.`;
+  const [a, b] = meneurs;
+  let phrase = `${nom(a.r)} mène jusqu'à l'année ${b.i}, puis ${nom(b.r)} prend le relais`;
+  if(meneurs.length > 2) phrase += `, avant ${nom(meneurs[2].r)} à partir de l'année ${meneurs[2].i + 1}`;
+  return phrase + ".";
 }
 
 // Sensibilité : même graphique des deux côtés, mêmes libellés.

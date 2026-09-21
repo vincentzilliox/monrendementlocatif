@@ -120,16 +120,30 @@ const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400",
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
 
 function compute(p){
-  const notaire = p.prix * p.notairePct/100;
+  // Deux situations. « achat » : le bien est à acheter, la mise est l'apport et
+  // le crédit part de zéro. « detenu » : le bien est déjà à soi ; les frais
+  // d'acquisition sont payés, le crédit est en cours, et la mise est ce qu'une
+  // vente aujourd'hui rendrait — c'est cet argent-là qu'on choisit de laisser
+  // dans le bien plutôt que de le placer ailleurs.
+  const detenu = p.situation === "detenu";
+  const deja = detenu ? Math.max(0, Math.round(Number(p.depuis) || 0)) : 0;
+  // Achat comptant : pas d'emprunt, donc ni frais de dossier ni assurance.
+  const comptant = p.comptant === true;
+  const notaire = detenu ? 0 : p.prix * p.notairePct/100;
+  const fraisAcq = detenu ? 0 : p.fraisAcq;
+  const fraisDossier = (detenu || comptant) ? 0 : p.fraisDossier;
   // Meublé ou nu : ce qui ne concerne pas le régime choisi est masqué à l'écran,
   // donc neutralisé ici. Un champ masqué ne doit jamais peser sur le résultat.
   const meuble = p.regime === "lmnp-micro" || p.regime === "lmnp-reel";
-  const mobilier = meuble ? p.mobilier : 0;
-  const besoin = p.prix + notaire + p.travaux + p.fraisAcq + mobilier + p.fraisDossier;
-  const emprunt = Math.max(0, besoin - p.apport);
-  const cash0 = Math.max(0, besoin - emprunt);
-  const sch = schedule(emprunt, p.taux, p.duree, p.assur);
-  const valeur0 = p.prix + p.travaux;
+  const mobilier = meuble && !detenu ? p.mobilier : 0;
+  // Le prix qui sert d'assiette à la plus-value et à l'amortissement : celui
+  // qui a été payé. La valeur d'aujourd'hui, elle, est le point de départ du
+  // marché et de la revente.
+  const prixRef = detenu ? p.prixAchat : p.prix;
+  const valeur0 = (detenu ? p.valeur : p.prix) + p.travaux;
+  const besoin = detenu ? p.travaux : p.prix + notaire + p.travaux + fraisAcq + mobilier + fraisDossier;
+  const emprunt = comptant ? 0 : detenu ? Math.max(0, p.crd) : Math.max(0, besoin - p.apport);
+  const sch = schedule(emprunt, p.taux, detenu ? p.dureeRestante : p.duree, p.assur);
   const tauxImpot = (p.tmi + p.ps)/100;
   // Affichage brut : le même projet sans aucun impôt — ni sur les loyers, ni sur
   // la plus-value, ni sur les gains des placements comparés. Charges, crédit,
@@ -142,7 +156,10 @@ function compute(p){
   const travauxNonDeduits = p.travaux - travauxDeductibles;
 
   const surAns = (montant, ans) => ans > 0 ? montant/ans : 0;
-  const amortBati = surAns((p.prix + notaire + p.fraisAcq)*(p.partBati/100), p.amortBatiAns);
+  // Bien détenu : la base amortissable est le prix payé et ses frais, retenus au
+  // forfait de 7,5 % faute de les connaître.
+  const baseBati = detenu ? prixRef*1.075 : p.prix + notaire + fraisAcq;
+  const amortBati = surAns(baseBati*(p.partBati/100), p.amortBatiAns);
   const amortTvx = surAns(p.travaux, p.amortTvxAns);
   const amortMob = surAns(mobilier, p.amortMobAns);
   // La CFE relève du BIC : elle ne concerne pas la location nue.
@@ -160,7 +177,10 @@ function compute(p){
   // la plus-value depuis la loi de finances 2025, confirmée en 2026 ; le mobilier
   // non — il n'entre
   // pas dans la cession immobilière.
-  let stockImm = 0, stockMob = 0, amortCumul = 0, amortReintegre = 0;
+  // Bien détenu au LMNP réel : le bâti déjà amorti pendant les années écoulées
+  // sera réintégré à la cession, comme celui des années à venir.
+  const amortAcquis = p.regime === "lmnp-reel" ? amortBati*Math.min(deja, p.amortBatiAns) : 0;
+  let stockImm = 0, stockMob = 0, amortCumul = amortAcquis, amortReintegre = amortAcquis;
   // Comparaison à mise de fonds identique. Les deux scénarios partent du même
   // apport et exigent exactement les mêmes versements : chaque euro d'effort
   // d'épargne que le bien réclame est, côté bourse, investi au taux de référence.
@@ -168,9 +188,9 @@ function compute(p){
   // même taux. Les deux courbes sont donc bien deux capitaux comparables — et,
   // comme le bien, ils sont pris nets de l'impôt dû sur leurs gains à la sortie.
   let cumulCF=0, cumulLoyers=0, cumulCharges=0, cumulCredit=0, cumulImpot=0;
-  let portefeuille=cash0, potImmo=0, surplusCumul=0;
-  let pFonds = cash0, pLivret = cash0;   // mêmes versements, placés ailleurs
-  let miseTotale = cash0; // apport, puis chaque euro d'effort d'épargne versé ensuite
+  let portefeuille, potImmo=0, surplusCumul=0;
+  let pFonds, pLivret;   // mêmes versements, placés ailleurs
+  let miseTotale; // la mise du premier jour, puis chaque euro d'effort d'épargne versé ensuite
   const efforts = [];
   const rows=[], cfHist=[];
   // Les taux de placement sont saisis hors inflation ; on les repasse en nominal
@@ -182,10 +202,40 @@ function compute(p){
   // Capital net de l'impôt sur le gain, le gain étant ce qui dépasse les versements.
   const netDe = (capital, verse, fisc) => capital - Math.max(0, capital - verse)*fisc;
 
+  // Ce que rend une vente à la fin de l'année y (0 : aujourd'hui). La durée de
+  // détention fiscale compte les années déjà écoulées : c'est elle qui fixe les
+  // abattements et le forfait travaux, pas l'année de la simulation.
+  const cession = (valeur, y, crd, reintegre) => {
+    const h = deja + y;
+    const fraisVente = valeur*p.fraisVente/100;
+    const ira = (p.ira && crd>0) ? Math.min(0.03*crd, crd*(p.taux/100)/2) : 0;
+    const notaireRetenu = Math.max(notaire, 0.075*prixRef);
+    const forfaitTvx = h>5 ? 0.15*prixRef : 0;
+    // Des travaux déjà déduits des revenus fonciers ne peuvent pas majorer une
+    // seconde fois le prix d'acquisition. Les travaux réalisés avant aujourd'hui
+    // sur un bien détenu s'ajoutent à ceux de la simulation.
+    const travauxPV = (detenu ? Math.max(0, Number(p.travauxPasses) || 0) : 0)
+      + (y === 0 ? 0 : p.regime === "reel-foncier" ? travauxNonDeduits : p.travaux);
+    let prixAcq = prixRef + notaireRetenu + Math.max(travauxPV, forfaitTvx);
+    if(p.regime === "lmnp-reel") prixAcq -= reintegre;
+    // Les frais supportés par le vendeur viennent en moins du prix de cession.
+    const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
+    const baseIR = pvBrute*(1-abattementIR(h));
+    const basePS = pvBrute*(1-abattementPS(h));
+    const impotPV = avantImpot ? 0 : baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
+    return {fraisVente, ira, impotPV, net: valeur - fraisVente - crd - ira - impotPV};
+  };
+  // Bien détenu : la mise est le produit net d'une vente aujourd'hui, plus les
+  // travaux engagés maintenant. Achat : l'apport, ou tout le coût si comptant.
+  const vente0 = detenu ? cession(valeur0 - p.travaux, 0, emprunt, amortAcquis) : null;
+  const net0 = vente0 ? vente0.net : 0;
+  const cash0 = detenu ? net0 + p.travaux : comptant ? besoin : Math.max(0, besoin - emprunt);
+  portefeuille = pFonds = pLivret = miseTotale = cash0;
+
   for(let y=1; y<=p.horizon; y++){
     const loyers = p.loyer*12*Math.pow(1+p.indexLoyer/100, y-1)*(1-p.vacance/100);
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
-    const cfeAn = (!cfeApplicable || y === 1 || loyers <= 5000) ? 0 : p.cfe;
+    const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
     const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn)*Math.pow(1+p.indexCharges/100, y-1);
     const charges = chargesFixes + loyers*(p.gestion+p.entretien)/100;
     const L = sch.years[y-1] || {int:0,pri:0,ass:0,crd:0};
@@ -220,7 +270,7 @@ function compute(p){
         impot = -impute*(p.tmi/100);
       }
     } else {
-      const dotImm = (y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0);
+      const dotImm = (deja+y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0);
       const dotMob = y<=p.amortMobAns ? amortMob : 0;
       amortAn = dotImm + dotMob;
       let base = loyers - charges - fraisEmprunt;
@@ -254,22 +304,8 @@ function compute(p){
 
     // Le prix du marché progresse, mais les travaux s'usent : seule leur valeur
     // résiduelle s'ajoute encore au bien.
-    const valeur = (p.prix + residuTravaux(p.items, y))*Math.pow(1+p.indexPrix/100, y);
-    const fraisVente = valeur*p.fraisVente/100;
-    const ira = (p.ira && L.crd>0) ? Math.min(0.03*L.crd, L.crd*(p.taux/100)/2) : 0;
-
-    const notaireRetenu = Math.max(notaire, 0.075*p.prix);
-    const forfaitTvx = y>5 ? 0.15*p.prix : 0;
-    // Des travaux déjà déduits des revenus fonciers ne peuvent pas majorer une
-    // seconde fois le prix d'acquisition.
-    const travauxPV = p.regime === "reel-foncier" ? travauxNonDeduits : p.travaux;
-    let prixAcq = p.prix + notaireRetenu + Math.max(travauxPV, forfaitTvx);
-    if(p.regime === "lmnp-reel") prixAcq -= amortReintegre;
-    // Les frais supportés par le vendeur viennent en moins du prix de cession.
-    const pvBrute = Math.max(0, valeur - fraisVente - prixAcq);
-    const baseIR = pvBrute*(1-abattementIR(y));
-    const basePS = pvBrute*(1-abattementPS(y));
-    const impotPV = avantImpot ? 0 : baseIR*0.19 + basePS*(p.psPV/100) + surtaxePV(baseIR);
+    const valeur = (valeur0 - p.travaux + residuTravaux(p.items, y))*Math.pow(1+p.indexPrix/100, y);
+    const {fraisVente, ira, impotPV} = cession(valeur, y, L.crd, amortReintegre);
 
     // Vendre avant le 31/12 de la 3e année suivant une imputation la fait reprendre.
     const repriseDF = p.regime === "reel-foncier" && !avantImpot
@@ -277,6 +313,9 @@ function compute(p){
       : 0;
 
     const netVente = valeur - fraisVente - L.crd - ira - impotPV - repriseDF;
+    // Revalorisation depuis le départ : du prix payé en achat, de la valeur
+    // d'aujourd'hui pour un bien détenu.
+    const revalorisation = valeur - (valeur0 - p.travaux);
 
     const effort = Math.max(0, -cfNet), surplus = Math.max(0, cfNet);
     portefeuille = portefeuille*(1+bourse) + effort;
@@ -300,7 +339,7 @@ function compute(p){
     const gain = cumulCF + netVente - cash0;
 
     rows.push({y, loyers, charges, interets:L.int, assurance:L.ass, principal:L.pri, annuite,
-      impot, cfNet, cumulCF, valeur, crd:L.crd, fraisVente, ira, impotPV, repriseDF, netVente, tri, triBourse, gain,
+      impot, cfNet, cumulCF, valeur, revalorisation, crd:L.crd, fraisVente, ira, impotPV, repriseDF, netVente, tri, triBourse, gain,
       cumulLoyers, cumulCharges, cumulCredit, cumulImpot,
       patrimoine: valeur - L.crd, recupere: netVente + potImmoNet, potImmo: potImmoNet, portefeuille: portefeuilleNet,
       amortCumul, amortReintegre, mise: miseTotale, pFonds: fondsNet, pLivret,
@@ -322,13 +361,18 @@ function compute(p){
     r.triBourseReel = reel(r.triBourse);
     r.gainConstant = r.gainImmo/Math.pow(1 + p.inflation/100, r.y);
   });
+  // Les rentabilités classiques se rapportent au prix, puis au coût complet de
+  // l'opération ; pour un bien détenu, à sa valeur d'aujourd'hui.
+  const prixRenta = detenu ? valeur0 - p.travaux : p.prix;
+  const coutRenta = detenu ? valeur0 : besoin;
   return {
-    p, rows, best, notaire, mobilier, besoin, emprunt, cash0, mensualite:sch.mensualite, valeur0,
+    p, rows, best, detenu, deja, comptant, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
+    vente0, net0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
-    brute: p.prix > 0 ? loyerBrutAn/p.prix : 0,
-    bruteCout: besoin > 0 ? loyerBrutAn/besoin : 0,
-    nette: besoin > 0 ? (r1.loyers - r1.charges)/besoin : 0,
-    netteNette: besoin > 0 ? (r1.loyers - r1.charges - r1.impot)/besoin : 0,
+    brute: prixRenta > 0 ? loyerBrutAn/prixRenta : 0,
+    bruteCout: coutRenta > 0 ? loyerBrutAn/coutRenta : 0,
+    nette: coutRenta > 0 ? (r1.loyers - r1.charges)/coutRenta : 0,
+    netteNette: coutRenta > 0 ? (r1.loyers - r1.charges - r1.impot)/coutRenta : 0,
     cfMensuel1: r1.cfNet/12,
     final: rows[rows.length-1],
     cumulEffort: rows.reduce((s,r)=> s + Math.min(0, r.cfNet), 0)
@@ -355,13 +399,17 @@ function comparerRegimes(p, courant){
     }
     const f = r.final;
     return {rg, label, tri:f.tri, triReel:f.triReel, gain:f.gain,
+      // Le rendement de chaque année de revente : les quatre régimes se
+      // comparent aussi dans le temps, pas seulement à l'horizon.
+      tris: r.rows.map(x => x.tri),
       impots: r.rows.reduce((s,x) => s + x.impot, 0) + f.impotPV + f.repriseDF};
   });
 }
 
 /* ---------- sensibilité ---------- */
+// Pour un bien détenu, c'est la valeur d'aujourd'hui qui joue, pas le prix payé.
 const SENS = [
-  {k:"prix",      nom:"Prix d'achat",            pas:v => v*0.10, txt:"10 %"},
+  {k:"prix",      kDetenu:"valeur", nom:"Prix d'achat", nomDetenu:"Valeur du bien", pas:v => v*0.10, txt:"10 %"},
   {k:"loyer",     nom:"Loyer",                   pas:v => v*0.10, txt:"10 %"},
   {k:"taux",      nom:"Taux du crédit",          pas:() => 1,     txt:"1 pt"},
   {k:"vacance",   nom:"Vacance locative",        pas:() => 5,     txt:"5 pts"},
@@ -369,14 +417,17 @@ const SENS = [
   {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"}
 ];
 function sensibilite(p, triRef){
+  const detenu = p.situation === "detenu";
+  const cle = s => detenu && s.kDetenu ? s.kDetenu : s.k;
   const essai = (s, signe) => {
     const q = Object.assign({}, p);
     if(s.k === "travaux"){
       q.items = p.items.map(it => Object.assign({}, it, {montant: it.montant*(1 + signe*0.2)}));
       q.travaux = q.items.reduce((a,it) => a + it.montant, 0);
     } else {
-      const v = p[s.k] + signe*s.pas(p[s.k]);
-      q[s.k] = s.k === "indexPrix" ? v : Math.max(0, v);
+      const k = cle(s);
+      const v = p[k] + signe*s.pas(p[k]);
+      q[k] = k === "indexPrix" ? v : Math.max(0, v);
     }
     const t = compute(q).final.tri;
     return t === null ? null : t;
@@ -387,7 +438,7 @@ function sensibilite(p, triRef){
     const dm = moins - triRef, dp = plus - triRef;
     const fav = dp >= dm ? {d:dp, tri:plus, s:"+"} : {d:dm, tri:moins, s:"−"};
     const def = dp >= dm ? {d:dm, tri:moins, s:"−"} : {d:dp, tri:plus, s:"+"};
-    return {nom:s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
+    return {nom: detenu && s.nomDetenu ? s.nomDetenu : s.nom, txt:s.txt, hi:fav.d, lo:def.d, fav, def,
       amplitude: Math.max(Math.abs(dp), Math.abs(dm))};
   }).filter(r => r && r.amplitude > 1e-6).sort((a,b) => b.amplitude - a.amplitude);
 }
@@ -747,7 +798,7 @@ function drawColumns(host, tip, cfg){
     }
     const monte = it.to >= it.from;
     const ty = monte ? Math.min(y0,y1) - 7 : Math.max(y0,y1) + 14;
-    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || encre(it.color)), "font-size":"11.5", "font-weight":"600", class:"valeur"});
+    const tv = svgEl("text",{x:X(i), y:ty, "text-anchor":"middle", fill:css(it.textColor || encre(it.color)), "font-size":"11.5", "font-weight":"600", class:"chiffre"});
     tv.textContent = it.text;
     svg.appendChild(tv);
     String(it.label).split("\n").forEach((l,k) => {
@@ -931,11 +982,15 @@ function brancherInfobulles(){
 // Les seuils fiscaux créent de vraies ruptures de pente : sans repère, elles
 // passent pour des artefacts de calcul.
 function jalonsFiscaux(p, rows){
+  // Un bien déjà détenu a entamé le compte : les seuils se rapprochent d'autant,
+  // et ceux qui sont déjà franchis n'ont plus rien à marquer.
+  const deja = p.situation === "detenu" ? Math.max(0, Math.round(Number(p.depuis) || 0)) : 0;
   const j = [
     {y:6,  text:"seuil 5 ans"},
     {y:22, text:"exonéré IR"},
     {y:30, text:"exonéré PS"}
-  ].filter(j => j.y <= p.horizon).map(j => ({i:j.y-1, text:j.text}));
+  ].map(j => ({y:j.y - deja, text:j.text}))
+   .filter(j => j.y >= 1 && j.y <= p.horizon).map(j => ({i:j.y-1, text:j.text}));
   if(p.regime === "reel-foncier" && p.horizon >= 4 && rows.some(r => r.repriseDF > 0.5)){
     j.unshift({i:3, text:"fin de reprise"});
   }
@@ -985,6 +1040,68 @@ function cfgGainNet(p, R, opts){
   }, opts || {});
 }
 
+// Les toutes premières années d'un rendement par année de revente sont
+// massivement négatives (frais d'acquisition non amortis). En « zone lisible »
+// on plafonne le bas du graphe sans jamais masquer une année à partir de la
+// 5e ; en « échelle complète » on montre tout.
+function plancherLisible(listes, complete){
+  if(complete) return undefined;
+  const tard = listes.flatMap(l => l.slice(4)).filter(v => v !== null && isFinite(v));
+  return tard.length ? Math.min(-0.30, Math.min.apply(null, tard)) : -0.30;
+}
+
+// Les quatre régimes selon l'année de revente : la calculatrice et la page
+// d'accueil tracent le même graphique. Une couleur par régime, dans l'ordre
+// de REGIMES ; le régime en cours en trait fort ; la bourse en tirets, la même
+// référence que sur le graphique de rendement.
+const COULEURS_REGIMES = ["--d1", "--d2", "--d3", "--d4"];
+function cfgRegimesTemps(p, R, regs, opts){
+  const rows = R.rows;
+  const brut = p.avantImpot === true;
+  const nom = r => r.label.replace("\n", ", ");
+  return Object.assign({
+    x: rows.map(r => String(r.y)),
+    height: 270, zero: true,
+    label: "Rendement annualisé de chaque régime selon l'année de revente",
+    fmtAxis: v => (v*100).toFixed(0)+" %",
+    fmtVal: sPct,
+    milestones: jalonsFiscaux(p, rows),
+    series: regs.map((r, k) => ({color: COULEURS_REGIMES[k], nom: nom(r), values: r.tris,
+        width: r.rg === p.regime ? 2.6 : 1.5}))
+      .concat([{color:"--text-muted", nom: brut ? "Bourse, avant impôt" : "Bourse, nette d'impôt",
+        values: rows.map(r => r.triBourse), dash:true}]),
+    tip: i => {
+      const meilleur = regs.reduce((m, r) =>
+        r.tris[i] !== null && (m === null || r.tris[i] > m.tris[i]) ? r : m, null);
+      return `<div class="th">Revente année ${rows[i].y}</div>` +
+        regs.map((r, k) => tipRow(css(COULEURS_REGIMES[k]),
+          (r === meilleur ? "<b>" + nom(r) + "</b>" : nom(r)) + (r.rg === p.regime ? " · en cours" : ""),
+          r.tris[i] === null ? "—" : sPct(r.tris[i]))).join("") +
+        tipRow(css("--text-muted"), brut ? "Bourse, avant impôt" : "Bourse, nette d'impôt",
+          rows[i].triBourse === null ? "—" : sPct(rows[i].triBourse));
+    }
+  }, opts || {});
+}
+
+// Qui mène, et jusqu'à quand : la phrase sous le graphique des régimes dans le
+// temps. Les quatre premières années ne départagent rien — tout le monde y perd
+// ses frais d'acquisition —, on lit à partir de la cinquième.
+function meneurRegimes(regs, horizon){
+  const nom = r => r.label.replace("\n", " ");
+  const meneurs = [];
+  for(let i = Math.min(4, horizon - 1); i < horizon; i++){
+    const m = regs.reduce((m, r) => r.tris[i] !== null && (m === null || r.tris[i] > m.tris[i]) ? r : m, null);
+    if(!m) continue;
+    if(!meneurs.length || meneurs[meneurs.length-1].r !== m) meneurs.push({r:m, i});
+  }
+  if(!meneurs.length) return "";
+  if(meneurs.length === 1) return `Sur vos hypothèses, ${nom(meneurs[0].r)} reste devant à toute date de revente.`;
+  const [a, b] = meneurs;
+  let phrase = `${nom(a.r)} mène jusqu'à l'année ${b.i}, puis ${nom(b.r)} prend le relais`;
+  if(meneurs.length > 2) phrase += `, avant ${nom(meneurs[2].r)} à partir de l'année ${meneurs[2].i + 1}`;
+  return phrase + ".";
+}
+
 // Sensibilité : même graphique des deux côtés, mêmes libellés.
 function cfgSensibilite(sens, triRef){
   return {
@@ -1025,6 +1142,12 @@ const DEFAUTS = {
   "duree": 20.0,
   "taux": 3.4,
   "assur": 0.34,
+  "valeur": 200000.0,
+  "prixAchat": 160000.0,
+  "depuis": 8.0,
+  "travauxPasses": 0.0,
+  "crd": 90000.0,
+  "dureeRestante": 12.0,
   "fraisDossier": 2500.0,
   "loyer": 900.0,
   "vacance": 5.0,
@@ -1053,9 +1176,11 @@ const DEFAUTS = {
   "livretA": -0.8,
   "fiscBourse": 31.4,
   "fiscFonds": 30.0,
+  "situation": "achat",
   "regime": "lmnp-reel",
   "tmi": 30.0,
-  "ira": true
+  "ira": true,
+  "comptant": false
 };
 // Les choix offerts par les listes déroulantes du formulaire : l'assistant pose
 // les mêmes tranches d'imposition et les mêmes régimes que la calculatrice.
@@ -1153,6 +1278,12 @@ function vitrine(){
 
   drawChart(g("vPlotNet"), g("vTipNet"), cfgGainNet(p, R, {height: 280}));
 
+  // Les quatre régimes dans le temps, tracés comme sur la calculatrice.
+  const regs = comparerRegimes(p, R);
+  drawChart(g("vPlotReg"), g("vTipReg"), cfgRegimesTemps(p, R, regs,
+    {height: 280, floor: plancherLisible(regs.map(r => r.tris), false)}));
+  ecrire("vRegNote", meneurRegimes(regs, p.horizon));
+
   const sens = sensibilite(p, f.tri);
   drawTornado(g("vPlotSens"), g("vTipSens"), cfgSensibilite(sens, f.tri));
   if(sens.length) ecrire("vSens", sens[0].nom.toLowerCase());
@@ -1172,6 +1303,9 @@ vitrine();
    les valeurs proposées produit donc un lien qui ne fixe aucune
    hypothèse, c'est-à-dire très exactement le scénario que la vitrine
    affiche plus bas.
+   Deux situations, deux jeux de questions : « j'achète un bien », et
+   « je possède déjà un bien », où la question n'est plus « faut-il
+   acheter ? » mais « faut-il garder ? ».
    ═════════════════════════════════════════════════════════════════ */
 (function(){
 const racine = document.getElementById("assistant");
@@ -1188,19 +1322,28 @@ const nb = v => String(v).replace(".", ",");
 // du neuf. index.html annonce 2 à 3 %, la calculatrice s'ouvre sur l'ancien.
 const NOTAIRE_NEUF = 2.5;
 
-// Sept questions, puis le récapitulatif. `champ` : la saisie chiffrée que
-// l'étape prérègle ; `skip` : elle accepte un « je ne sais pas encore ».
+// Les étapes, dans l'ordre. `pour` : la situation qui pose cette question (les
+// autres sont communes) ; `actif` : une condition de plus ; `champs` : les
+// saisies chiffrées que l'étape prérègle ; `skip` : elle accepte un « je ne
+// sais pas encore ».
 const ETAPES = [
-  {id:"qEtapeBien",     champ:"qPrix",    skip:true},
-  {id:"qEtapeLoyer",    champ:"qLoyer",   skip:true},
+  {id:"qEtapeBien",     pour:"achat",  champs:["qPrix"],      skip:true},
+  {id:"qEtapeValeur",   pour:"detenu", champs:["qValeur"],    skip:true},
+  {id:"qEtapeAchat",    pour:"detenu", champs:["qPrixAchat"], skip:true},
+  {id:"qEtapeDepuis",   pour:"detenu", champs:["qDepuis"]},
+  {id:"qEtapeLoyer",                   champs:["qLoyer"],     skip:true},
   {id:"qEtapeLocation"},
-  {id:"qEtapeTravaux",  champ:"qTravaux"},
-  {id:"qEtapeApport",   champ:"qApport",  skip:true},
-  {id:"qEtapeDuree"},
+  {id:"qEtapeTravaux",  pour:"achat",  champs:["qTravaux"]},
+  {id:"qEtapeApport",   pour:"achat",  champs:["qApport"],    skip:true},
+  // Payer comptant, c'est n'avoir aucune durée de prêt à choisir.
+  {id:"qEtapeDuree",    pour:"achat",  actif: () => coche("qFinancement") !== "comptant"},
+  {id:"qEtapeCredit",   pour:"detenu", champs:["qCrd", "qDureeRestante"]},
   {id:"qEtapeTmi"},
   {id:"qEtapeRecap",    recap:true}
 ];
-const QUESTIONS = ETAPES.length - 1;
+let situation = "achat";
+const detenu = () => situation === "detenu";
+const actives = () => ETAPES.filter(e => (!e.pour || e.pour === situation) && (!e.actif || e.actif()));
 
 /* ---------- ce que l'assistant propose ---------- */
 const arrondi = (v, pas) => Math.max(0, Math.round(v/pas)*pas);
@@ -1208,19 +1351,27 @@ const arrondi = (v, pas) => Math.max(0, Math.round(v/pas)*pas);
 // groupés ; à la lecture on ne retient que les chiffres — l'espace fine des
 // milliers ne survivrait pas à un parseFloat, qui rendrait 200.
 const chiffres = v => String(v).replace(/[^\d]/g, "");
-const prixSaisi = () => {
-  const v = parseInt(chiffres(el("qPrix").value), 10);
-  return isFinite(v) && v > 0 ? v : DEFAUTS.prix;
+const lu = (id, defaut) => {
+  const v = parseInt(chiffres(el(id).value), 10);
+  return isFinite(v) && v > 0 ? v : defaut;
 };
+// Le prix du bien à acheter, ou la valeur de celui qu'on possède : c'est lui
+// qui donne l'échelle.
+const prixSaisi = () => detenu() ? lu("qValeur", DEFAUTS.valeur) : lu("qPrix", DEFAUTS.prix);
 // Tout se met à l'échelle du prix : un bien deux fois plus cher se loue plus
 // cher, coûte plus de taxe foncière et se meuble plus cher. À prix inchangé, le
 // facteur vaut 1 et les propositions retombent sur les valeurs d'ouverture.
-const facteur = () => prixSaisi() / DEFAUTS.prix;
+const facteur = () => prixSaisi() / (detenu() ? DEFAUTS.valeur : DEFAUTS.prix);
 const PROPOSE = {
-  qPrix:    () => DEFAUTS.prix,
-  qLoyer:   () => arrondi(DEFAUTS.loyer * facteur(), 10),
-  qApport:  () => arrondi(DEFAUTS.apport * facteur(), 1000),
-  qTravaux: () => arrondi(TVX_DEFAUT[0].montant * facteur(), 1000)
+  qPrix:          () => DEFAUTS.prix,
+  qValeur:        () => DEFAUTS.valeur,
+  qPrixAchat:     () => arrondi(DEFAUTS.prixAchat * facteur(), 1000),
+  qDepuis:        () => DEFAUTS.depuis,
+  qCrd:           () => arrondi(DEFAUTS.crd * facteur(), 1000),
+  qDureeRestante: () => DEFAUTS.dureeRestante,
+  qLoyer:         () => arrondi(DEFAUTS.loyer * facteur(), 10),
+  qApport:        () => arrondi(DEFAUTS.apport * facteur(), 1000),
+  qTravaux:       () => arrondi(TVX_DEFAUT[0].montant * facteur(), 1000)
 };
 const saisi = id => {
   const v = parseInt(chiffres(el(id).value), 10);
@@ -1247,33 +1398,51 @@ function regimeRetenu(base){
 }
 
 function reponses(){
-  const prix = prixSaisi(), k = facteur();
-  const neuf = coche("qNeuf") === "neuf";
-  const tvx = coche("qTvx");
-  const items = tvx === "aucun" ? [] : [Object.assign({}, TVX_DEFAUT[0], {
-    montant: tvx === "inconnu" ? PROPOSE.qTravaux() : saisi("qTravaux")
-  })];
+  const k = facteur();
   const r = {
-    prix: prix,
-    neuf: neuf,
-    notairePct: neuf ? NOTAIRE_NEUF : DEFAUTS.notairePct,
+    situation: situation,
     loyer: saisi("qLoyer"),
-    duree: parseFloat(coche("qDuree")) || DEFAUTS.duree,
     tmi: coche("qTmi") === "" ? DEFAUTS.tmi : parseFloat(coche("qTmi")),
     tf: arrondi(DEFAUTS.tf * k, 50),
-    copro: arrondi(DEFAUTS.copro * k, 5),
-    mobilier: arrondi(DEFAUTS.mobilier * k, 500),
-    items: items,
-    travaux: items.reduce((s, it) => s + it.montant, 0)
+    copro: arrondi(DEFAUTS.copro * k, 5)
   };
-  // Un apport supérieur au coût de l'opération n'a plus rien à financer : on le
-  // ramène au plafond, et le récapitulatif le dit. Même assiette que compute().
-  const meuble = coche("qLocation") !== "nu";
-  const besoin = Math.round(prix + prix*r.notairePct/100 + r.travaux
-    + DEFAUTS.fraisAcq + (meuble ? r.mobilier : 0) + DEFAUTS.fraisDossier);
-  const voulu = saisi("qApport");
-  r.apport = Math.min(voulu, besoin);
-  r.plafonne = voulu > r.apport;
+  if(detenu()){
+    // Un bien qu'on possède : rien à acheter, pas de travaux prévus par défaut.
+    r.valeur = prixSaisi();
+    r.prixAchat = saisi("qPrixAchat");
+    r.depuis = saisi("qDepuis");
+    r.comptant = coche("qCredit") === "non";
+    r.crd = saisi("qCrd");
+    r.dureeRestante = saisi("qDureeRestante");
+    r.items = [];
+    r.travaux = 0;
+  } else {
+    const prix = prixSaisi();
+    const neuf = coche("qNeuf") === "neuf";
+    const tvx = coche("qTvx");
+    const items = tvx === "aucun" ? [] : [Object.assign({}, TVX_DEFAUT[0], {
+      montant: tvx === "inconnu" ? PROPOSE.qTravaux() : saisi("qTravaux")
+    })];
+    Object.assign(r, {
+      prix: prix,
+      neuf: neuf,
+      notairePct: neuf ? NOTAIRE_NEUF : DEFAUTS.notairePct,
+      duree: parseFloat(coche("qDuree")) || DEFAUTS.duree,
+      mobilier: arrondi(DEFAUTS.mobilier * k, 500),
+      comptant: coche("qFinancement") === "comptant",
+      items: items,
+      travaux: items.reduce((s, it) => s + it.montant, 0)
+    });
+    // Un apport supérieur au coût de l'opération n'a plus rien à financer : on le
+    // ramène au plafond, et le récapitulatif le dit. Même assiette que compute().
+    // Payer comptant, c'est apporter tout le coût.
+    const meuble = coche("qLocation") !== "nu";
+    const besoin = Math.round(prix + prix*r.notairePct/100 + r.travaux
+      + DEFAUTS.fraisAcq + (meuble ? r.mobilier : 0) + (r.comptant ? 0 : DEFAUTS.fraisDossier));
+    const voulu = r.comptant ? besoin : saisi("qApport");
+    r.apport = Math.min(voulu, besoin);
+    r.plafonne = voulu > r.apport;
+  }
   r.regime = regimeRetenu(r);
   r.meuble = r.regime === "lmnp-micro" || r.regime === "lmnp-reel";
   return r;
@@ -1281,10 +1450,18 @@ function reponses(){
 
 // Ce qui part dans le lien. Le mobilier ne suit qu'en meublé : en nu, la
 // calculatrice l'écarte du coût de l'opération, l'inscrire n'apprendrait rien.
+// « Comptant » ne voyage que s'il est coché ; la situation, que si elle n'est
+// pas celle de l'ouverture.
 function valeurs(r){
-  const v = {prix:r.prix, notairePct:r.notairePct, loyer:r.loyer, regime:r.regime,
-             apport:r.apport, duree:r.duree, tmi:r.tmi, tf:r.tf, copro:r.copro};
-  if(r.meuble) v.mobilier = r.mobilier;
+  const v = {loyer:r.loyer, regime:r.regime, tmi:r.tmi, tf:r.tf, copro:r.copro};
+  if(detenu()){
+    Object.assign(v, {situation:"detenu", valeur:r.valeur, prixAchat:r.prixAchat, depuis:r.depuis,
+      crd:r.crd, dureeRestante:r.dureeRestante});
+  } else {
+    Object.assign(v, {prix:r.prix, notairePct:r.notairePct, apport:r.apport, duree:r.duree});
+    if(r.meuble) v.mobilier = r.mobilier;
+  }
+  if(r.comptant) v.comptant = true;
   return v;
 }
 
@@ -1305,48 +1482,64 @@ const libelleRegime = rg => {
   const o = (OPTIONS.regime || []).filter(x => x.valeur === rg)[0];
   return o ? o.libelle : rg;
 };
+const ans = n => n + (n > 1 ? " ans" : " an");
 
 // Chaque ligne : le terme, la valeur retenue, la note qui l'explique, et
 // l'étape à rouvrir. Le bouton suit la valeur, la note passe en dessous.
 function dessinerRecap(r){
   const demande = coche("qLocation");
-  const lignes = [
-    ["Le bien", eur.format(r.prix) + (r.neuf ? " · neuf" : " · ancien"), "", 0],
-    ["Loyer mensuel", eur.format(r.loyer) + " hors charges", "", 1],
-    ["Location", libelleRegime(r.regime), demande === "inconnu"
+  const location = ["Location", libelleRegime(r.regime), demande === "inconnu"
       ? "le plus favorable des quatre régimes sur vos chiffres"
-      : "le plus favorable des deux régimes possibles", 2],
-    ["Travaux", r.travaux ? eur.format(r.travaux) : "aucun", "", 3],
-    ["Apport", eur.format(r.apport),
-      r.plafonne ? "ramené au coût de l’opération : au-delà, il n’y a plus rien à emprunter" : "", 4],
-    ["Prêt", r.duree + " ans", "", 5],
-    ["Tranche d'imposition", r.tmi + " %", "", 6]
-  ];
-  el("qRecap").innerHTML = lignes.map(([terme, valeur, note, i]) =>
+      : "le plus favorable des deux régimes possibles", "qEtapeLocation"];
+  const loyer = ["Loyer mensuel", eur.format(r.loyer) + " hors charges", "", "qEtapeLoyer"];
+  const tranche = ["Tranche d'imposition", r.tmi + " %", "", "qEtapeTmi"];
+  const lignes = detenu() ? [
+    ["Le bien", eur.format(r.valeur) + " aujourd'hui", "", "qEtapeValeur"],
+    ["Acheté", eur.format(r.prixAchat) + " il y a " + ans(r.depuis), "", "qEtapeAchat"],
+    loyer, location,
+    ["Crédit", r.comptant ? "aucun" : eur.format(r.crd) + " restant dû sur " + ans(r.dureeRestante),
+      r.comptant ? "" : "au taux et à l'assurance de la calculatrice", "qEtapeCredit"],
+    tranche
+  ] : [
+    ["Le bien", eur.format(r.prix) + (r.neuf ? " · neuf" : " · ancien"), "", "qEtapeBien"],
+    loyer, location,
+    ["Travaux", r.travaux ? eur.format(r.travaux) : "aucun", "", "qEtapeTravaux"],
+    r.comptant
+      ? ["Financement", "comptant, " + eur.format(r.apport), "tout le coût de l'opération, sans crédit", "qEtapeApport"]
+      : ["Apport", eur.format(r.apport),
+          r.plafonne ? "ramené au coût de l’opération : au-delà, il n’y a plus rien à emprunter" : "", "qEtapeApport"],
+    r.comptant ? null : ["Prêt", r.duree + " ans", "", "qEtapeDuree"],
+    tranche
+  ].filter(Boolean);
+  el("qRecap").innerHTML = lignes.map(([terme, valeur, note, id]) =>
     "<dt>" + terme + "</dt><dd><span>" + valeur + "</span>"
-    + '<button type="button" class="qmod" data-etape="' + i + '">Modifier<span class="visually-hidden"> : '
+    + '<button type="button" class="qmod" data-etape="' + id + '">Modifier<span class="visually-hidden"> : '
     + esc(terme.toLowerCase()) + "</span></button>"
     + (note ? "<small>" + note + "</small>" : "") + "</dd>").join("");
 
   const suppose = ["la taxe foncière à " + eur.format(r.tf),
                    "les charges de copropriété à " + eur.format(r.copro) + " par mois"];
-  if(r.meuble) suppose.push("le mobilier à " + eur.format(r.mobilier));
-  el("qHypo").innerHTML = "Nous avons supposé, à proportion du prix, " + suppose.join(", ")
-    + ". Et, comme la calculatrice à l’ouverture : un crédit à " + nb(DEFAUTS.taux)
-    + " %, une inflation de " + nb(DEFAUTS.inflation) + " % par an, une revente au bout de "
-    + DEFAUTS.horizon + " ans. Ces trente-six hypothèses restent modifiables dans l’outil.";
+  if(r.meuble && !detenu()) suppose.push("le mobilier à " + eur.format(r.mobilier));
+  const ouverture = [];
+  if(!r.comptant) ouverture.push("un crédit à " + nb(DEFAUTS.taux) + " %");
+  ouverture.push("une inflation de " + nb(DEFAUTS.inflation) + " % par an");
+  ouverture.push("une revente " + (detenu() ? "dans " : "au bout de ") + DEFAUTS.horizon + " ans");
+  el("qHypo").innerHTML = "Nous avons supposé, à proportion " + (detenu() ? "de la valeur" : "du prix") + ", "
+    + suppose.join(", ") + ". Et, comme la calculatrice à l’ouverture : " + ouverture.join(", ")
+    + ". Toutes ces hypothèses restent modifiables dans l’outil.";
 }
 
 function montrer(n){
-  etape = Math.max(0, Math.min(ETAPES.length - 1, n));
-  const e = ETAPES[etape];
-  ETAPES.forEach((x, i) => { el(x.id).hidden = i !== etape; });
+  const liste = actives();
+  etape = Math.max(0, Math.min(liste.length - 1, n));
+  const e = liste[etape];
+  ETAPES.forEach(x => { el(x.id).hidden = x !== e; });
   // Une saisie que le visiteur n'a pas touchée suit le prix : changer le prix
   // après coup remet le loyer proposé à l'échelle, sans écraser une vraie saisie.
-  if(e.champ && !touches.has(e.champ)) ecrire(e.champ, PROPOSE[e.champ]());
+  (e.champs || []).forEach(c => { if(!touches.has(c)) ecrire(c, PROPOSE[c]()); });
   el("qCompteur").textContent = e.recap
-    ? "Récapitulatif" : "Question " + (etape + 1) + " sur " + QUESTIONS;
-  el("qJauge").style.width = Math.round((etape + 1)/ETAPES.length*100) + "%";
+    ? "Récapitulatif" : "Question " + (etape + 1) + " sur " + (liste.length - 1);
+  el("qJauge").style.width = Math.round((etape + 1)/liste.length*100) + "%";
   el("qBack").hidden = etape === 0;
   el("qNext").hidden = !!e.recap;
   el("qSkip").hidden = !e.skip;
@@ -1360,13 +1553,15 @@ function montrer(n){
   }
 }
 
-// Un seul point de recalcul : le lien, l'affichage du montant des travaux et,
+// Un seul point de recalcul : le lien, l'affichage des champs conditionnels et,
 // sur la dernière étape, le récapitulatif.
 function rafraichir(){
   el("qTravauxChamp").hidden = coche("qTvx") !== "montant";
+  el("qApportChamps").hidden = coche("qFinancement") === "comptant";
+  el("qCreditChamps").hidden = coche("qCredit") === "non";
   const r = reponses();
   majLiens(r);
-  if(ETAPES[etape].recap) dessinerRecap(r);
+  if(actives()[etape].recap) dessinerRecap(r);
 }
 
 /* ---------- écoutes ---------- */
@@ -1390,8 +1585,7 @@ racine.addEventListener("keydown", e => {
 el("qNext").addEventListener("click", () => { demarre = true; montrer(etape + 1); });
 el("qBack").addEventListener("click", () => { demarre = true; montrer(etape - 1); });
 el("qSkip").addEventListener("click", () => {
-  const c = ETAPES[etape].champ;
-  if(c){ touches.delete(c); ecrire(c, PROPOSE[c]()); }
+  (actives()[etape].champs || []).forEach(c => { touches.delete(c); ecrire(c, PROPOSE[c]()); });
   demarre = true;
   montrer(etape + 1);
 });
@@ -1399,8 +1593,17 @@ el("qRecap").addEventListener("click", e => {
   const b = e.target.closest(".qmod");
   if(!b) return;
   demarre = true;
-  montrer(parseInt(b.dataset.etape, 10));
+  montrer(Math.max(0, actives().findIndex(x => x.id === b.dataset.etape)));
 });
+// La bascule de situation : un autre jeu de questions, reprises du début.
+function choisirSituation(s){
+  situation = s;
+  el("qSituAchat").setAttribute("aria-pressed", s === "achat" ? "true" : "false");
+  el("qSituDetenu").setAttribute("aria-pressed", s === "detenu" ? "true" : "false");
+  montrer(0);
+}
+el("qSituAchat").addEventListener("click", () => choisirSituation("achat"));
+el("qSituDetenu").addEventListener("click", () => choisirSituation("detenu"));
 
 /* ---------- démarrage ---------- */
 const radio = (nom, valeur, libelle, choisi) =>
