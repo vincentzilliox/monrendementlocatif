@@ -108,9 +108,8 @@ variables réellement déclarées.
 
 ### À vérifier avant de faire confiance aveuglément
 
-6. 🟠 Le taux différencié de 18,6 %/17,2 % de prélèvements sociaux (meublé/nu,
-   `PS_LOYERS`) a été vérifié par recherche web (sources citées en A.2) mais
-   pas sur une source primaire (BOFiP) — règle récente et inhabituelle.
+6. ✅ Le taux différencié de 18,6 %/17,2 % de prélèvements sociaux (meublé/nu,
+   `PS_LOYERS`) : **confirmé le 2026-09-23** sur le BOFiP et la LFSS 2026. → A.2
 7. ✅ Contraste de `--text-muted` en clair : 4,54:1, moins de 1 % de marge.
    **Corrigé** en `#6b6b6b` (5,11:1), vérifié automatiquement.
 
