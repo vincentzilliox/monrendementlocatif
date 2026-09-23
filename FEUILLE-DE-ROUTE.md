@@ -37,9 +37,9 @@ Tous ces contrôles ont été validés par mutation (huit réintroductions, huit
 ### À reprendre tout de suite
 
 - **Image de partage.** `og-image.png` porte les nouveaux chiffres (+4,8 %,
-  −0,5 pt face à la bourse), mais elle a été rendue sous Linux, en DejaVu Sans,
-  faute de police Helvetica ou Inter sur cette machine. La régénérer sur le Mac
-  (`python3 outils/og_image.py`) pour retrouver la typographie habituelle.
+  −0,5 pt face à la bourse), rendue sous Linux en DejaVu Sans. *Décision du
+  2026-09-23 : on la garde pour le moment* ; la régénérer sur le Mac
+  (`python3 outils/og_image.py`) rendra la typographie habituelle.
 - **Guides.** Leurs exemples chiffrés datent d'avant la comptabilité et
   retiennent 2 % d'inflation, contre 2,5 % aujourd'hui (taux de dépôt de la
   BCE). Ils restent justes pour les hypothèses qu'ils énoncent, mais le lecteur
@@ -167,14 +167,12 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   comme au LMNP réel. Le rendement d'ouverture ne bouge pas : l'impôt y est
   déjà nul.
 
-### 2.7 Budget de poids
+### 2.7 ✅ Budget de poids — validé le 2026-09-23
 
 Le contrôle « poids total sous 600 Ko » est devenu « poids du site, hors
-données de marché, sous 650 Ko » : 595 Ko aujourd'hui, dont 66 Ko d'image de
-partage rendue sous Linux (48 Ko sur le Mac). Les données ont leurs propres
-budgets, par fichier chargé. À rediscuter si le site doit rester sous 600 Ko :
-sortir de `vitrine.js` le code que seule la calculatrice utilise (repères,
-seuils) ferait quelques kilo-octets.
+données de marché, sous 650 Ko », et le mode Essentiel passe à quatorze
+réglages (commune et surface) : deux décisions validées le 2026-09-23. Les
+données ont leurs propres budgets, par fichier chargé.
 
 ---
 
