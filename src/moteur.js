@@ -515,7 +515,8 @@ const SEUILS = [
   {k:"prix",      nom:"Prix d'achat maximal",     achat:true,  borne:v => [v*0.2, v*4], precision:50},
   {k:"loyer",     nom:"Loyer minimal",            borne:v => [v*0.2, v*4], precision:1},
   {k:"taux",      nom:"Taux du crédit maximal",   credit:true, borne:() => [0, 12], precision:0.005},
-  {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005}
+  {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005},
+  {k:"vacance",   nom:"Vacance maximale",         borne:() => [0, 90], precision:0.05}
 ];
 // Rendement du projet moins celui de la bourse, à l'horizon. Sans TRI, deux cas
 // opposés : rien n'est jamais sorti de la poche (infiniment bon), ou rien n'y

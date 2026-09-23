@@ -65,8 +65,8 @@ données sont servies par le site lui-même, chargées à la demande (voir
 « Mettre à jour les données de marché »). Seuls liens sortants autorisés : les
 sources officielles en `.gouv.fr`.
 
-**Seuils** — le prix maximal, le loyer minimal, le taux maximal et la
-revalorisation minimale auxquels le projet fait jeu égal avec la bourse,
+**Seuils** — le prix maximal, le loyer minimal, le taux maximal, la
+revalorisation minimale et la vacance maximale auxquels le projet fait jeu égal avec la bourse,
 trouvés par dichotomie sur le moteur (`seuils()`), affichés sous le graphique
 des placements.
 

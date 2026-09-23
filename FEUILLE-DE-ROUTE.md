@@ -87,8 +87,8 @@ jamais par commune.
 
 | Source | Indicateur retenu | Usage | État |
 |---|---|---|---|
-| [Statistiques DVF](https://www.data.gouv.fr/datasets/statistiques-dvf) (DGFiP / Etalab, semestriel) | Prix médian au m², appartements et maisons, 24 derniers mois, repli sur le département sous 10 ventes | Situer le prix saisi | ✅ Reste : proposer la valeur actuelle en mode « bien détenu » |
-| [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025) (ANIL, annuel) | Loyer d'annonce au m² charges comprises, fourchette, selon la surface | Situer le loyer saisi | ✅ Reste : un bouton « reprendre le loyer du marché » |
+| [Statistiques DVF](https://www.data.gouv.fr/datasets/statistiques-dvf) (DGFiP / Etalab, semestriel) | Prix médian au m², appartements et maisons, 24 derniers mois, repli sur le département sous 10 ventes | Situer le prix saisi | ✅ Pour un bien détenu, la valeur actuelle proposée (prix au m² × surface), reprise d'un clic. |
+| [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025) (ANIL, annuel) | Loyer d'annonce au m² charges comprises, fourchette, selon la surface | Situer le loyer saisi | ✅ Avec l'annonce équivalente pour la surface saisie, charges comprises. Pas de bouton « reprendre » : l'annonce est charges comprises, le champ hors charges, et convertir l'un en l'autre supposerait des charges qu'on ne connaît pas. |
 | Encadrement des loyers ([Service-Public.fr](https://www.service-public.gouv.fr/particuliers/vosdroits/F1314)) | 95 communes, entières ou en partie, relevées à la main | Alerte avec lien vers le simulateur officiel | ✅ *Fait le 2026-09-23.* Le plafond dépend de l'adresse : non vérifié. Contrôle qui échoue après le 24 novembre 2026 si la liste n'a pas été revue. Reste : les loyers de référence de Paris (open data, licence ODbL) pour situer le loyer sans l'adresse exacte. |
 | Fichier REI de la DGFiP (`data.economie.gouv.fr`) | Taux de taxe foncière et de CFE votés par commune, avec leur historique | Dérive locale de la taxe foncière au lieu de l'inflation | À faire. Le montant lui-même dépend de la valeur locative, inconnue : le taux seul ne le donne pas. |
 | Taux des droits de mutation par département (DGFiP) | Taux départemental | Frais de notaire au lieu de 8 % partout | À faire. Gain faible (7,5 % ou 8 %). |
@@ -149,8 +149,9 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   taux maximal et revalorisation minimale pour faire jeu égal avec la bourse,
   sous le graphique des placements (`seuils()`, dichotomie arrêtée à une
   précision par paramètre ; option `horizonSeul` du moteur pour ne résoudre que
-  le TRI final — 44 ms les quatre, la sensibilité en profite). Reste : les
-  proposer sur la page d'accueil, et un seuil « taux de vacance maximal ».
+  le TRI final — 44 ms les quatre, la sensibilité en profite). La vacance
+  maximale s'y est ajoutée le même jour. Reste : les proposer sur la page
+  d'accueil.
 - **Seuils de bascule** dans le graphique de sensibilité — *en partie fait* :
   les seuils face à la bourse sont exactement la frontière entre « excellente
   affaire » et « belle réserve de valeur ». Reste la seconde frontière, celle
@@ -160,7 +161,9 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   d'endettement au sens du HCSF, l'emprunt maximal au même taux et une alerte
   au-delà de 35 % (`endettement()` dans le moteur). Les revenus sont
   `PRIVES` : jamais dans un lien, conservés à l'ouverture du lien d'un autre.
-  Reste : le reste à vivre, et la méthode différentielle de certaines banques.
+  Reste, volontairement : le reste à vivre (il faut la composition du foyer et
+  son train de vie, que la calculatrice ne demande pas) et la méthode
+  différentielle de certaines banques, qui n'est pas la norme du HCSF.
 - ✅ **Frais de dossier et de garantie déductibles** — *fait le 2026-09-23*,
   l'année de leur paiement, au réel foncier (déficit reportable seulement)
   comme au LMNP réel. Le rendement d'ouverture ne bouge pas : l'impôt y est

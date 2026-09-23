@@ -267,6 +267,8 @@ input[type=number]{-moz-appearance:textfield}
 .derived dd.neg{color:var(--down-ink)}
 /* repères de marché, sous le prix et le loyer */
 .repere{margin:-2px 0 4px; font-size:12px; line-height:1.45; color:var(--text-muted)}
+.repere .reprendre{margin-left:4px; padding:1px 8px; font:inherit; font-size:11.5px; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:999px; cursor:pointer}
+.repere .reprendre:hover{border-color:var(--text-muted)}
 .repere b{font-weight:600; color:var(--text)} .repere b.pos{color:var(--up-ink)} .repere b.neg{color:var(--down-ink)}
 /* postes de travaux dépréciables */
 .tvxlist{display:flex; flex-direction:column; gap:9px}

@@ -516,7 +516,8 @@ const SEUILS = [
   {k:"prix",      nom:"Prix d'achat maximal",     achat:true,  borne:v => [v*0.2, v*4], precision:50},
   {k:"loyer",     nom:"Loyer minimal",            borne:v => [v*0.2, v*4], precision:1},
   {k:"taux",      nom:"Taux du crédit maximal",   credit:true, borne:() => [0, 12], precision:0.005},
-  {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005}
+  {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005},
+  {k:"vacance",   nom:"Vacance maximale",         borne:() => [0, 90], precision:0.05}
 ];
 // Rendement du projet moins celui de la bourse, à l'horizon. Sans TRI, deux cas
 // opposés : rien n'est jamais sorti de la poche (infiniment bon), ou rien n'y
@@ -1888,7 +1889,8 @@ const FORMAT_SEUIL = {
   prix:      {v: x => eur.format(Math.round(x/100)*100), ecart: (x, a) => sPct(x/a - 1)},
   loyer:     {v: x => eur.format(Math.round(x)) + " /mois", ecart: (x, a) => sPct(x/a - 1)},
   taux:      {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
-  indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)}
+  indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)},
+  vacance:   {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)}
 };
 function renderSeuils(p){
   $("seuils").innerHTML = seuils(p).map(s => {
@@ -1939,6 +1941,14 @@ $("commune").addEventListener("input", () => {
     $("communesListe").innerHTML = suggestions.map(c => `<option value="${esc(libelleCommune(c[0], c[1]))}"></option>`).join("");
   });
 });
+// « Reprendre » : la valeur que le marché propose pour un bien détenu.
+$("repPrix").addEventListener("click", e => {
+  const b = e.target.closest(".reprendre");
+  if(!b) return;
+  $("valeur").value = b.dataset.valeur;
+  render();
+  toast("Valeur reprise du marché : " + eur.format(+b.dataset.valeur));
+});
 // Un nom tapé en entier, sans passer par la liste, vaut choix s'il est sans ambiguïté.
 $("commune").addEventListener("change", () => {
   if(communeCode) return;
@@ -1977,9 +1987,14 @@ function renderMarche(p){
     const X = M.prix, type = M.maison ? "les maisons" : "les appartements";
     const ou = X.echelle === "commune" ? `à ${esc(M.nom)}` : `dans le département — trop peu de ventes à ${esc(M.nom)}`;
     const vente = `${type} se sont vendus ${eur1.format(X.marche)} €/m² ${ou} en ${periode}, sur ${eur1.format(X.ventes)} ventes`;
+    // Un bien détenu n'a pas de prix affiché : le marché en propose une valeur,
+    // que l'on peut reprendre d'un clic.
+    const estimation = M.surface > 0 ? Math.round(X.marche*M.surface/1000)*1000 : null;
+    const reprendre = p.situation === "detenu" && estimation && Math.abs(estimation - p.valeur) >= 1000
+      ? ` <button type="button" class="reprendre" data-valeur="${estimation}">Reprendre ${eur.format(estimation)}</button>` : "";
     rp.innerHTML = X.saisi === null
       ? `${vente.charAt(0).toUpperCase() + vente.slice(1)}. Renseignez la surface pour situer votre prix.`
-      : `<b>${eur1.format(Math.round(X.saisi))} €/m²</b> : ${vente}. Vous êtes ${ecart(X.saisi, X.marche, true)}.`;
+      : `<b>${eur1.format(Math.round(X.saisi))} €/m²</b> : ${vente}. Vous êtes ${ecart(X.saisi, X.marche, true)}.${reprendre}`;
     rp.hidden = false;
     tuiles.push(["Prix au m²", X.saisi === null ? "—" : eur1.format(Math.round(X.saisi)) + " €",
       `ventes${X.echelle === "commune" ? "" : " du département"} : ${eur1.format(X.marche)} €${X.saisi === null ? "" : " · " + ecart(X.saisi, X.marche, true)}`]);
@@ -1990,7 +2005,7 @@ function renderMarche(p){
     const annonces = `les annonces à ${esc(M.nom)} affichent ${m2(L.marche)} charges comprises pour ${M.maison ? "une maison" : "un appartement"} de ${ref} m², la plupart entre ${m2(L.bas)} et ${m2(L.haut)}${secteur}`;
     rl.innerHTML = L.saisi === null
       ? `${annonces.charAt(0).toUpperCase() + annonces.slice(1)}. Renseignez la surface pour situer votre loyer.`
-      : `<b>${m2(L.saisi)}</b> hors charges : ${annonces}.`
+      : `<b>${m2(L.saisi)}</b> hors charges : ${annonces}. Pour vos ${eur1.format(M.surface)} m², l'annonce équivalente serait d'environ ${eur.format(Math.round(L.marche*M.surface/10)*10)} par mois, charges comprises.`
         + (L.saisi > L.haut ? ` <b class="neg">Au-dessus de la fourchette</b> : un loyer difficile à obtenir.`
           : L.saisi < L.bas ? ` <b class="pos">Sous la fourchette</b> : de la marge, ou un bien moins demandé.` : "");
     rl.hidden = false;

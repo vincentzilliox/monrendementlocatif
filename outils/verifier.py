@@ -526,6 +526,13 @@ setTimeout(function(){
       r.lien = lienHypotheses(valeursFormulaire(), null, items, true).indexOf("commune=69383") >= 0;
       r.resume = document.getElementById("marcheResume").hidden ? 0 : document.querySelectorAll("#marcheTuiles .tile").length;
       r.encadre = /encadrement des loyers/.test(document.getElementById("warnBox").textContent);
+      r.equivalent = /annonce équivalente serait/.test(r.loyer);
+      // Bien détenu : le marché propose une valeur, reprise d'un clic.
+      var sit = document.getElementById("situation");
+      sit.value = "detenu"; sit.dispatchEvent(new Event("change", {bubbles:true}));
+      var bouton = document.querySelector("#repPrix .reprendre");
+      if(bouton){ bouton.click(); r.reprise = document.getElementById("valeur").value; }
+      sit.value = "achat"; sit.dispatchEvent(new Event("change", {bubbles:true}));
       // Effacer la commune efface les repères.
       c.value = ""; c.dispatchEvent(new Event("input", {bubbles:true}));
       r.efface = rp.hidden && rl.hidden;
@@ -1009,7 +1016,7 @@ def main():
                     controle("quatre courbes comparées", r["courbes"] == 4, str(r["courbes"]))
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
-                    controle("seuils face à la bourse affichés", r.get("seuils") == 4, "%s tuiles" % r.get("seuils"))
+                    controle("seuils face à la bourse affichés", r.get("seuils") == 5, "%s tuiles" % r.get("seuils"))
                     if largeur == 1360:
                         m = sonde_navigateur(chrome, base, fichier_pour("/calculatrice/"), largeur, SONDE_MARCHE) or {}
                         # « Lyon 3e proposée », « prix au m² situé », « loyer situé »,
@@ -1018,9 +1025,11 @@ def main():
                             (m.get("options") or [""])[0] == "Lyon 3e Arrondissement (69)",
                             "4 000 €/m²" in (m.get("prix") or "").replace("\u202f", " ").replace("\xa0", " "),
                             "hors charges" in (m.get("loyer") or ""),
-                            m.get("lien"), m.get("efface"), m.get("resume") == 4, m.get("encadre")))
-                        controle("repères de marché : recherche, prix, loyer, lien, effacement, résumé, encadrement",
-                                 etat == "1111111" and not m.get("erreurs"),
+                            m.get("lien"), m.get("efface"), m.get("resume") == 4, m.get("encadre"),
+                            m.get("equivalent"), m.get("reprise") == "226000"))
+                        controle("repères de marché : recherche, prix, loyer, lien, effacement, résumé, "
+                                 "encadrement, équivalent charges comprises, valeur reprise",
+                                 etat == "111111111" and not m.get("erreurs"),
                                  etat + (" · " + m["erreurs"][0] if m.get("erreurs") else ""))
                     attendu = {
                         "micro-foncier": ("fAbattement", False),
@@ -1198,7 +1207,7 @@ var ecartsSeuils = [];
 });
 var sp = seuils(site({}).p);
 lignes.push('seuils : a la valeur trouvee, le projet egale la bourse|'
-  +(ecartsSeuils.length===0 && sp.length===4 && sp[0].k==='prix' && (sp[0].valeur < sp[0].actuel) === !sp[0].devant?1:0)
+  +(ecartsSeuils.length===0 && sp.length===5 && sp[0].k==='prix' && (sp[0].valeur < sp[0].actuel) === !sp[0].devant?1:0)
   +'|'+(ecartsSeuils[0] || 'prix max '+Math.round(sp[0].valeur)+' EUR'));
 // Un projet qui s'autofinance sans mise n'a pas de TRI : pour la recherche des
 // seuils, il est infiniment devant la bourse, pas « non comparable ».
