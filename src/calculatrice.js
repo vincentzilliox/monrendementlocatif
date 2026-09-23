@@ -111,7 +111,7 @@ function render(){
 
   const p = read();
   R = compute(p);
-  renderMarche(p);
+  const marche = renderMarche(p);
   const {rows, best, final} = R;
   const brut = p.avantImpot;
   const detenu = R.detenu;
@@ -406,6 +406,12 @@ function render(){
     warns.push("Sans apport, votre mise est l'effort d'épargne : le rendement se mesure sur les mensualités que les loyers ne couvrent pas. Une banque qui finance aussi les frais demandera en général un dossier solide.");
   if(E && E.taux > PLAFOND_ENDETTEMENT)
     warns.push(`Avec ce crédit, vos mensualités atteindraient ${pct(E.taux)} de vos revenus, loyer compté à 70 % : au-delà de 35 %, les banques refusent en général — elles ne peuvent déroger que pour une part de leurs dossiers, d'abord la résidence principale. À ce taux et sur cette durée, vous pourriez emprunter environ ${eur.format(E.empruntMax)}.`);
+  // L'encadrement dépend de l'adresse : on le signale, avec le simulateur officiel.
+  if(marche && marche.contexte.encadre){
+    const E = DONNEES.sources.encadrement;
+    warns.push(`${marche.contexte.encadre === 2 ? "Une partie de " + esc(marche.nom) + " applique" : esc(marche.nom) + " applique"} l'encadrement des loyers : le loyer hors charges ne peut dépasser le loyer de référence majoré de l'adresse, selon le nombre de pièces, l'époque de construction et le meublé. <a href="${esc(E.page)}" rel="noopener noreferrer">Vérifiez sur le site officiel</a>. L'expérimentation court jusqu'au ${new Date(E.fin).toLocaleDateString("fr-FR", {day:"numeric", month:"long", year:"numeric"})}, sauf prolongation.`);
+  } else if(marche && marche.contexte.tension === 1)
+    warns.push(`${esc(marche.nom)} est en zone tendue : le loyer d'un nouveau bail y est en principe plafonné par celui du locataire précédent. Un bien acheté loué hérite de son loyer.`);
   // Au-delà de 23 000 € de recettes meublées, le statut dépend des revenus
   // d'activité du foyer, que la calculatrice ne connaît pas : on prévient.
   const seuilLMP = (p.regime === "lmnp-micro" || p.regime === "lmnp-reel") ? rows.find(r => r.loyers > 23000) : null;
@@ -648,13 +654,17 @@ $("commune").addEventListener("change", () => {
 
 const m2 = v => v.toFixed(1).replace(".", ",") + " €/m²";
 const an = mois => mois.slice(0, 4);
+const ZONES = {Abis:"très tendu", A:"tendu", B1:"tendu", B2:"intermédiaire", C:"détendu"};
+// Les repères sous le prix et le loyer, et leur résumé dans les résultats, qui
+// reste visible quand le panneau est replié ou fermé. Rend les repères, pour
+// les alertes, ou null sans commune.
 function renderMarche(p){
-  const rp = $("repPrix"), rl = $("repLoyer");
-  const cacher = () => { rp.hidden = rl.hidden = true; };
+  const rp = $("repPrix"), rl = $("repLoyer"), resume = $("marcheResume");
+  const cacher = () => { rp.hidden = rl.hidden = resume.hidden = true; return null; };
   if(!communeCode) return cacher();
   const dep = departementDe(communeCode);
   // Un seul rendu à l'arrivée du fichier, quel que soit le nombre de frappes d'ici là.
-  if(!(dep in DONNEES.pret)){ cacher(); if(!DONNEES.marche[dep]) marcheDe(dep).then(render); return; }
+  if(!(dep in DONNEES.pret)){ cacher(); if(!DONNEES.marche[dep]) marcheDe(dep).then(render); return null; }
   const M = reperesMarche(DONNEES.pret[dep], communeCode, p), S = DONNEES.sources;
   if(!M || !S) return cacher();
   // Ouvert depuis un lien ou une visite précédente : le champ n'a que le code.
@@ -666,26 +676,50 @@ function renderMarche(p){
     const bien = (e < 0) === cherEstMal;
     return `<b class="${bien ? "pos" : "neg"}">${Math.round(Math.abs(e)*100)} % ${e > 0 ? "au-dessus" : "en dessous"}</b>`;
   };
+  const fourchette = L => L.saisi > L.haut ? `<b class="neg">au-dessus de la fourchette</b>`
+    : L.saisi < L.bas ? `<b class="pos">sous la fourchette</b>` : `<b>dans la fourchette</b>`;
+  const tuiles = [];
   if(M.prix){
     const X = M.prix, type = M.maison ? "les maisons" : "les appartements";
-    const ou = X.echelle === "commune" ? `à ${M.nom}` : `dans le département — trop peu de ventes à ${M.nom}`;
+    const ou = X.echelle === "commune" ? `à ${esc(M.nom)}` : `dans le département — trop peu de ventes à ${esc(M.nom)}`;
     const vente = `${type} se sont vendus ${eur1.format(X.marche)} €/m² ${ou} en ${periode}, sur ${eur1.format(X.ventes)} ventes`;
     rp.innerHTML = X.saisi === null
       ? `${vente.charAt(0).toUpperCase() + vente.slice(1)}. Renseignez la surface pour situer votre prix.`
       : `<b>${eur1.format(Math.round(X.saisi))} €/m²</b> : ${vente}. Vous êtes ${ecart(X.saisi, X.marche, true)}.`;
     rp.hidden = false;
+    tuiles.push(["Prix au m²", X.saisi === null ? "—" : eur1.format(Math.round(X.saisi)) + " €",
+      `ventes${X.echelle === "commune" ? "" : " du département"} : ${eur1.format(X.marche)} €${X.saisi === null ? "" : " · " + ecart(X.saisi, X.marche, true)}`]);
   } else rp.hidden = true;
   if(M.loyer){
     const L = M.loyer, ref = S.loyers.references[L.cle];
     const secteur = L.annonces === 0 ? " — estimation de secteur, la commune ayant peu d'annonces" : "";
-    const annonces = `les annonces à ${M.nom} affichent ${m2(L.marche)} charges comprises pour ${M.maison ? "une maison" : "un appartement"} de ${ref} m², la plupart entre ${m2(L.bas)} et ${m2(L.haut)}${secteur}`;
+    const annonces = `les annonces à ${esc(M.nom)} affichent ${m2(L.marche)} charges comprises pour ${M.maison ? "une maison" : "un appartement"} de ${ref} m², la plupart entre ${m2(L.bas)} et ${m2(L.haut)}${secteur}`;
     rl.innerHTML = L.saisi === null
       ? `${annonces.charAt(0).toUpperCase() + annonces.slice(1)}. Renseignez la surface pour situer votre loyer.`
       : `<b>${m2(L.saisi)}</b> hors charges : ${annonces}.`
         + (L.saisi > L.haut ? ` <b class="neg">Au-dessus de la fourchette</b> : un loyer difficile à obtenir.`
           : L.saisi < L.bas ? ` <b class="pos">Sous la fourchette</b> : de la marge, ou un bien moins demandé.` : "");
     rl.hidden = false;
+    tuiles.push(["Loyer au m², hors charges", L.saisi === null ? "—" : m2(L.saisi).replace(" €/m²", " €"),
+      `annonces : ${m2(L.marche).replace(" €/m²", " €")} charges comprises${L.saisi === null ? "" : " · " + fourchette(L)}`]);
   } else rl.hidden = true;
+  const C = M.contexte;
+  if(C.tendance){
+    const T = C.tendance, retenu = p.indexPrix/100;
+    // Une revalorisation retenue bien au-dessus de la tendance récente est un pari.
+    tuiles.push([`Prix de l'ancien, département`, `${sPct(T.taux)} /an`,
+      `${T.an0}-${T.an1} · vous retenez <b class="${retenu > T.taux + 0.01 ? "neg" : ""}">${sPct(retenu)} /an</b>`]);
+  }
+  if(C.zone){
+    const tension = C.tension === 1 ? "zone tendue" : C.tension === 2 ? "zone touristique tendue" : "hors zone tendue";
+    tuiles.push(["Marché local", `Zone ${C.zone === "Abis" ? "A bis" : C.zone}`,
+      `${ZONES[C.zone] || ""} · ${tension}${C.encadre ? " · <b>loyers encadrés</b>" : ""}`]);
+  }
+  $("marcheTitre").textContent = `Face au marché : ${M.nom}`;
+  $("marcheTuiles").innerHTML = tuiles.map(([k, v, sous]) =>
+    `<div class="tile"><span class="k">${k}</span><span class="v num">${v}</span><span class="s">${sous}</span></div>`).join("");
+  resume.hidden = false;
+  return M;
 }
 
 /* ---------- persistence & chrome ---------- */

@@ -58,8 +58,12 @@ rendement annualisé du portefeuille boursier net d'impôt sert de référence.
 
 **Repères de marché** — avec la commune et la surface, le prix au m² est situé
 face aux ventes DVF des vingt-quatre derniers mois, et le loyer face aux
-annonces de la Carte des loyers de l'ANIL. Les données sont servies par le site
-lui-même, chargées à la demande (voir « Mettre à jour les données de marché »).
+annonces de la Carte des loyers de l'ANIL. Un résumé dans les résultats y ajoute
+le zonage A/B/C, la zone tendue, la tendance des prix du département, et
+signale l'encadrement des loyers avec un lien vers le simulateur officiel. Les
+données sont servies par le site lui-même, chargées à la demande (voir
+« Mettre à jour les données de marché »). Seuls liens sortants autorisés : les
+sources officielles en `.gouv.fr`.
 
 **Seuils** — le prix maximal, le loyer minimal, le taux maximal et la
 revalorisation minimale auxquels le projet fait jeu égal avec la bourse,
@@ -212,7 +216,10 @@ python3 outils/donnees.py --frais  # ignore le cache
 ```
 
 Un contrôle échoue quand les ventes DVF ont plus de dix-huit mois : c'est le
-signal qu'un millésime a été manqué. Pour la Carte des loyers, changer d'année
+signal qu'un millésime a été manqué. Un autre échoue après le 24 novembre 2026
+tant que la liste d'encadrement des loyers, relevée à la main dans
+`ENCADREMENT` (`outils/donnees.py`), n'a pas été revue : l'expérimentation
+s'arrête ce jour-là, sauf prolongation. Pour la Carte des loyers, changer d'année
 suppose de mettre à jour les adresses des quatre fichiers dans le script.
 
 ### Installer le garde-fou

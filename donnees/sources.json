@@ -9,6 +9,29 @@
   ],
   "note": "moyenne des prix médians mensuels au m², pondérée par le nombre de ventes"
  },
+ "tendance": {
+  "titre": "Statistiques DVF — DGFiP, Etalab",
+  "page": "https://www.data.gouv.fr/datasets/statistiques-dvf",
+  "periode": [
+   "2021",
+   "2025"
+  ],
+  "note": "prix typique au m² du département, première et dernière année complète"
+ },
+ "zonage": {
+  "titre": "Zonage A/B/C — ministère du Logement, en vigueur au 26 juin 2026",
+  "page": "https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-abc"
+ },
+ "tension": {
+  "titre": "Zones tendues — décret n° 2025-1267 du 22 décembre 2025",
+  "page": "https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-tlv-1"
+ },
+ "encadrement": {
+  "titre": "Encadrement des loyers — Service-Public.fr, vérifié le 1ᵉʳ août 2026",
+  "page": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1314",
+  "verifie": "2026-09-23",
+  "fin": "2026-11-24"
+ },
  "loyers": {
   "titre": "Carte des loyers 2025 — ANIL, ministère du Logement",
   "page": "https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025",

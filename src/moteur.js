@@ -609,8 +609,18 @@ function reperesMarche(marche, code, p){
     prix: ventes ? {echelle, marche: ventes[0], ventes: ventes[1],
                     saisi: surface > 0 ? prixSaisi/surface : null} : null,
     loyer: annonces ? {cle: cleLoyer, marche: annonces[0], bas: annonces[1], haut: annonces[2],
-                       annonces: annonces[3], saisi: surface > 0 ? p.loyer/surface : null} : null
+                       annonces: annonces[3], saisi: surface > 0 ? p.loyer/surface : null} : null,
+    // Zone A/B/C, zone tendue (1 : agglomération, 2 : touristique), encadrement
+    // des loyers (1 : toute la commune, 2 : une partie), et la tendance des prix
+    // du département — une commune a trop peu de ventes pour en avoir une.
+    contexte: {zone: fiche.z || null, tension: fiche.t || 0, encadre: fiche.e || 0,
+      tendance: tendancePrix(marche.d && marche.d.ev && marche.d.ev[cle])}
   };
+}
+// [prix an0, prix an1, an0, an1] → variation annuelle moyenne entre les deux.
+function tendancePrix(ev){
+  if(!ev || !(ev[0] > 0) || ev[3] <= ev[2]) return null;
+  return {an0: ev[2], an1: ev[3], taux: Math.pow(ev[1]/ev[0], 1/(ev[3] - ev[2])) - 1};
 }
 
 /* ---------- le lien qui porte les hypothèses ---------- */

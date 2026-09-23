@@ -524,6 +524,8 @@ setTimeout(function(){
       r.prix = rp.hidden ? "" : rp.textContent;
       r.loyer = rl.hidden ? "" : rl.textContent;
       r.lien = lienHypotheses(valeursFormulaire(), null, items, true).indexOf("commune=69383") >= 0;
+      r.resume = document.getElementById("marcheResume").hidden ? 0 : document.querySelectorAll("#marcheTuiles .tile").length;
+      r.encadre = /encadrement des loyers/.test(document.getElementById("warnBox").textContent);
       // Effacer la commune efface les repères.
       c.value = ""; c.dispatchEvent(new Event("input", {bubbles:true}));
       r.efface = rp.hidden && rl.hidden;
@@ -786,10 +788,18 @@ def main():
         print("\nCONFIDENTIALITÉ ET POIDS")
         textes = css + "".join(f.read_text(encoding="utf-8") for _, f in pages)
         textes += (SITE / "js" / "app.js").read_text(encoding="utf-8")
-        tiers = {d for d in re.findall(r"https?://([a-z0-9.-]+)", textes)
+        # Un lien qu'on clique n'est pas un appel : il ne part qu'au geste du
+        # visiteur. Ils sont mis de côté, puis réservés aux sources officielles.
+        ancre = r'<a\b[^>]*\bhref="https?://([a-z0-9.-]+)[^"]*"'
+        liens = set(re.findall(ancre, textes))
+        tiers = {d for d in re.findall(r"https?://([a-z0-9.-]+)", re.sub(ancre, "", textes))
                  if not d.endswith(("w3.org", "schema.org", "sitemaps.org", "cloudflare.com"))
                  and "monrendementlocatif" not in d}
         controle("aucun appel vers un domaine tiers", not tiers, ", ".join(tiers))
+        # Les sources officielles, et l'hébergeur que les mentions légales nomment.
+        sortants = sorted(d for d in liens if not d.endswith((".gouv.fr", "cloudflare.com"))
+                          and "monrendementlocatif" not in d)
+        controle("liens sortants : sources officielles seulement", not sortants, ", ".join(sortants))
         controle("aucun script de mesure d'audience",
                  not re.search(r"googletagmanager|google-analytics|gtag\(|plausible\.io|matomo|hotjar|clarity\.ms|cloudflareinsights", textes, re.I))
         # Les données de marché ne se chargent qu'à la demande, une initiale et un
@@ -829,6 +839,12 @@ def main():
         sources = json.loads((dossier / "sources.json").read_text(encoding="utf-8"))
         fin = date.fromisoformat(sources["dvf"]["periode"][1] + "-01")
         age = (date.today() - fin).days // 30
+        # L'encadrement des loyers est une expérimentation datée : passé sa fin,
+        # la liste relevée à la main doit être revue — prolongée ou retirée.
+        enc = sources["encadrement"]
+        controle("données : liste d'encadrement revue depuis la fin de l'expérimentation",
+                 date.today() <= date.fromisoformat(enc["fin"]) or enc["verifie"] >= enc["fin"],
+                 "vérifiée le %s, fin le %s" % (enc["verifie"], enc["fin"]))
         # DVF publie deux fois l'an, avec six mois de retard : au-delà de 18 mois,
         # un millésime a été manqué — relancer outils/donnees.py.
         controle("données : ventes DVF de moins de 18 mois", age <= 18,
@@ -1002,9 +1018,9 @@ def main():
                             (m.get("options") or [""])[0] == "Lyon 3e Arrondissement (69)",
                             "4 000 €/m²" in (m.get("prix") or "").replace("\u202f", " ").replace("\xa0", " "),
                             "hors charges" in (m.get("loyer") or ""),
-                            m.get("lien"), m.get("efface")))
-                        controle("repères de marché : recherche, prix, loyer, lien, effacement",
-                                 etat == "11111" and not m.get("erreurs"),
+                            m.get("lien"), m.get("efface"), m.get("resume") == 4, m.get("encadre")))
+                        controle("repères de marché : recherche, prix, loyer, lien, effacement, résumé, encadrement",
+                                 etat == "1111111" and not m.get("erreurs"),
                                  etat + (" · " + m["erreurs"][0] if m.get("erreurs") else ""))
                     attendu = {
                         "micro-foncier": ("fAbattement", False),
@@ -1214,6 +1230,14 @@ lignes.push('reperes de marche : commune ou departement, loyer selon la surface|
     && rs.loyer.cle==='l12' && rm.prix.echelle==='departement' && rm.prix.marche===2200 && rm.loyer.cle==='lm'
     && rd.prix.saisi===3000 && reperesMarche(M,'22222',{})===null
     && reperesMarche(M,'11111',{prix:1,loyer:1,surface:0}).prix.saisi===null?1:0)+'|');
+// Contexte local : zonage, tension, encadrement, et tendance des prix du
+// departement en taux annuel compose.
+var Mc = {c:{'11111':{n:'Ville', pa:[3000,120], z:'A', t:1, e:2}}, d:{pa:[2800,900], ev:{pa:[2000,1800,2021,2025]}}};
+var cx = reperesMarche(Mc,'11111',{prix:1,loyer:1,surface:50}).contexte;
+var tauxAttendu = Math.pow(0.9, 1/4) - 1;
+lignes.push('reperes de marche : zonage, tension, encadrement, tendance annuelle|'
+  +(cx.zone==='A' && cx.tension===1 && cx.encadre===2 && Math.abs(cx.tendance.taux-tauxAttendu)<1e-12
+    && reperesMarche({c:{'1':{n:'X'}}, d:{}},'1',{}).contexte.tendance===null?1:0)+'|'+(cx.tendance.taux*100).toFixed(2)+' %/an');
 // Frais de dossier au reel : deduits l'annee 1, a emprunt egal (l'apport les
 // absorbe), sur un scenario sans amortissement ni travaux ou la base est
 // positive. L'impot de l'annee 1 baisse alors exactement de frais x (TMI + PS).

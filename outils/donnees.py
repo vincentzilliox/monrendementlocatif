@@ -54,6 +54,59 @@ ANIL = {
 }
 
 
+# Le zonage A/B/C : la tension du marché, de A bis (la plus forte) à C.
+ZONAGE_ABC = {
+    "url": "https://static.data.gouv.fr/resources/liste-des-communes-selon-le-zonage-abc/20260703-091314/liste-ensemble-des-communes-zonage-abc-en-vigueur-26-juin-2026.csv",
+    "page": "https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-abc",
+    "titre": "Zonage A/B/C — ministère du Logement, en vigueur au 26 juin 2026",
+}
+# Les zones tendues de l'article 232 du CGI : « 1. Zone tendue », une agglomération
+# de plus de 50 000 habitants, où le loyer d'un nouveau bail est plafonné par
+# celui du locataire précédent ; « 2. Zone touristique et tendue ».
+ZONAGE_TLV = {
+    "url": "https://static.data.gouv.fr/resources/liste-des-communes-selon-le-zonage-tlv-1/20251230-094759/zonage-tlv-decret-22-dec-2025.csv",
+    "page": "https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-tlv-1",
+    "titre": "Zones tendues — décret n° 2025-1267 du 22 décembre 2025",
+}
+# L'encadrement des loyers : aucune source ouverte ne le donne pour toute la
+# France, et ses zones sont plus fines que la commune. La liste vient de la
+# page officielle, relevée à la main : `verifie` dit quand, `fin` quand
+# l'expérimentation s'arrête sauf prolongation — verifier.py échoue au-delà de
+# cette date tant que la liste n'a pas été revue. Paris et Lyon s'étendent à
+# leurs arrondissements ; Hellemmes et Lomme sont des communes associées de
+# Lille, Pierrefitte-sur-Seine a fusionné dans Saint-Denis en 2025.
+ENCADREMENT = {
+    "page": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1314",
+    "titre": "Encadrement des loyers — Service-Public.fr, vérifié le 1ᵉʳ août 2026",
+    "verifie": "2026-09-23",
+    "fin": "2026-11-24",
+    "territoires": [
+        ["Paris", "75", ["Paris"], []],
+        ["Lille", "59", ["Lille"], []],
+        ["Plaine Commune", "93", ["Aubervilliers", "La Courneuve", "Épinay-sur-Seine", "L'Île-Saint-Denis",
+                                  "Saint-Denis", "Saint-Ouen-sur-Seine", "Stains", "Villetaneuse"], []],
+        ["Est Ensemble", "93", ["Bagnolet", "Bobigny", "Bondy", "Le Pré-Saint-Gervais", "Les Lilas",
+                                "Montreuil", "Noisy-le-Sec", "Pantin", "Romainville"], []],
+        ["Lyon et Villeurbanne", "69", ["Lyon", "Villeurbanne"], []],
+        ["Montpellier", "34", ["Montpellier"], []],
+        ["Bordeaux", "33", ["Bordeaux"], []],
+        ["Grenoble-Alpes Métropole", "38",
+         ["Bresson", "Claix", "Domène", "Eybens", "Fontanil-Cornillon", "Gières", "Meylan", "Murianette",
+          "Poisat", "La Tronche", "Seyssins", "Varces-Allières-et-Risset", "Venon"],
+         ["Échirolles", "Fontaine", "Grenoble", "Le Pont-de-Claix", "Saint-Égrève", "Saint-Martin-d'Hères",
+          "Sassenage", "Seyssinet-Pariset"]],
+        ["Pays basque", "64",
+         ["Ahetze", "Anglet", "Arbonne", "Arcangues", "Ascain", "Bassussarry", "Bayonne", "Biarritz", "Bidart",
+          "Biriatou", "Boucau", "Ciboure", "Guéthary", "Hendaye", "Jatxou", "Lahonce", "Larressore",
+          "Mouguerre", "Saint-Jean-de-Luz", "Saint-Pierre-d'Irube", "Urcuit", "Urrugne", "Ustaritz",
+          "Villefranque"], []],
+    ],
+}
+# Paris, Lyon et Marseille sont des communes pour les zonages, des
+# arrondissements pour DVF et l'ANIL.
+ARRONDISSEMENTS = {"75056": "751", "69123": "6938", "13055": "132"}
+
+
 def telecharger(url, nom, frais):
     CACHE.mkdir(parents=True, exist_ok=True)
     cible = CACHE / nom
@@ -128,12 +181,94 @@ def prix(frais):
     return sortie, (min(retenus), max(retenus))
 
 
+def lire_csv(chemin):
+    """Les fichiers ministériels : UTF-8 avec BOM, point-virgule."""
+    return list(csv.DictReader(io.StringIO(chemin.read_bytes().decode("utf-8-sig")), delimiter=";"))
+
+
+def etendre(code, codes):
+    """Le code d'un zonage, ou ceux de ses arrondissements."""
+    prefixe = ARRONDISSEMENTS.get(code)
+    return [c for c in codes if c.startswith(prefixe) and c != code] if prefixe else [code]
+
+
+def zonages(frais, codes):
+    """{code: {"z": zone A/B/C, "t": 1 zone tendue, 2 touristique et tendue}}."""
+    sortie = defaultdict(dict)
+    for l in lire_csv(telecharger(ZONAGE_ABC["url"], "zonage-abc.csv", frais)):
+        zone = next(v for k, v in l.items() if k.startswith("Zonage ABC")).strip()
+        for c in etendre(l["CODGEO"].strip(), codes):
+            sortie[c]["z"] = zone
+    for l in lire_csv(telecharger(ZONAGE_TLV["url"], "zonage-tlv.csv", frais)):
+        cle = next(k for k in l if k.startswith("Zonage TLV post"))
+        rang = l[cle].strip()[:1]
+        if rang in ("1", "2"):
+            for c in etendre(l["CODGEO25"].strip(), codes):
+                sortie[c]["t"] = int(rang)
+    return sortie
+
+
+def encadrement(noms):
+    """{code: 1 si toute la commune est encadrée, 2 si une partie}. Un nom
+    introuvable arrête l'import : la liste officielle a changé, ou une commune
+    a fusionné — à relire, pas à deviner."""
+    parNom = defaultdict(list)
+    for code, nom in noms.items():
+        parNom[(departement(code), nom)].append(code)
+    sortie = {}
+    for territoire, dep, entieres, parties in ENCADREMENT["territoires"]:
+        for rang, liste in ((1, entieres), (2, parties)):
+            for nom in liste:
+                if nom in ("Paris", "Lyon"):
+                    prefixe = {"Paris": "751", "Lyon": "6938"}[nom]
+                    trouves = [c for c in noms if c.startswith(prefixe)]
+                else:
+                    trouves = parNom.get((dep, nom), [])
+                if not trouves:
+                    raise SystemExit("encadrement : « %s » (%s) introuvable dans la Carte des loyers" % (nom, dep))
+                for c in trouves:
+                    sortie[c] = rang
+    return sortie
+
+
+def evolution(frais):
+    """{département: {"pa": [prix an0, prix an1, an0, an1], "pm": ...}} : le prix
+    typique de la première et de la dernière année complète de DVF, par
+    département — une commune a trop peu de ventes pour une tendance."""
+    chemin = telecharger(DVF["url"], "dvf-mensuel.csv", frais)
+    somme = defaultdict(lambda: defaultdict(lambda: [0.0, 0]))
+    mois = defaultdict(set)
+    with open(chemin, encoding="utf-8") as f:
+        for l in csv.DictReader(f):
+            if l["echelle_geo"] != "departement":
+                continue
+            an = l["annee_mois"][:4]
+            mois[an].add(l["annee_mois"])
+            for cle, type_ in (("pa", "appartement"), ("pm", "maison")):
+                n, med = nombre(l["nb_ventes_" + type_]), nombre(l["med_prix_m2_" + type_])
+                if n and med:
+                    somme[(l["code_geo"], cle)][an][0] += med*n
+                    somme[(l["code_geo"], cle)][an][1] += int(n)
+    completes = sorted(an for an, m in mois.items() if len(m) == 12)
+    a0, a1 = completes[0], completes[-1]
+    sortie = defaultdict(dict)
+    for (dep, cle), parAn in somme.items():
+        if parAn[a0][1] >= 100 and parAn[a1][1] >= 100:
+            sortie[dep][cle] = [round(parAn[a0][0]/parAn[a0][1]), round(parAn[a1][0]/parAn[a1][1]), int(a0), int(a1)]
+    return sortie, (a0, a1)
+
+
 def main():
     frais = "--frais" in sys.argv
     print("Loyers d'annonce (ANIL)")
     parCommune, noms = loyers(frais)
     print("Prix de vente (DVF)")
     ventes, (debut, fin) = prix(frais)
+
+    print("Zonages, encadrement, tendance des prix")
+    zones = zonages(frais, list(noms))
+    encadre = encadrement(noms)
+    tendance, (a0, a1) = evolution(frais)
 
     marche = defaultdict(lambda: {"c": {}, "d": {}})
     index = []
@@ -144,11 +279,16 @@ def main():
         fiche = {"n": nom}
         fiche.update(parCommune[code])
         fiche.update(ventes.get(code, {}))
+        fiche.update(zones.get(code, {}))
+        if code in encadre:
+            fiche["e"] = encadre[code]
         marche[dep]["c"][code] = fiche
         n = sum(fiche[k][1] for k in ("pa", "pm") if k in fiche)
         index.append([code, nom, n])
     for dep in marche:
-        marche[dep]["d"] = ventes.get(dep, {})
+        marche[dep]["d"] = dict(ventes.get(dep, {}))
+        if tendance.get(dep):
+            marche[dep]["d"]["ev"] = tendance[dep]
     # Les communes les plus actives d'abord : à nom égal, c'est celle qu'on cherche.
     index.sort(key=lambda c: (c[1].lower(), -c[2]))
 
@@ -156,6 +296,11 @@ def main():
         "millesime": fin[:4],
         "dvf": {"titre": DVF["titre"], "page": DVF["page"], "periode": [debut, fin],
                 "note": "moyenne des prix médians mensuels au m², pondérée par le nombre de ventes"},
+        "tendance": {"titre": DVF["titre"], "page": DVF["page"], "periode": [a0, a1],
+                     "note": "prix typique au m² du département, première et dernière année complète"},
+        "zonage": {"titre": ZONAGE_ABC["titre"], "page": ZONAGE_ABC["page"]},
+        "tension": {"titre": ZONAGE_TLV["titre"], "page": ZONAGE_TLV["page"]},
+        "encadrement": {k: ENCADREMENT[k] for k in ("titre", "page", "verifie", "fin")},
         "loyers": {"titre": ANIL["titre"], "page": ANIL["page"], "periode": ANIL["periode"],
                    "references": {k: v[1] for k, v in ANIL["fichiers"].items()},
                    "note": "loyer d'annonce prédit au m², charges comprises, pour un logement de référence"},

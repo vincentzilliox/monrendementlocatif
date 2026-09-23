@@ -83,20 +83,20 @@ l'ANIL sont en Windows-1252 (en latin-1, « Œ » devient un caractère de
 contrôle) ; DVF et l'ANIL codent Paris, Lyon et Marseille par arrondissement,
 jamais par commune.
 
-### 2.3 Les sources — deux branchées, huit à venir
+### 2.3 Les sources — cinq branchées, cinq à venir
 
 | Source | Indicateur retenu | Usage | État |
 |---|---|---|---|
 | [Statistiques DVF](https://www.data.gouv.fr/datasets/statistiques-dvf) (DGFiP / Etalab, semestriel) | Prix médian au m², appartements et maisons, 24 derniers mois, repli sur le département sous 10 ventes | Situer le prix saisi | ✅ Reste : proposer la valeur actuelle en mode « bien détenu » |
 | [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025) (ANIL, annuel) | Loyer d'annonce au m² charges comprises, fourchette, selon la surface | Situer le loyer saisi | ✅ Reste : un bouton « reprendre le loyer du marché » |
-| Arrêtés d'encadrement des loyers (open data de Paris, Lyon, Lille, Bordeaux, Montpellier…) | Loyer de référence majoré par zone, pièces, époque, nu ou meublé | Alerte « loyer au-dessus du plafond légal » | À faire. Les zones sont infra-communales : il faudra l'adresse, ou au moins le quartier. Le dispositif expérimental expire le 23 novembre 2026, sauf pérennisation votée. |
+| Encadrement des loyers ([Service-Public.fr](https://www.service-public.gouv.fr/particuliers/vosdroits/F1314)) | 95 communes, entières ou en partie, relevées à la main | Alerte avec lien vers le simulateur officiel | ✅ *Fait le 2026-09-23.* Le plafond dépend de l'adresse : non vérifié. Contrôle qui échoue après le 24 novembre 2026 si la liste n'a pas été revue. Reste : les loyers de référence de Paris (open data, licence ODbL) pour situer le loyer sans l'adresse exacte. |
 | Fichier REI de la DGFiP (`data.economie.gouv.fr`) | Taux de taxe foncière et de CFE votés par commune, avec leur historique | Dérive locale de la taxe foncière au lieu de l'inflation | À faire. Le montant lui-même dépend de la valeur locative, inconnue : le taux seul ne le donne pas. |
 | Taux des droits de mutation par département (DGFiP) | Taux départemental | Frais de notaire au lieu de 8 % partout | À faire. Gain faible (7,5 % ou 8 %). |
-| Zonage A/B/C et communes en zone tendue | Tension locative | Vacance par défaut ; taxe sur les logements vacants | À faire |
+| [Zonage A/B/C](https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-abc) et [zones tendues](https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-tlv-1) (décret du 22 décembre 2025) | Tension du marché, zone tendue d'agglomération ou touristique | Résumé « face au marché », alerte sur le loyer de relocation | ✅ *Fait le 2026-09-23.* Un décret du 25 août 2026 pourrait avoir revu la liste : le fichier national n'est pas encore à jour. |
 | INSEE (recensement) et LOVAC (Cerema) | Taux de logements vacants, évolution de la population | Vacance par défaut réaliste | À faire |
 | [DPE logements existants](https://data.ademe.fr/datasets/dpe03existant) (ADEME, mensuel) | Part de passoires F et G par commune | Contexte du champ DPE (2.4) | À faire |
 | Banque de France, BCE, INSEE | Taux moyen des crédits à l'habitat, taux d'usure, Livret A, taux de dépôt de la BCE, IRL, inflation | Valeurs par défaut mises à jour à l'import | À faire. Attention : chaque changement de valeur par défaut déplace le chiffre de l'accueil et impose de régénérer l'image de partage. |
-| Indices Notaires-INSEE | Historique des prix de l'ancien par région | Revalorisation par défaut fondée sur l'historique local | À faire |
+| Tendance des prix (DVF, par département) | Évolution annuelle moyenne entre la première et la dernière année complète | Mise en regard de la revalorisation retenue | ✅ *Fait le 2026-09-23*, à partir de DVF plutôt que des indices Notaires-INSEE, qui ne descendent pas au département. |
 
 ### 2.4 ✅ Champ « Classe DPE » — fait le 2026-09-23
 
@@ -131,9 +131,8 @@ charges comprises pour le logement de référence, la fourchette, et un
 avertissement au-dessus ou en dessous. Une saisie hors norme n'est pas
 bloquée : elle est dite. Contrôles à réponse connue sur `reperesMarche()`, et
 une sonde asynchrone qui tape « lyon 3 », choisit, attend le fichier et lit les
-deux lignes. **Reste** : ces repères ne sont visibles que dans le panneau (tiroir fermé
-sur téléphone) ; un résumé « votre projet face au marché de … » dans les
-résultats les rendrait visibles d'emblée.
+deux lignes. Un résumé « Face au marché » dans les résultats, sous les indicateurs, les
+rend visibles sans ouvrir le panneau — y compris sur téléphone.
 
 Le projet initial :
 
