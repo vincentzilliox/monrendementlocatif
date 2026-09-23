@@ -1,0 +1,27 @@
+{
+ "credit": {
+  "valeur": 3.18,
+  "periode": "2026-07",
+  "titre": "Taux des nouveaux crédits à l'habitat, France — BCE",
+  "page": "https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.FR.B.A2C.A.R.A.2250.EUR.N"
+ },
+ "depot": {
+  "valeur": 2.5,
+  "periode": "2026-09-16",
+  "titre": "Taux de la facilité de dépôt — BCE",
+  "page": "https://data.ecb.europa.eu/data/datasets/FM/FM.D.U2.EUR.4F.KR.DFR.LEV"
+ },
+ "inflation": {
+  "valeur": 2.6,
+  "periode": "2026-08",
+  "titre": "Inflation sur un an, IPCH France — Eurostat",
+  "page": "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table"
+ },
+ "irl": {
+  "valeur": 1.15,
+  "periode": "2026-Q2",
+  "depuis": "2025-Q2",
+  "titre": "Indice de référence des loyers — INSEE",
+  "page": "https://www.insee.fr/fr/statistiques/serie/001515333"
+ }
+}

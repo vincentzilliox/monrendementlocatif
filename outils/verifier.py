@@ -195,6 +195,8 @@ setTimeout(function(){
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
   r.sens      = document.querySelectorAll("#plotSens svg rect").length;
   r.seuils    = document.querySelectorAll("#seuils .tile .v").length;
+  var rt = document.getElementById("repTaux"), ri = document.getElementById("repInflation");
+  r.tauxMarche = !!(rt && !rt.hidden && /BCE/.test(rt.textContent) && ri && !ri.hidden && /Eurostat/.test(ri.textContent));
   r.liens     = document.querySelectorAll("#suite a").length;
   var boite = document.getElementById("avisBox");
   r.avis = boite && !boite.hidden ? (document.getElementById("avisText").textContent || "").slice(0, 40) : "";
@@ -846,6 +848,23 @@ def main():
         sources = json.loads((dossier / "sources.json").read_text(encoding="utf-8"))
         fin = date.fromisoformat(sources["dvf"]["periode"][1] + "-01")
         age = (date.today() - fin).days // 30
+        # Les taux du marché : frais de moins de six mois, et l'inflation par défaut
+        # qui suit toujours le taux de dépôt de la BCE — le jour où la BCE bouge, ce
+        # contrôle échoue : changer la valeur par défaut (et le texte qui cite sa
+        # date) est une décision, qui déplace le chiffre de l'accueil.
+        releves = json.loads((dossier / "taux.json").read_text(encoding="utf-8"))
+        an, mois = (int(x) for x in releves["credit"]["periode"].split("-"))
+        age_taux = (date.today().year - an)*12 + date.today().month - mois
+        controle("taux du marché de moins de six mois", age_taux <= 6,
+                 "crédits : %s, il y a %d mois" % (releves["credit"]["periode"], age_taux))
+        depot = releves["depot"]
+        jour = date.fromisoformat(depot["periode"])
+        MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
+                "septembre", "octobre", "novembre", "décembre"]
+        cite = "%s %s %d" % ("1ᵉʳ" if jour.day == 1 else jour.day, MOIS[jour.month - 1], jour.year)
+        controle("inflation par défaut = taux de dépôt de la BCE, date citée",
+                 abs(defauts["inflation"] - depot["valeur"]) < 1e-9 and cite in balisage and cite in methode,
+                 "%s %% depuis le %s, défaut %s %%" % (depot["valeur"], cite, defauts["inflation"]))
         # L'encadrement des loyers est une expérimentation datée : passé sa fin,
         # la liste relevée à la main doit être revue — prolongée ou retirée.
         enc = sources["encadrement"]
@@ -1017,6 +1036,8 @@ def main():
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
                     controle("seuils face à la bourse affichés", r.get("seuils") == 5, "%s tuiles" % r.get("seuils"))
+                    controle("taux du marché affichés sous le taux et l'inflation", r.get("tauxMarche") is True,
+                             str(r.get("tauxMarche")))
                     if largeur == 1360:
                         m = sonde_navigateur(chrome, base, fichier_pour("/calculatrice/"), largeur, SONDE_MARCHE) or {}
                         # « Lyon 3e proposée », « prix au m² situé », « loyer situé »,

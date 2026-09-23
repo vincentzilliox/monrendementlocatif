@@ -83,7 +83,7 @@ l'ANIL sont en Windows-1252 (en latin-1, « Œ » devient un caractère de
 contrôle) ; DVF et l'ANIL codent Paris, Lyon et Marseille par arrondissement,
 jamais par commune.
 
-### 2.3 Les sources — cinq branchées, cinq à venir
+### 2.3 Les sources — six branchées, quatre à venir
 
 | Source | Indicateur retenu | Usage | État |
 |---|---|---|---|
@@ -95,7 +95,7 @@ jamais par commune.
 | [Zonage A/B/C](https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-abc) et [zones tendues](https://www.data.gouv.fr/datasets/liste-des-communes-selon-le-zonage-tlv-1) (décret du 22 décembre 2025) | Tension du marché, zone tendue d'agglomération ou touristique | Résumé « face au marché », alerte sur le loyer de relocation | ✅ *Fait le 2026-09-23.* Un décret du 25 août 2026 pourrait avoir revu la liste : le fichier national n'est pas encore à jour. |
 | INSEE (recensement) et LOVAC (Cerema) | Taux de logements vacants, évolution de la population | Vacance par défaut réaliste | À faire |
 | [DPE logements existants](https://data.ademe.fr/datasets/dpe03existant) (ADEME, mensuel) | Part de passoires F et G par commune | Contexte du champ DPE (2.4) | À faire |
-| Banque de France, BCE, INSEE | Taux moyen des crédits à l'habitat, taux d'usure, Livret A, taux de dépôt de la BCE, IRL, inflation | Valeurs par défaut mises à jour à l'import | À faire. Attention : chaque changement de valeur par défaut déplace le chiffre de l'accueil et impose de régénérer l'image de partage. |
+| BCE, Eurostat, INSEE | Taux moyen des nouveaux crédits à l'habitat en France, taux de dépôt de la BCE, inflation sur un an (IPCH), évolution de l'IRL | Affichés sous le taux et l'inflation ; contrôle que l'inflation par défaut suit le taux de dépôt | ✅ *Fait le 2026-09-23.* Les valeurs par défaut ne changent pas seules : c'est une décision (chiffre de l'accueil, image de partage). Reste : le Livret A, que ni la BCE ni Eurostat ne publient, et le taux d'usure (Banque de France, API à clé). |
 | Tendance des prix (DVF, par département) | Évolution annuelle moyenne entre la première et la dernière année complète | Mise en regard de la revalorisation retenue | ✅ *Fait le 2026-09-23*, à partir de DVF plutôt que des indices Notaires-INSEE, qui ne descendent pas au département. |
 
 ### 2.4 ✅ Champ « Classe DPE » — fait le 2026-09-23

@@ -477,6 +477,16 @@ def main():
     # hypothèses — et la vitrine reçoit les valeurs par défaut relues dans le
     # balisage, jamais recopiées.
     prelude = '"use strict";\n'
+    # Les taux du marché, relevés par outils/donnees.py, entrent dans le script :
+    # la page les affiche sans rien charger. Sans eux, les repères se taisent.
+    marqueur = "const TAUX_MARCHE = {/* build.py : taux du marché */};"
+    if calculatrice.count(marqueur) != 1:
+        raise SystemExit("src/calculatrice.js : ligne TAUX_MARCHE introuvable")
+    taux = DONNEES / "taux.json"
+    # Valeurs et dates seulement : les adresses des sources restent dans donnees/.
+    releves = json.loads(taux.read_text(encoding="utf-8")) if taux.exists() else {}
+    calculatrice = calculatrice.replace(marqueur, "const TAUX_MARCHE = %s;" % json.dumps(
+        {k: {c: v[c] for c in ("valeur", "periode", "depuis") if c in v} for k, v in releves.items()}))
     (SITE / "js" / "app.js").write_text(
         prelude + "\n".join((moteur, graphiques, calculatrice, MENU_JS)) + "\n", encoding="utf-8")
     marqueur = "const DEFAUTS = {/* build.py : valeurs par défaut */};"

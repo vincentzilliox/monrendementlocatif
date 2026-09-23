@@ -107,6 +107,24 @@ ENCADREMENT = {
 ARRONDISSEMENTS = {"75056": "751", "69123": "6938", "13055": "132"}
 
 
+# Les taux du marché : affichés sous les champs, et confrontés aux valeurs par
+# défaut par verifier.py. Ils ne remplacent pas les valeurs par défaut : chacune
+# déplace le chiffre de la page d'accueil, et doit rester une décision.
+BCE = "https://data-api.ecb.europa.eu/service/data/"
+TAUX = {
+    "credit": {"serie": "MIR/M.FR.B.A2C.A.R.A.2250.EUR.N", "titre": "Taux des nouveaux crédits à l'habitat, France — BCE"},
+    "depot": {"serie": "FM/D.U2.EUR.4F.KR.DFR.LEV", "titre": "Taux de la facilité de dépôt — BCE"},
+}
+# L'inflation vient d'Eurostat : la série de la BCE s'est arrêtée au changement
+# de base de l'IPCH, en décembre 2025.
+EUROSTAT = {"url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=FR&coicop18=TOTAL&unit=RCH_A&lastTimePeriod=1",
+            "page": "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table",
+            "titre": "Inflation sur un an, IPCH France — Eurostat"}
+IRL = {"url": "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/001515333?lastNObservations=5",
+       "page": "https://www.insee.fr/fr/statistiques/serie/001515333",
+       "titre": "Indice de référence des loyers — INSEE"}
+
+
 def telecharger(url, nom, frais):
     CACHE.mkdir(parents=True, exist_ok=True)
     cible = CACHE / nom
@@ -258,6 +276,39 @@ def evolution(frais):
     return sortie, (a0, a1)
 
 
+def taux():
+    """Les derniers taux publiés, toujours frais : quelques octets par série.
+    Pour le taux de dépôt, la date à laquelle il a pris sa valeur actuelle."""
+    sortie = {}
+    for cle, t in TAUX.items():
+        n = 400 if cle == "depot" else 1
+        with urllib.request.urlopen(BCE + t["serie"] + "?format=csvdata&lastNObservations=%d" % n, timeout=60) as r:
+            lignes = list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
+        valeur, periode = float(lignes[-1]["OBS_VALUE"]), lignes[-1]["TIME_PERIOD"]
+        if cle == "depot":
+            depuis = periode
+            for l in reversed(lignes):
+                if float(l["OBS_VALUE"]) != valeur:
+                    break
+                depuis = l["TIME_PERIOD"]
+            periode = depuis
+        sortie[cle] = {"valeur": valeur, "periode": periode, "titre": t["titre"],
+                       "page": "https://data.ecb.europa.eu/data/datasets/" + t["serie"].replace("/", "/" + t["serie"].split("/")[0] + ".", 1)}
+    with urllib.request.urlopen(EUROSTAT["url"], timeout=60) as r:
+        d = json.loads(r.read().decode("utf-8"))
+    mois = next(iter(d["dimension"]["time"]["category"]["index"]))
+    sortie["inflation"] = {"valeur": float(next(iter(d["value"].values()))), "periode": mois,
+                           "titre": EUROSTAT["titre"], "page": EUROSTAT["page"]}
+    import re
+    with urllib.request.urlopen(IRL["url"], timeout=60) as r:
+        obs = re.findall(r'TIME_PERIOD="([^"]*)" OBS_VALUE="([^"]*)"', r.read().decode("utf-8"))
+    obs = sorted(obs)
+    (t0, v0), (t1, v1) = obs[-5], obs[-1]
+    sortie["irl"] = {"valeur": round((float(v1)/float(v0) - 1)*100, 2), "periode": t1, "depuis": t0,
+                     "titre": IRL["titre"], "page": IRL["page"]}
+    return sortie
+
+
 def main():
     frais = "--frais" in sys.argv
     print("Loyers d'annonce (ANIL)")
@@ -305,6 +356,8 @@ def main():
                    "references": {k: v[1] for k, v in ANIL["fichiers"].items()},
                    "note": "loyer d'annonce prédit au m², charges comprises, pour un logement de référence"},
     }
+    print("Taux du marché (BCE, INSEE)")
+    (SORTIE / "taux.json").write_text(json.dumps(taux(), ensure_ascii=False, indent=1), encoding="utf-8")
     for dossier in ("marche", "communes"):
         (SORTIE / dossier).mkdir(parents=True, exist_ok=True)
         for ancien in (SORTIE / dossier).glob("*.json"):

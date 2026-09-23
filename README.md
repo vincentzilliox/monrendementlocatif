@@ -63,7 +63,9 @@ le zonage A/B/C, la zone tendue, la tendance des prix du département, et
 signale l'encadrement des loyers avec un lien vers le simulateur officiel. Les
 données sont servies par le site lui-même, chargées à la demande (voir
 « Mettre à jour les données de marché »). Seuls liens sortants autorisés : les
-sources officielles en `.gouv.fr`.
+sources officielles en `.gouv.fr`. Sous le taux et l'inflation, les derniers taux
+publiés (BCE, Eurostat, INSEE), inscrits dans le script au moment de la
+construction ; ils éclairent la saisie sans changer les valeurs par défaut.
 
 **Seuils** — le prix maximal, le loyer minimal, le taux maximal, la
 revalorisation minimale et la vacance maximale auxquels le projet fait jeu égal avec la bourse,
@@ -216,7 +218,11 @@ python3 outils/donnees.py --frais  # ignore le cache
 ```
 
 Un contrôle échoue quand les ventes DVF ont plus de dix-huit mois : c'est le
-signal qu'un millésime a été manqué. Un autre échoue après le 24 novembre 2026
+signal qu'un millésime a été manqué. Les taux du marché (`donnees/taux.json`) sont relevés à chaque passage ; un
+contrôle échoue au-delà de six mois, un autre dès que le taux de dépôt de la
+BCE s'écarte de l'inflation par défaut ou de la date que citent l'infobulle et
+la page d'hypothèses — changer la valeur par défaut reste une décision, qui
+déplace le chiffre de l'accueil et l'image de partage. Un autre échoue après le 24 novembre 2026
 tant que la liste d'encadrement des loyers, relevée à la main dans
 `ENCADREMENT` (`outils/donnees.py`), n'a pas été revue : l'expérimentation
 s'arrête ce jour-là, sauf prolongation. Pour la Carte des loyers, changer d'année

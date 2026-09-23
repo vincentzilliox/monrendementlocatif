@@ -1407,6 +1407,7 @@ function render(){
   const p = read();
   R = compute(p);
   const marche = renderMarche(p);
+  renderTaux(p);
   const {rows, best, final} = R;
   const brut = p.avantImpot;
   const detenu = R.detenu;
@@ -1901,6 +1902,34 @@ function renderSeuils(p){
       : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
     return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
   }).join("");
+}
+
+/* ---------- taux du marché ---------- */
+// Relevés par outils/donnees.py (BCE, Eurostat, INSEE) et inscrits ici par
+// build.py. Ils éclairent la saisie ; ils ne la remplacent jamais.
+const TAUX_MARCHE = {"credit": {"valeur": 3.18, "periode": "2026-07"}, "depot": {"valeur": 2.5, "periode": "2026-09-16"}, "inflation": {"valeur": 2.6, "periode": "2026-08"}, "irl": {"valeur": 1.15, "periode": "2026-Q2", "depuis": "2025-Q2"}};
+const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const quand = periode => {
+  const t = /^(\d{4})-Q(\d)$/.exec(periode);
+  if(t) return `au ${t[2] === "1" ? "1ᵉʳ" : t[2] + "ᵉ"} trimestre ${t[1]}`;
+  const [a, m, j] = periode.split("-");
+  return (j ? `le ${+j === 1 ? "1ᵉʳ" : +j} ` : "en ") + MOIS[+m - 1] + " " + a;
+};
+const pct2 = v => v.toFixed(2).replace(".", ",") + " %";
+function renderTaux(p){
+  const T = TAUX_MARCHE;
+  if(T.credit){
+    const e = p.taux - T.credit.valeur;
+    $("repTaux").innerHTML = `Nouveaux crédits immobiliers en France : <b>${pct2(T.credit.valeur)}</b> en moyenne ${quand(T.credit.periode)} (BCE)`
+      + (Math.abs(e) < 0.15 ? "." : ` — vous êtes <b class="${e > 0 ? "neg" : "pos"}">${pts(e/100)} ${e > 0 ? "au-dessus" : "en dessous"}</b>.`);
+    $("repTaux").hidden = false;
+  }
+  if(T.inflation && T.depot){
+    $("repInflation").innerHTML = `Inflation constatée sur un an : <b>${pct2(T.inflation.valeur)}</b> ${quand(T.inflation.periode)} (Eurostat). `
+      + `Taux de dépôt de la BCE : ${pct2(T.depot.valeur)} depuis ${quand(T.depot.periode).replace(/^le /, "le ")}.`
+      + (T.irl ? ` Loyers : l'IRL a progressé de ${pct2(T.irl.valeur)} sur un an, ${quand(T.irl.periode)}.` : "");
+    $("repInflation").hidden = false;
+  }
 }
 
 /* ---------- données de marché ---------- */
