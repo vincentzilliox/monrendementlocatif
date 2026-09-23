@@ -196,6 +196,7 @@ setTimeout(function(){
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
   r.sens      = document.querySelectorAll("#plotSens svg rect").length;
   r.seuils    = document.querySelectorAll("#seuils .tile .v").length;
+
   var rt = document.getElementById("repTaux"), ri = document.getElementById("repInflation");
   r.tauxMarche = !!(rt && !rt.hidden && /BCE/.test(rt.textContent) && ri && !ri.hidden && /Eurostat/.test(ri.textContent));
   r.liens     = document.querySelectorAll("#suite a").length;
@@ -338,6 +339,12 @@ setTimeout(function(){
     if(dpe){
       dpe.value = "G"; dpe.dispatchEvent(new Event("change", {bubbles:true}));
       r.alertes += /gèle/.test(alertes()) && /2025/.test(alertes()) ? "1" : "0";
+      // Classé G : la case « sans travaux » apparaît, et arrête le loyer.
+      var st = document.getElementById("sansTravaux"), triG = document.getElementById("heroTri").textContent;
+      r.alertes += !document.getElementById("fSansTravaux").hidden ? "1" : "0";
+      st.checked = true; st.dispatchEvent(new Event("change", {bubbles:true}));
+      r.alertes += document.getElementById("heroTri").textContent !== triG && /Sans travaux, le calcul/.test(alertes()) ? "1" : "0";
+      st.checked = false; st.dispatchEvent(new Event("change", {bubbles:true}));
       dpe.value = ""; dpe.dispatchEvent(new Event("change", {bubbles:true}));
     }
   }
@@ -539,7 +546,16 @@ setTimeout(function(){
       // Effacer la commune efface les repères.
       c.value = ""; c.dispatchEvent(new Event("input", {bubbles:true}));
       r.efface = rp.hidden && rl.hidden;
-      fin();
+      // Les seuils se calculent en différé : on bascule vers l'inflation, on attend.
+      var bi = document.getElementById("cibleInflation"), avant = document.getElementById("seuils").textContent;
+      if(!bi){ fin(); return; }
+      bi.click();
+      setTimeout(function(){
+        r.cibleInflation = /pouvoir d'achat/.test(document.getElementById("seuilsTitre").textContent)
+          && document.getElementById("seuils").textContent !== avant && document.querySelectorAll("#seuils .tile").length === 5;
+        document.getElementById("cibleBourse").click();
+        fin();
+      }, 1200);
     }, 1500);
   }, 1500);
 }, 1200);
@@ -997,8 +1013,8 @@ def main():
                     # expliqué », « comptabilité au seul LMNP réel », « DPE G :
                     # gel et interdiction datée », « endettement au-delà de 35 %,
                     # revenus hors du lien », « revenus gardés à l'ouverture d'un lien »
-                    controle("angles morts signalés : LMP, apport nul, comptabilité, endettement, DPE",
-                             r.get("alertes") == "111111", r.get("alertes") or "sonde muette")
+                    controle("angles morts signalés : LMP, apport nul, comptabilité, endettement, DPE, sans travaux",
+                             r.get("alertes") == "11111111", r.get("alertes") or "sonde muette")
                     controle("achat comptant : les champs du crédit s'effacent, le rendement suit",
                              r.get("comptant") == "1111", r.get("comptant") or "sonde muette")
                     controle("bien détenu : ses champs, et seulement eux",
@@ -1042,6 +1058,7 @@ def main():
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
                     controle("seuils face à la bourse affichés", r.get("seuils") == 5, "%s tuiles" % r.get("seuils"))
+
                     controle("taux du marché affichés sous le taux et l'inflation", r.get("tauxMarche") is True,
                              str(r.get("tauxMarche")))
                     if largeur == 1360:
@@ -1054,6 +1071,8 @@ def main():
                             "hors charges" in (m.get("loyer") or ""),
                             m.get("lien"), m.get("efface"), m.get("resume") == 6, m.get("encadre"),
                             m.get("equivalent"), m.get("reprise") == "226000"))
+                        controle("seuils : bascule vers la frontière de l'inflation", m.get("cibleInflation") is True,
+                                 str(m.get("cibleInflation")))
                         controle("repères de marché : recherche, prix, loyer, lien, effacement, résumé, "
                                  "encadrement, équivalent charges comprises, valeur reprise",
                                  etat == "111111111" and not m.get("erreurs"),
@@ -1236,6 +1255,18 @@ var sp = seuils(site({}).p);
 lignes.push('seuils : a la valeur trouvee, le projet egale la bourse|'
   +(ecartsSeuils.length===0 && sp.length===5 && sp[0].k==='prix' && (sp[0].valeur < sp[0].actuel) === !sp[0].devant?1:0)
   +'|'+(ecartsSeuils[0] || 'prix max '+Math.round(sp[0].valeur)+' EUR'));
+// Seconde frontiere : a la valeur trouvee, le rendement egale l'inflation ; et
+// le prix maximal y est plus haut que face a la bourse, plus exigeante.
+var pi = site({}).p, si = seuils(pi, 'inflation'), ecartsInfl = [];
+si.forEach(function(sl){
+  if(sl.valeur === null) return;
+  var q = {}; for(var k in pi) q[k] = pi[k]; q[sl.k] = sl.valeur;
+  var t = compute(q).final.tri;
+  if(Math.abs(t - pi.inflation/100) > 1e-4) ecartsInfl.push(sl.k+' '+(t*100).toFixed(3)+' %');
+});
+lignes.push('seuils face a l inflation : rendement = inflation, prix maximal au-dessus de celui de la bourse|'
+  +(ecartsInfl.length===0 && si[0].k==='prix' && si[0].valeur > sp[0].valeur?1:0)
+  +'|'+(ecartsInfl[0] || 'prix max '+Math.round(si[0].valeur)+' EUR'));
 // Un projet qui s'autofinance sans mise n'a pas de TRI : pour la recherche des
 // seuils, il est infiniment devant la bourse, pas « non comparable ».
 var autoS = site({apport:0, loyer:3000});
@@ -1304,6 +1335,13 @@ var gG = run({dpe:'G'}), gD = run({dpe:'D'}), gN = run({});
 lignes.push('DPE F ou G : loyers geles, autres classes indexees|'
   +(gG.rows.every(function(r){ return Math.abs(r.loyers-gG.rows[0].loyers)<1e-6; })
     && run({dpe:'F'}).final.tri===gG.final.tri && gD.final.tri===gN.final.tri && gN.rows[1].loyers>gN.rows[0].loyers?1:0)+'|');
+// Sans travaux : plus de loyer a partir de l'annee d'interdiction, le reste
+// continue ; le rendement baisse.
+var st = run({finLocation:5}), sn = run({});
+lignes.push('sans travaux : le loyer s arrete a l interdiction, les charges continuent|'
+  +(st.rows.every(function(r){ return r.y < 5 ? r.loyers > 0 : r.loyers === 0; })
+    && st.rows[10].charges > 0 && st.final.tri < sn.final.tri && run({finLocation:0}).final.tri === sn.final.tri?1:0)
+  +'|'+(sn.final.tri*100).toFixed(2)+' -> '+(st.final.tri===null?'non calculable':(st.final.tri*100).toFixed(2)+' %'));
 // Les ordres de grandeur que la page d'hypotheses publie dans ses limites.
 var ref = site({}).final.tri;
 var gel = ref - site({dpe:'G'}).final.tri;

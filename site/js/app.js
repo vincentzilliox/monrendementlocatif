@@ -256,7 +256,10 @@ function compute(p){
   portefeuille = pFonds = pLivret = miseTotale = cash0;
 
   for(let y=1; y<=p.horizon; y++){
-    const loyers = p.loyer*12*Math.pow(1+indexLoyer/100, y-1)*(1-p.vacance/100);
+    // Un logement qu'on ne peut plus donner à bail ne rapporte plus rien, à
+    // partir de l'année `finLocation` ; charges, crédit et taxes continuent.
+    const loue = !(p.finLocation >= 1 && y >= p.finLocation);
+    const loyers = loue ? p.loyer*12*Math.pow(1+indexLoyer/100, y-1)*(1-p.vacance/100) : 0;
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
     const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
     const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn + compta)*Math.pow(1+p.indexCharges/100, y-1);
@@ -519,20 +522,23 @@ const SEUILS = [
   {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005},
   {k:"vacance",   nom:"Vacance maximale",         borne:() => [0, 90], precision:0.05}
 ];
-// Rendement du projet moins celui de la bourse, à l'horizon. Sans TRI, deux cas
+// Rendement du projet moins celui de la cible, à l'horizon : la bourse à mêmes
+// versements, ou l'inflation — la frontière où le projet cesse d'enrichir en
+// pouvoir d'achat. Ce sont les deux frontières de l'avis. Sans TRI, deux cas
 // opposés : rien n'est jamais sorti de la poche (infiniment bon), ou rien n'y
 // revient (infiniment mauvais).
-function ecartBourse(q){
+function ecartBourse(q, cible){
   const f = compute(Object.assign({}, q, {horizonSeul:true})).final;
   if(f.tri === null) return f.mise <= 1 ? 1 : -1;
+  if(cible === "inflation") return f.tri - q.inflation/100;
   return f.triBourse === null ? f.tri : f.tri - f.triBourse;
 }
-function seuils(p){
+function seuils(p, cible){
   const detenu = p.situation === "detenu";
   const credit = !p.comptant && (detenu ? p.crd > 0 : true);
-  const devant = ecartBourse(p) >= 0;
+  const devant = ecartBourse(p, cible) >= 0;
   return SEUILS.filter(s => !(s.achat && detenu) && !(s.credit && !credit)).map(s => {
-    const essai = v => ecartBourse(Object.assign({}, p, {[s.k]: v}));
+    const essai = v => ecartBourse(Object.assign({}, p, {[s.k]: v}), cible);
     const actuel = p[s.k];
     let [a, b] = s.borne(actuel), fa = essai(a), fb = essai(b);
     // Pas de changement de signe : la bourse gagne, ou perd, sur toute la plage.
@@ -1329,6 +1335,7 @@ FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
 DEFAULTS.ira = true;
 DEFAULTS.prixSuitInflation = true;
 DEFAULTS.comptant = false;
+DEFAULTS.sansTravaux = false;
 DEFAULTS.commune = "";
 // La commune voyage par son code INSEE ; le champ, lui, montre son nom.
 let communeCode = "";
@@ -1357,6 +1364,14 @@ function read(){
   p.regime = $("regime").value;
   p.tmi = parseFloat($("tmi").value);
   p.dpe = $("dpe").value;
+  // L'interdiction de louer, datée dans la simulation qui commence cette année.
+  // « Sans travaux », le loyer s'arrête ce jour-là ; la case n'existe — et ne
+  // pèse — que si l'interdiction tombe dans l'horizon.
+  const interdit = INTERDICTION_DPE[p.dpe];
+  p.rangInterdiction = interdit ? Math.max(1, interdit - new Date().getFullYear() + 1) : 0;
+  const interdictionVisible = p.rangInterdiction > 0 && p.rangInterdiction <= Math.max(1, Math.min(40, Math.round(parseFloat($("horizon").value) || 0)));
+  $("fSansTravaux").hidden = !interdictionVisible;
+  p.finLocation = interdictionVisible && $("sansTravaux").checked ? p.rangInterdiction : 0;
   p.typeBien = $("typeBien").value;
   p.commune = communeCode;
   p.ira = $("ira").checked;
@@ -1731,15 +1746,15 @@ function render(){
   // datée dans la simulation qui commence cette année.
   const interdit = INTERDICTION_DPE[p.dpe];
   if(interdit || R.gelLoyer){
-    const an0 = new Date().getFullYear(), rang = interdit - an0 + 1;
+    const rang = p.rangInterdiction;
     const gel = R.gelLoyer ? `Classé ${p.dpe}, le logement ne peut plus voir son loyer augmenter : le calcul le gèle au niveau saisi. ` : "";
     const quand = !interdit ? ""
       : rang <= 1 ? `Il ne peut plus être donné à bail depuis ${interdit} : ni nouveau locataire, ni renouvellement.`
       : rang <= p.horizon ? `À partir de ${interdit} — l'année ${rang} de la simulation —, il ne pourra plus être donné à bail.`
       : `L'interdiction de le louer, en ${interdit}, tombe après l'horizon simulé.`;
-    warns.push(gel + quand + (interdit && rang <= p.horizon
-      ? " Le calcul suppose qu'il reste loué : comptez les travaux qui le sortent de cette classe dans vos postes."
-      : ""));
+    warns.push(gel + quand + (!interdit || rang > p.horizon ? ""
+      : p.finLocation ? ` Sans travaux, le calcul arrête le loyer à partir de l'année ${p.finLocation} : charges, crédit et taxe foncière continuent.`
+      : " Le calcul suppose qu'il reste loué : comptez les travaux qui le sortent de cette classe dans vos postes, ou cochez « Sans travaux » pour voir ce que coûte l'inaction."));
   }
   if(detenu && R.deja >= 30)
     warns.push(`Détenu depuis ${R.deja} ans : la plus-value est déjà exonérée d'impôt et de prélèvements sociaux, revendre ne coûte plus que les frais d'agence.`);
@@ -1903,12 +1918,17 @@ const FORMAT_SEUIL = {
   indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)},
   vacance:   {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)}
 };
+// La frontière cherchée : la bourse (par défaut) ou l'inflation. Non retenue :
+// la page s'ouvre sur la comparaison que porte le verdict.
+let cibleSeuils = "bourse";
 function renderSeuils(p){
-  $("seuils").innerHTML = seuils(p).map(s => {
+  $("seuilsTitre").textContent = cibleSeuils === "inflation" ? "Pour ne pas perdre de pouvoir d'achat" : "Pour faire jeu égal avec la bourse";
+  $("seuils").innerHTML = seuils(p, cibleSeuils).map(s => {
     const F = FORMAT_SEUIL[s.k];
     const valeur = s.valeur === null ? "—" : F.v(s.valeur);
     const sous = s.valeur === null
-      ? (s.toujours ? "devant la bourse sur toute la plage" : "hors de portée : la bourse reste devant")
+      ? (s.toujours ? `devant ${cibleSeuils === "inflation" ? "l'inflation" : "la bourse"} sur toute la plage`
+                    : `hors de portée : ${cibleSeuils === "inflation" ? "l'inflation" : "la bourse"} reste devant`)
       : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
     return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
   }).join("");
@@ -2083,6 +2103,15 @@ function renderMarche(p){
   return M;
 }
 
+function setCibleSeuils(v){
+  cibleSeuils = v;
+  $("cibleBourse").setAttribute("aria-pressed", v === "bourse" ? "true" : "false");
+  $("cibleInflation").setAttribute("aria-pressed", v === "inflation" ? "true" : "false");
+  render();
+}
+$("cibleBourse").addEventListener("click", () => setCibleSeuils("bourse"));
+$("cibleInflation").addEventListener("click", () => setCibleSeuils("inflation"));
+
 /* ---------- persistence & chrome ---------- */
 const STORE = "rentaloc.v2";
 // v1 enregistrait les taux de placement en nominal ; ils sont désormais saisis
@@ -2094,7 +2123,7 @@ const TAUX_REDEFINIS = ["bourse","fondsEuros","livretA"];
 function save(){
   try{
     const o = {v:2, ira:$("ira").checked, prixSuitInflation:$("prixSuitInflation").checked,
-      comptant:$("comptant").checked, items, commune:communeCode, communeNom:$("commune").value};
+      comptant:$("comptant").checked, sansTravaux:$("sansTravaux").checked, items, commune:communeCode, communeNom:$("commune").value};
     FIELDS.concat(SELECTS).forEach(k => o[k] = $(k).value);
     localStorage.setItem(STORE, JSON.stringify(o));
   }catch(e){}
@@ -2116,6 +2145,7 @@ function load(){
     if(typeof o.ira === "boolean") $("ira").checked = o.ira;
     if(typeof o.prixSuitInflation === "boolean") $("prixSuitInflation").checked = o.prixSuitInflation;
     if(typeof o.comptant === "boolean") $("comptant").checked = o.comptant;
+    if(typeof o.sansTravaux === "boolean") $("sansTravaux").checked = o.sansTravaux;
     if(o.items !== undefined) items = assainir(o.items);
     if(CODE_COMMUNE.test(o.commune || "")){ communeCode = o.commune; $("commune").value = String(o.communeNom || ""); }
   }catch(e){}
@@ -2190,6 +2220,7 @@ $("regime").addEventListener("change", () => { appliquerRegime($("regime").value
 $("prixSuitInflation").addEventListener("change", render);
 $("ira").addEventListener("change", render);
 $("comptant").addEventListener("change", render);
+$("sansTravaux").addEventListener("change", render);
 
 // Les champs des postes sont délégués : on met à jour le modèle sans reconstruire
 // la liste, sinon la saisie perdrait le focus à chaque frappe.
@@ -2315,7 +2346,7 @@ function retablirDefauts(){
 
 // L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
 // un guide peut ouvrir le calculateur pré-réglé (/#regime=reel-foncier).
-const BOOLS = ["ira","prixSuitInflation","comptant"];
+const BOOLS = ["ira","prixSuitInflation","comptant","sansTravaux"];
 // Les champs que « Copier le lien » inscrit depuis qu'il existe (11 septembre
 // 2026). Un lien qui les porte tous est un lien partagé, pas une adresse
 // retouchée à la main ni un lien de l'assistant. Liste figée : c'est un fait passé.

@@ -32,7 +32,8 @@ retenu à 70 %) et l'emprunt maximal ; ces revenus ne voyagent jamais dans un
 lien partagé.
 
 **Classe énergétique** — facultative. F ou G gèle les loyers ; l'interdiction de
-louer (G 2025, F 2028, E 2034) est datée dans la simulation par une alerte.
+louer (G 2025, F 2028, E 2034) est datée dans la simulation par une alerte, et la
+case « Sans travaux » arrête le loyer cette année-là.
 
 **Bien déjà détenu** — la calculatrice a deux situations. « J'achète un bien » :
 la mise est l'apport, le crédit part de zéro. « Je possède déjà le bien » : les
@@ -72,7 +73,7 @@ construction ; ils éclairent la saisie sans changer les valeurs par défaut.
 **Seuils** — le prix maximal, le loyer minimal, le taux maximal, la
 revalorisation minimale et la vacance maximale auxquels le projet fait jeu égal avec la bourse,
 trouvés par dichotomie sur le moteur (`seuils()`), affichés sous le graphique
-des placements.
+des placements. Une bascule cherche la seconde frontière : celle de l'inflation.
 
 **Monnaie** — inflation explicite, fixée par défaut au taux directeur de la BCE
 (facilité de dépôt). Prix, loyers et charges la suivent :

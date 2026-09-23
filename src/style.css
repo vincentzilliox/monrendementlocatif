@@ -369,7 +369,8 @@ input[type=number]{-moz-appearance:textfield}
 .warn a{color:inherit; text-decoration:underline}
 /* ce qu'il faudrait pour égaler la bourse, sous le graphique des placements */
 .seuils{margin-top:18px; padding-top:16px; border-top:1px solid var(--border)}
-.seuils h3{font-size:14px; font-weight:600; margin:0 0 10px; display:flex; align-items:center; gap:5px}
+.seuilstete{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 10px}
+.seuils h3{font-size:14px; font-weight:600; margin:0; display:flex; align-items:center; gap:5px}
 .seuils .tiles{grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px}
 .seuils .v{font-size:19px}
 .seuils .s{font-size:12px; color:var(--text-muted); margin-top:2px}

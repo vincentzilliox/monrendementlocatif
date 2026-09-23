@@ -171,6 +171,7 @@
             <option value="G">G</option>
           </select>
         </div>
+        <label class="check" id="fSansTravaux" hidden><input id="sansTravaux" type="checkbox"> Sans travaux : le logement cesse d'être loué à l'interdiction</label>
       </div>
     </details>
 
@@ -379,7 +380,13 @@
       <div class="plot" id="plotNet"><div class="tip" id="tipNet"></div></div>
       <p class="axisnote" id="netNote"></p>
       <div class="seuils">
-        <h3>Pour faire jeu égal avec la bourse<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque valeur est celle à laquelle le rendement du projet rejoint exactement celui du même argent placé en bourse, <span data-brut="avant impôt">net d'impôt</span>, les autres hypothèses restant fixes. Au-dessus du prix maximal ou sous le loyer minimal, la bourse fait mieux : c'est le prix à négocier, ou le loyer à obtenir.</span></span></h3>
+        <div class="seuilstete">
+          <h3><span id="seuilsTitre">Pour faire jeu égal avec la bourse</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque valeur est celle à laquelle le rendement du projet rejoint exactement celui du même argent placé en bourse, <span data-brut="avant impôt">net d'impôt</span>, les autres hypothèses restant fixes. Au-dessus du prix maximal ou sous le loyer minimal, la bourse fait mieux : c'est le prix à négocier, ou le loyer à obtenir. « Inflation » cherche la seconde frontière : celle où le projet cesse de préserver votre pouvoir d'achat.</span></span></h3>
+          <div class="seg" role="group" aria-label="Frontière cherchée">
+            <button type="button" id="cibleBourse" aria-pressed="true">Bourse</button>
+            <button type="button" id="cibleInflation" aria-pressed="false">Inflation</button>
+          </div>
+        </div>
         <div class="tiles" id="seuils"></div>
       </div>
     </section>

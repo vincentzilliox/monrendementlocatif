@@ -256,7 +256,10 @@ function compute(p){
   portefeuille = pFonds = pLivret = miseTotale = cash0;
 
   for(let y=1; y<=p.horizon; y++){
-    const loyers = p.loyer*12*Math.pow(1+indexLoyer/100, y-1)*(1-p.vacance/100);
+    // Un logement qu'on ne peut plus donner à bail ne rapporte plus rien, à
+    // partir de l'année `finLocation` ; charges, crédit et taxes continuent.
+    const loue = !(p.finLocation >= 1 && y >= p.finLocation);
+    const loyers = loue ? p.loyer*12*Math.pow(1+indexLoyer/100, y-1)*(1-p.vacance/100) : 0;
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
     const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
     const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn + compta)*Math.pow(1+p.indexCharges/100, y-1);
@@ -519,20 +522,23 @@ const SEUILS = [
   {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005},
   {k:"vacance",   nom:"Vacance maximale",         borne:() => [0, 90], precision:0.05}
 ];
-// Rendement du projet moins celui de la bourse, à l'horizon. Sans TRI, deux cas
+// Rendement du projet moins celui de la cible, à l'horizon : la bourse à mêmes
+// versements, ou l'inflation — la frontière où le projet cesse d'enrichir en
+// pouvoir d'achat. Ce sont les deux frontières de l'avis. Sans TRI, deux cas
 // opposés : rien n'est jamais sorti de la poche (infiniment bon), ou rien n'y
 // revient (infiniment mauvais).
-function ecartBourse(q){
+function ecartBourse(q, cible){
   const f = compute(Object.assign({}, q, {horizonSeul:true})).final;
   if(f.tri === null) return f.mise <= 1 ? 1 : -1;
+  if(cible === "inflation") return f.tri - q.inflation/100;
   return f.triBourse === null ? f.tri : f.tri - f.triBourse;
 }
-function seuils(p){
+function seuils(p, cible){
   const detenu = p.situation === "detenu";
   const credit = !p.comptant && (detenu ? p.crd > 0 : true);
-  const devant = ecartBourse(p) >= 0;
+  const devant = ecartBourse(p, cible) >= 0;
   return SEUILS.filter(s => !(s.achat && detenu) && !(s.credit && !credit)).map(s => {
-    const essai = v => ecartBourse(Object.assign({}, p, {[s.k]: v}));
+    const essai = v => ecartBourse(Object.assign({}, p, {[s.k]: v}), cible);
     const actuel = p[s.k];
     let [a, b] = s.borne(actuel), fa = essai(a), fb = essai(b);
     // Pas de changement de signe : la bourse gagne, ou perd, sur toute la plage.

@@ -104,8 +104,10 @@ jamais par commune.
 l'interdiction de louer est datée dans la simulation par une alerte
 (`INTERDICTION_DPE`), pas simulée — le calcul suppose les travaux faits.
 Contrôles : « DPE F ou G : loyers gelés, autres classes indexées » et la sonde
-des angles morts. **Reste** : la part de passoires par commune (2.3), et un
-scénario « sans travaux » où le loyer s'arrête à la date d'interdiction.
+des angles morts. La part de passoires par commune (2.3) et le scénario « sans travaux » — plus
+de loyer à partir de l'année d'interdiction (`finLocation`) — sont faits le même
+jour. Reste une finesse : un bail en cours court jusqu'à son terme, le calcul
+arrête le loyer un peu tôt.
 
 Le projet initial :
 
@@ -152,10 +154,8 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   le TRI final — 44 ms les quatre, la sensibilité en profite). La vacance
   maximale s'y est ajoutée le même jour. Reste : les proposer sur la page
   d'accueil.
-- **Seuils de bascule** dans le graphique de sensibilité — *en partie fait* :
-  les seuils face à la bourse sont exactement la frontière entre « excellente
-  affaire » et « belle réserve de valeur ». Reste la seconde frontière, celle
-  de l'inflation (rendement réel nul).
+- ✅ **Seuils de bascule** — *faits le 2026-09-23* : une bascule « Bourse | Inflation »
+  au-dessus des seuils cherche l'une ou l'autre frontière de l'avis.
 - ✅ **Capacité d'emprunt** — *fait le 2026-09-23.* Revenus nets et crédits en
   cours (facultatifs, repliés dans le financement) donnent le taux
   d'endettement au sens du HCSF, l'emprunt maximal au même taux et une alerte
