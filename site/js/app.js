@@ -1022,26 +1022,32 @@ function drawColumns(host, tip, cfg){
 }
 
 /* ---------- tornade : sensibilité ---------- */
-// Une ligne par paramètre, une barre vers la gauche pour le scénario défavorable
-// et une vers la droite pour le favorable, en points de rendement annualisé.
+// Une ligne par paramètre. L'axe est le rendement lui-même, pas un écart : la
+// ligne verticale est celui du projet, et chaque barre part de là vers le
+// rendement qu'on obtiendrait si ce seul paramètre bougeait — à gauche le
+// scénario défavorable, à droite le favorable. Sous le nom, l'écart essayé ;
+// sur un téléphone, nom et écart passent au-dessus de la barre, qui prend
+// alors toute la largeur.
 function drawTornado(host, tip, cfg){
-  const rows = cfg.rows, n = rows.length;
-  const W = Math.max(320, host.clientWidth), rh = 32;
-  const M = {t:8, r:64, b:30, l:Math.min(170, Math.max(120, W*0.28))};
+  const rows = cfg.rows, n = rows.length, ref = cfg.ref;
+  const W = Math.max(320, host.clientWidth), etroit = W < 520, rh = etroit ? 46 : 38;
+  const M = etroit ? {t:24, r:44, b:30, l:44} : {t:24, r:56, b:30, l:Math.min(170, Math.max(120, W*0.28))};
   const H = M.t + n*rh + M.b;
   host.querySelectorAll("svg").forEach(el=>el.remove());
   const svg = svgEl("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img",
     tabindex:"0", "aria-label":cfg.label||""});
   if(!n){ host.appendChild(svg); return; }
-  const ext = Math.max(0.0025, ...rows.flatMap(r => [Math.abs(r.lo), Math.abs(r.hi)]));
-  const ticks = niceTicks(-ext, ext, 4);
+  // Une plage d'au moins un demi-point, pour qu'un projet peu sensible ne
+  // dessine pas des écarts minuscules en barres géantes.
+  let lo = Math.min(ref, ...rows.map(r => r.lo)), hi = Math.max(ref, ...rows.map(r => r.hi));
+  if(hi - lo < 0.005){ const c = (hi+lo)/2; lo = c - 0.0025; hi = c + 0.0025; }
+  const ticks = niceTicks(lo, hi, etroit ? 3 : 4);
   const xMin = ticks[0], xMax = ticks[ticks.length-1];
   const iw = W - M.l - M.r;
   const X = v => M.l + iw*(v-xMin)/(xMax-xMin || 1);
-  const gridC = css("--border"), ink3 = css("--text-muted"), up = css("--up"), down = css("--down");
+  const gridC = css("--border"), ink = css("--text"), ink3 = css("--text-muted"), up = css("--up"), down = css("--down");
   ticks.forEach(t => {
-    const zero = Math.abs(t) < 1e-9;
-    svg.appendChild(svgEl("line",{x1:X(t),x2:X(t),y1:M.t,y2:H-M.b,stroke:zero?ink3:gridC,"stroke-width":zero?1.2:1}));
+    svg.appendChild(svgEl("line",{x1:X(t),x2:X(t),y1:M.t,y2:H-M.b,stroke:gridC,"stroke-width":1}));
     const lb = svgEl("text",{x:X(t), y:H-10, "text-anchor":"middle", fill:ink3, "font-size":"11"});
     lb.textContent = cfg.fmtAxis(t);
     svg.appendChild(lb);
@@ -1050,37 +1056,48 @@ function drawTornado(host, tip, cfg){
   const montrer = i => {
     courant = Math.max(0, Math.min(n-1, i));
     tip.innerHTML = cfg.tip(courant); tip.classList.add("on");
-    const yc = M.t + rh*courant + rh/2;
-    placerInfobulle(tip, host, X(0)*(host.clientWidth/W),
-      Math.max(0, (yc - rh/2 - 4)*(host.clientWidth/W) - 40));
+    placerInfobulle(tip, host, X(ref)*(host.clientWidth/W),
+      Math.max(0, (M.t + rh*courant - 4)*(host.clientWidth/W) - 40));
   };
   const cacher = () => { courant = -1; tip.classList.remove("on"); };
   rows.forEach((r,i) => {
-    const yc = M.t + rh*i + rh/2, h = rh*0.5;
+    const yc = M.t + rh*i + (etroit ? 30 : rh/2), h = 16;
     [[r.lo, down, r.loText], [r.hi, up, r.hiText]].forEach(([v, col, txt]) => {
+      // Au bout d'une échelle, un côté ne bouge pas : ni barre ni chiffre.
+      if(Math.abs(v - ref) < 1e-9) return;
       const enc = css(col === up ? "--up-ink" : "--down-ink");
-      const x0 = X(0), x1 = X(v);
+      const x0 = X(ref), x1 = X(v);
       const w = Math.abs(x1-x0);
       if(w > 0.5) svg.appendChild(svgEl("rect",{x:Math.min(x0,x1), y:yc-h/2, width:w, height:h, rx:2, fill:col}));
-      const droite = v >= 0;
+      const droite = v >= ref;
       const tv = svgEl("text",{x:droite ? x1+5 : x1-5, y:yc+4, "text-anchor":droite?"start":"end", fill:enc, "font-size":"11", "font-weight":"600"});
       tv.textContent = txt;
       svg.appendChild(tv);
     });
-    const lb = svgEl("text",{x:M.l-10, y:yc+4, "text-anchor":"end", fill:css("--text"), "font-size":"12"});
+    const lb = svgEl("text", etroit ? {x:0, y:yc-14, fill:ink, "font-size":"12"}
+      : {x:M.l-10, y:yc-2, "text-anchor":"end", fill:ink, "font-size":"12"});
     lb.textContent = r.label;
+    const ec = svgEl(etroit ? "tspan" : "text", etroit ? {dx:8, fill:ink3, "font-size":"11"}
+      : {x:M.l-10, y:yc+12, "text-anchor":"end", fill:ink3, "font-size":"11"});
+    ec.textContent = r.ecart;
+    (etroit ? lb : svg).appendChild(ec);
     svg.appendChild(lb);
-    const hit = svgEl("rect",{x:0, y:yc-rh/2, width:W, height:rh, fill:"transparent"});
+    const hit = svgEl("rect",{x:0, y:M.t + rh*i, width:W, height:rh, fill:"transparent"});
     hit.addEventListener("pointermove", () => montrer(i));
     hit.addEventListener("pointerleave", cacher);
     svg.appendChild(hit);
   });
+  // La référence par-dessus les barres, et son chiffre au-dessus du tracé.
+  svg.appendChild(svgEl("line",{x1:X(ref),x2:X(ref),y1:M.t-4,y2:H-M.b,stroke:ink,"stroke-width":1.5}));
+  const rl = svgEl("text",{x:X(ref), y:M.t-9, "text-anchor":"middle", fill:ink, "font-size":"11", "font-weight":"600"});
+  rl.textContent = cfg.refText;
+  svg.appendChild(rl);
   svg.addEventListener("focus", () => montrer(courant < 0 ? 0 : courant));
   svg.addEventListener("blur", cacher);
   svg.addEventListener("keydown", ev => auClavier(ev, n, courant, montrer, cacher));
   host.appendChild(svg);
-  resumeTexte(host, cfg.label || "", ["Paramètre", "Scénario défavorable", "Scénario favorable"],
-    rows.map(r => [r.label, r.loText, r.hiText]));
+  resumeTexte(host, cfg.label || "", ["Paramètre", "Écart essayé", "Scénario défavorable", "Scénario favorable"],
+    rows.map(r => [r.label, r.ecart, r.loText, r.hiText]));
 }
 
 function tipRow(color, label, value){
@@ -1286,23 +1303,41 @@ function meneurRegimes(regs, horizon){
   return phrase + ".";
 }
 
-// Sensibilité : même graphique des deux côtés, mêmes libellés.
+// Sensibilité : même graphique des deux côtés, mêmes libellés. Tout se lit en
+// rendement annualisé à l'horizon, celui du projet au centre.
 function cfgSensibilite(sens, triRef){
+  // Au bout d'une échelle — la tranche à 0 % ou à 45 % —, un côté ne bouge
+  // pas : il n'a rien à dire, on ne l'affiche pas.
+  const bouge = c => Math.abs(c.d) > 1e-9;
+  const pas = v => { const x = Math.round(v*1000)/10; return (x < 0 ? "−" : "") + String(Math.abs(x)).replace(".", ",") + " %"; };
   return {
     label: "Sensibilité du rendement annualisé",
-    fmtAxis: v => (v>0?"+":v<0?"−":"") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt",
-    rows: sens.map(s => ({label:s.nom, lo:s.lo, hi:s.hi, loText:pts(s.lo), hiText:pts(s.hi)})),
+    ref: triRef, refText: "Ce projet : " + pct(triRef),
+    fmtAxis: pas,
+    rows: sens.map(s => ({label:s.nom,
+      ecart: bouge(s.fav) && bouge(s.def) ? "± " + s.txt : (bouge(s.fav) ? s.fav.s : s.def.s) + " " + s.txt,
+      lo:triRef + s.lo, hi:triRef + s.hi, loText:pct(s.def.tri), hiText:pct(s.fav.tri)})),
     tip: i => {
       const s = sens[i];
-      // Au bout d'une échelle — la tranche à 0 % ou à 45 % —, un côté ne bouge
-      // pas : il n'a rien à dire, on ne l'affiche pas.
-      const bouge = c => Math.abs(c.d) > 1e-9;
-      return `<div class="th">${s.nom} · ${bouge(s.fav) && bouge(s.def) ? "±" : ""}${s.txt}</div>` +
-        (bouge(s.fav) ? tipRow(css("--up"), `${s.nom} ${s.fav.s}${s.txt}`, sPct(s.fav.tri)) : "") +
-        (bouge(s.def) ? tipRow(css("--down"), `${s.nom} ${s.def.s}${s.txt}`, sPct(s.def.tri)) : "") +
-        tipRow("transparent","Aujourd'hui", sPct(triRef));
+      const ligne = (c, col) => tipRow(col, `${s.nom} ${c.s}${s.txt}`, `${pct(c.tri)} <span style="color:var(--text-muted)">(${pts(c.d)})</span>`);
+      return `<div class="th">${s.nom}</div>` +
+        (bouge(s.fav) ? ligne(s.fav, css("--up")) : "") +
+        (bouge(s.def) ? ligne(s.def, css("--down")) : "") +
+        tipRow(css("--text"), "Ce projet", pct(triRef));
     }
   };
+}
+// La phrase sous le graphique : le paramètre le plus sensible, dans les deux
+// sens, en rendement plutôt qu'en points.
+function phraseSensibilite(sens, triRef, horizon){
+  if(!sens.length) return "";
+  const s = sens[0];
+  const sens1 = c => `avec ${s.txt} ${c.s === "+" ? "de plus" : "de moins"}`;
+  const cotes = [s.def, s.fav].filter(c => Math.abs(c.d) > 1e-9);
+  const [a, b] = cotes;
+  // Espaces insécables : ni « 5,9 » séparé de son %, ni guillemet orphelin.
+  return (`À ${horizon} ans, c'est « ${s.nom} » qui pèse le plus : ${sens1(a)}, le rendement passe de ${pct(triRef)} à ${pct(a.tri)} par an`
+    + (b ? ` ; ${sens1(b)}, à ${pct(b.tri)}.` : ".")).replace(/ (%|»)/g, "\u00a0$1").replace(/« /g, "«\u00a0");
 }
 
 // Ce qu'il faudrait pour faire jeu égal avec la bourse, ou avec l'inflation :
@@ -1903,17 +1938,17 @@ function renderComplements(p){
     + (R.detenu ? " au-delà d'une vente aujourd'hui." : ".");
 
   // Sensibilité : douze calculs de plus, différés pour ne pas freiner la saisie.
+  // Elle se lit à l'horizon, comme les seuils : le curseur de la cascade n'y
+  // touche pas — ses essais sont calculés à l'horizon, la référence doit l'être aussi.
   const host = $("plotSens");
   if(!host.querySelector("svg")) host.insertAdjacentHTML("beforeend", '<p class="pending">Calcul…</p>');
   planifier(() => {
     host.querySelectorAll(".pending").forEach(el => el.remove());
-    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; $("seuils").innerHTML = ""; return; }
+    if(final.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; $("seuils").innerHTML = ""; return; }
     renderSeuils(p);
-    const sens = sensibilite(p, f.tri);
-    drawTornado(host, $("tipSens"), cfgSensibilite(sens, f.tri));
-    $("sensNote").textContent = sens.length
-      ? `Le paramètre le plus sensible est ${sens[0].nom.toLowerCase()} : ${sens[0].txt} d'écart déplace le rendement de ${pts(sens[0].lo)} à ${pts(sens[0].hi)} par an.`
-      : "";
+    const sens = sensibilite(p, final.tri);
+    drawTornado(host, $("tipSens"), cfgSensibilite(sens, final.tri));
+    $("sensNote").textContent = phraseSensibilite(sens, final.tri, p.horizon);
   });
 }
 

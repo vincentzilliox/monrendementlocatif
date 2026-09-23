@@ -435,13 +435,13 @@
         <section class="sub" id="sensibilite">
           <div class="phead">
             <div>
-              <h2>Ce qui fait bouger le rendement<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Variation du rendement annualisé à l'horizon quand un seul paramètre change, les autres restant fixes. Les barres les plus longues désignent les hypothèses à vérifier en priorité avant de signer : ce sont celles dont une erreur d'estimation coûte le plus cher.</span></span></h2>
-              <p>Les barres les plus longues sont les hypothèses à vérifier avant de signer.</p>
+              <h2>Ce qui fait bouger le rendement<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque ligne refait le calcul en changeant un seul paramètre de l'écart indiqué sous son nom, les autres restant fixes. La ligne verticale est votre rendement annualisé à l'horizon ; la barre rouge montre où il tomberait si l'hypothèse se révélait moins bonne, la verte où il monterait si elle se révélait meilleure. Les barres les plus longues sont celles dont une erreur d'estimation coûte le plus cher. Le graphique se lit toujours à l'horizon : le curseur de revente ci-dessus ne le change pas.</span></span></h2>
+              <p>Votre rendement si une seule hypothèse change. Les barres les plus longues sont à vérifier avant de signer.</p>
             </div>
           </div>
           <div class="legend">
-            <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario favorable</span></span>
-            <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Scénario défavorable</span></span>
+            <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Si l'hypothèse se révèle moins bonne</span></span>
+            <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Si elle se révèle meilleure</span></span>
           </div>
           <div class="plot" id="plotSens"><div class="tip" id="tipSens"></div></div>
           <p class="axisnote" id="sensNote"></p>

@@ -214,17 +214,26 @@ setTimeout(function(){
     var t = document.querySelectorAll("#plotCasc svg text.chiffre");
     return t.length ? t[t.length - 1].textContent : "";
   };
+  // La sensibilite se lit a l'horizon : elle prenait l'annee du curseur pour
+  // reference, et ses barres partaient dans tous les sens. Elle est differee ;
+  // la sonde la fait tourner sur-le-champ pour la relire.
+  var sensTexte = function(){ return (document.getElementById("sensNote")||{}).textContent || ""; };
+  var differer = window.planifier;
+  if(differer) window.planifier = function(fn){ fn(); };
   if(curseur){
     r.cascMax = curseur.max;
     r.cascHorizon = totalCascade();
     var triAvant = (document.getElementById("heroTri")||{}).textContent;
+    var sensAvant = sensTexte();
     curseur.value = 1;
     curseur.dispatchEvent(new Event("input", {bubbles:true}));
     r.cascAn1 = totalCascade();
-    r.triStable = (document.getElementById("heroTri")||{}).textContent === triAvant;
+    r.triStable = (document.getElementById("heroTri")||{}).textContent === triAvant
+                  && sensAvant !== "" && sensTexte() === sensAvant;
     curseur.value = curseur.max;
     curseur.dispatchEvent(new Event("input", {bubbles:true}));
   }
+  if(differer) window.planifier = differer;
   // Les infobulles : chaque bouton doit porter un texte, et le clavier doit
   // pouvoir l'ouvrir puis le refermer, sans quoi l'explication serait perdue
   // pour qui n'a pas de souris. La bulle doit aussi rester dans l'ecran.

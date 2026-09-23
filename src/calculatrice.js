@@ -566,17 +566,17 @@ function renderComplements(p){
     + (R.detenu ? " au-delà d'une vente aujourd'hui." : ".");
 
   // Sensibilité : douze calculs de plus, différés pour ne pas freiner la saisie.
+  // Elle se lit à l'horizon, comme les seuils : le curseur de la cascade n'y
+  // touche pas — ses essais sont calculés à l'horizon, la référence doit l'être aussi.
   const host = $("plotSens");
   if(!host.querySelector("svg")) host.insertAdjacentHTML("beforeend", '<p class="pending">Calcul…</p>');
   planifier(() => {
     host.querySelectorAll(".pending").forEach(el => el.remove());
-    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; $("seuils").innerHTML = ""; return; }
+    if(final.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; $("seuils").innerHTML = ""; return; }
     renderSeuils(p);
-    const sens = sensibilite(p, f.tri);
-    drawTornado(host, $("tipSens"), cfgSensibilite(sens, f.tri));
-    $("sensNote").textContent = sens.length
-      ? `Le paramètre le plus sensible est ${sens[0].nom.toLowerCase()} : ${sens[0].txt} d'écart déplace le rendement de ${pts(sens[0].lo)} à ${pts(sens[0].hi)} par an.`
-      : "";
+    const sens = sensibilite(p, final.tri);
+    drawTornado(host, $("tipSens"), cfgSensibilite(sens, final.tri));
+    $("sensNote").textContent = phraseSensibilite(sens, final.tri, p.horizon);
   });
 }
 
