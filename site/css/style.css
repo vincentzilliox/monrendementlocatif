@@ -264,6 +264,7 @@ input[type=number]{-moz-appearance:textfield}
 .derived .tot{padding-top:7px; border-top:1px solid var(--border); font-weight:600}
 .derived dt.tot{color:var(--text)}
 .derived dd.tot{font-size:14.5px}
+.derived dd.neg{color:var(--down-ink)}
 /* postes de travaux dépréciables */
 .tvxlist{display:flex; flex-direction:column; gap:9px}
 .tvxlist.sans-deduc .deduc{display:none}   /* « déductible » ne vaut qu'au réel foncier */

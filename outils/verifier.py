@@ -317,6 +317,18 @@ setTimeout(function(){
     rg.value = "micro-foncier"; rg.dispatchEvent(new Event("change", {bubbles:true}));
     r.alertes += visibleReel && cpt.hidden ? "1" : "0";
     rg.value = rg0; rg.dispatchEvent(new Event("change", {bubbles:true}));
+    // Capacite d'emprunt : l'alerte tombe au-dela de 35 %%, et les revenus ne
+    // voyagent jamais dans un lien, ni ne s'effacent a l'ouverture d'un lien complet.
+    var rev = document.getElementById("revenus");
+    if(rev && typeof lienHypotheses === "function"){
+      var rev0 = rev.value;
+      poser(rev, "2000");
+      var lienRev = lienHypotheses(valeursFormulaire(), null, items, true);
+      r.alertes += /35 %%/.test(alertes()) && lienRev.indexOf("revenus") < 0 ? "1" : "0";
+      history.replaceState(null, "", location.pathname + "#complet=1&loyer=900"); depuisHash();
+      r.alertes += rev.value === "2000" ? "1" : "0";
+      poser(rev, rev0);
+    }
     var dpe = document.getElementById("dpe");
     if(dpe){
       dpe.value = "G"; dpe.dispatchEvent(new Event("change", {bubbles:true}));
@@ -851,9 +863,10 @@ def main():
                     # loyer couvert : aucun crédit », « décocher rend le départ »
                     # « seuil LMP signalé », « apport nul : rendement calculé et
                     # expliqué », « comptabilité au seul LMNP réel », « DPE G :
-                    # gel et interdiction datée »
-                    controle("angles morts signalés : LMP, apport nul, comptabilité, DPE",
-                             r.get("alertes") == "1111", r.get("alertes") or "sonde muette")
+                    # gel et interdiction datée », « endettement au-delà de 35 %,
+                    # revenus hors du lien », « revenus gardés à l'ouverture d'un lien »
+                    controle("angles morts signalés : LMP, apport nul, comptabilité, endettement, DPE",
+                             r.get("alertes") == "111111", r.get("alertes") or "sonde muette")
                     controle("achat comptant : les champs du crédit s'effacent, le rendement suit",
                              r.get("comptant") == "1111", r.get("comptant") or "sonde muette")
                     controle("bien détenu : ses champs, et seulement eux",
@@ -1055,6 +1068,14 @@ var t30 = tr(mf), t45 = tr(Object.assign({}, mf, {tmi:45})), tl = tr({});
 lignes.push('sensibilite : tranche d imposition|'
   +(t30 && t30.lo<0 && t30.hi>0 && t45 && Math.min(Math.abs(t45.lo),Math.abs(t45.hi))<1e-12 && !tl?1:0)+'|'
   +(t30?pts(t30.lo)+' / '+pts(t30.hi):'absente'));
+// Capacite d'emprunt : ratio du HCSF, loyer retenu a 70 %. Reponse connue, puis
+// l'emprunt maximal doit tomber exactement sur 35 %.
+var ce = run({revenus:4000, credits:300}), E1 = endettement(ce.p, ce);
+var attenduTaux = (300 + ce.mensualite)/(4000 + 0.7*900);
+var pMax = run({revenus:4000, credits:300, apport: ce.besoin - E1.empruntMax}), E2 = endettement(pMax.p, pMax);
+lignes.push('capacite d emprunt : ratio HCSF, emprunt maximal a 35 %|'
+  +(Math.abs(E1.taux-attenduTaux)<1e-12 && Math.abs(E2.taux-0.35)<1e-9 && endettement(run({}).p, run({}))===null?1:0)
+  +'|'+(E1.taux*100).toFixed(1)+' %, max '+E1.empruntMax.toFixed(0)+' EUR');
 // DPE F ou G : le loyer ne bouge plus d'une annee a l'autre ; les autres classes
 // suivent l'indexation, comme sans DPE renseigne.
 var gG = run({dpe:'G'}), gD = run({dpe:'D'}), gN = run({});

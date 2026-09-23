@@ -401,6 +401,27 @@ function compute(p){
   };
 }
 
+/* ---------- capacité d'emprunt ---------- */
+// Norme du Haut Conseil de stabilité financière : les mensualités de crédit,
+// assurance comprise, ne dépassent pas 35 % des revenus nets. La banque ne
+// retient en général que 70 % du loyer attendu, pour la vacance et les charges.
+const PLAFOND_ENDETTEMENT = 0.35, LOYER_RETENU = 0.70;
+// `revenus` et `credits` sont mensuels ; sans revenus, pas de ratio. Le capital
+// maximal se déduit de la mensualité : à taux et durée fixés, elle est
+// proportionnelle au capital, assurance comprise.
+function endettement(p, R){
+  const revenus = Number(p.revenus) || 0;
+  if(revenus <= 0 || R.emprunt <= 0) return null;
+  const credits = Math.max(0, Number(p.credits) || 0);
+  const assiette = revenus + LOYER_RETENU*p.loyer;
+  const mensualiteMax = PLAFOND_ENDETTEMENT*assiette - credits;
+  return {
+    taux: (credits + R.mensualite)/assiette,
+    assiette, mensualiteMax,
+    empruntMax: R.mensualite > 0 ? Math.max(0, R.emprunt*mensualiteMax/R.mensualite) : null
+  };
+}
+
 /* ---------- comparatif des régimes ---------- */
 const REGIMES = [
   ["micro-foncier", "Nu\nmicro-foncier"],

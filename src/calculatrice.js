@@ -13,7 +13,11 @@ const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux
   "valeur","prixAchat","depuis","travauxPasses","crd","dureeRestante",
   "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
   "ps","psPV","cfe","compta","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
-  "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds"];
+  "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds",
+  "revenus","credits"];
+// Ce qui décrit le foyer et non le projet : retenu dans ce navigateur, jamais
+// inscrit dans un lien, et conservé quand on ouvre le lien de quelqu'un d'autre.
+const PRIVES = ["revenus","credits"];
 const SELECTS = ["situation","regime","tmi","dpe"];
 const DEFAULTS = {};
 FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
@@ -272,6 +276,14 @@ function render(){
   ].map(([k,v,nn,cl]) => `<div class="tile"><span class="k">${k}${bulle(nn)}</span><span class="v ${cl} num">${v}</span></div>`).join("");
 
   $("dMens").textContent = eur.format(R.mensualite);
+  // Capacité d'emprunt : un ratio de banque, pas un accord.
+  const E = endettement(p, R);
+  $("dEndet").textContent = E ? pct(E.taux) : "—";
+  $("dEndet").className = E && E.taux > PLAFOND_ENDETTEMENT ? "neg" : "";
+  $("dEmpruntMax").textContent = E && E.empruntMax !== null ? eur.format(E.empruntMax) : "—";
+  $("dCapCap").textContent = E
+    ? `Le plafond de 35 % s'applique à ${eur.format(E.assiette)} de revenus par mois : les vôtres, plus 70 % du loyer. Il laisse ${eur.format(Math.max(0, E.mensualiteMax))} de mensualité, assurance comprise, au taux et sur la durée saisis.`
+    : "Renseignez vos revenus pour connaître le taux d'endettement que la banque calculera.";
   $("dCout2").textContent = eur.format(R.coutCredit);
   const dureePret = detenu ? p.dureeRestante : p.duree;
   $("dCap2").textContent = R.emprunt > 0 && dureePret > 0
@@ -386,6 +398,8 @@ function render(){
       : "Rien ne sort de votre poche : ni apport, ni effort d'épargne, les loyers paient tout dès le premier jour. Un rendement rapporté à une mise nulle n'a pas de sens — le gain net et la trésorerie disent ce que rapporte le projet.");
   else if(R.cash0 < 1 && !detenu)
     warns.push("Sans apport, votre mise est l'effort d'épargne : le rendement se mesure sur les mensualités que les loyers ne couvrent pas. Une banque qui finance aussi les frais demandera en général un dossier solide.");
+  if(E && E.taux > PLAFOND_ENDETTEMENT)
+    warns.push(`Avec ce crédit, vos mensualités atteindraient ${pct(E.taux)} de vos revenus, loyer compté à 70 % : au-delà de 35 %, les banques refusent en général — elles ne peuvent déroger que pour une part de leurs dossiers, d'abord la résidence principale. À ce taux et sur cette durée, vous pourriez emprunter environ ${eur.format(E.empruntMax)}.`);
   // Au-delà de 23 000 € de recettes meublées, le statut dépend des revenus
   // d'activité du foyer, que la calculatrice ne connaît pas : on prévient.
   const seuilLMP = (p.regime === "lmnp-micro" || p.regime === "lmnp-reel") ? rows.find(r => r.loyers > 23000) : null;
@@ -626,7 +640,7 @@ function syncRegime(){
 // capital restant dû — et ce qu'une vente aujourd'hui rendrait. La case
 // « comptant » sert aux deux : sans crédit, les champs du crédit s'effacent.
 const CHAMPS_SITUATION = {
-  achat:  ["fPrix", "fNotaire", "fFraisAcq", "fApport", "dFinancement", "fDuree", "mCredit"],
+  achat:  ["fPrix", "fNotaire", "fFraisAcq", "fApport", "dFinancement", "fDuree", "mCredit", "mCapacite"],
   detenu: ["fValeur", "fPrixAchat", "fDepuis", "fTravauxPasses", "fCrd", "fDureeRestante", "dVente"]
 };
 const TOUS_CHAMPS_SITUATION = [...new Set(Object.values(CHAMPS_SITUATION).flat())];
@@ -642,7 +656,7 @@ function syncSituation(){
   const visibles = CHAMPS_SITUATION[detenu ? "detenu" : "achat"];
   TOUS_CHAMPS_SITUATION.forEach(id => { $(id).hidden = !visibles.includes(id); });
   if(comptant){
-    ["fApport", "fDuree", "fCrd", "fDureeRestante", "mCredit"].forEach(id => { $(id).hidden = true; });
+    ["fApport", "fDuree", "fCrd", "fDureeRestante", "mCredit", "mCapacite"].forEach(id => { $(id).hidden = true; });
     CHAMPS_CREDIT.forEach(id => { $(id).hidden = true; });
   } else {
     CHAMPS_CREDIT.forEach(id => { $(id).hidden = false; });
@@ -805,7 +819,7 @@ const CHAMPS_TARDIFS = {compta: "0"};
 // produit un sans jamais voir ce formulaire. Ici on ne fait que lire les champs.
 function valeursFormulaire(){
   const valeurs = {};
-  FIELDS.concat(SELECTS).forEach(k => valeurs[k] = $(k).value);
+  FIELDS.concat(SELECTS).forEach(k => { if(!PRIVES.includes(k)) valeurs[k] = $(k).value; });
   BOOLS.forEach(k => valeurs[k] = $(k).checked);
   return valeurs;
 }
@@ -824,7 +838,11 @@ function depuisHash(){
   const parts = h.split("&");
   // Un lien complet repart de l'ouverture avant de s'appliquer ; un lien ordinaire
   // se pose sur ce que load() vient de relire.
-  if(parts.includes(LIEN_COMPLET)) retablirDefauts();
+  if(parts.includes(LIEN_COMPLET)){
+    const foyer = PRIVES.map(k => $(k).value);
+    retablirDefauts();
+    PRIVES.forEach((k, i) => { $(k).value = foyer[i]; });
+  }
   const vus = new Set();
   let regime = null;
   parts.forEach(part => {
@@ -841,7 +859,7 @@ function depuisHash(){
       if(![...$(k).options].some(o => o.value === v)) return;
       $(k).value = v; vus.add(k);
       if(k === "regime") regime = v;
-    } else if(FIELDS.includes(k)){
+    } else if(FIELDS.includes(k) && !PRIVES.includes(k)){
       if(!isFinite(parseFloat(v))) return;
       $(k).value = v; vus.add(k);
     }

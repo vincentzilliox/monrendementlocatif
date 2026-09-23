@@ -27,6 +27,12 @@ au rythme indiqué, parce qu'une cuisine de vingt ans ne vaut plus rien.
 
 **Financement** — amortissement mensuel réel, assurance emprunteur, frais de
 dossier, pénalités de remboursement anticipé — ou achat comptant, sans crédit.
+Avec les revenus du foyer, le taux d'endettement au sens du HCSF (35 %, loyer
+retenu à 70 %) et l'emprunt maximal ; ces revenus ne voyagent jamais dans un
+lien partagé.
+
+**Classe énergétique** — facultative. F ou G gèle les loyers ; l'interdiction de
+louer (G 2025, F 2028, E 2034) est datée dans la simulation par une alerte.
 
 **Bien déjà détenu** — la calculatrice a deux situations. « J'achète un bien » :
 la mise est l'apport, le crédit part de zéro. « Je possède déjà le bien » : les
@@ -241,10 +247,9 @@ Les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un
 conseiller fiscal. La page `/hypotheses-de-calcul/` tient la liste publique, en
 trois groupes, chacun avec le sens du biais et le moyen de le contourner :
 
-- **corrigeables dans le panneau** — DPE et gel des loyers, encadrement des
-  loyers, gros travaux futurs, mois sans loyer, dérive de la taxe foncière ;
-- **pouvant changer la réponse** — capacité d'emprunt (35 % d'endettement),
-  tranche d'imposition fixe, statut LMP, changement de régime en cours de
+- **corrigeables dans le panneau** — interdiction de louer d'une passoire
+  thermique, encadrement des loyers, gros travaux futurs, mois sans loyer, dérive de la taxe foncière ;
+- **pouvant changer la réponse** — tranche d'imposition fixe, statut LMP, changement de régime en cours de
   route, transmission ou résidence principale, changements de législation ;
 - **hors du cadre** — SCI à l'IS, démembrement, location courte durée,
   colocation, Pinel, Denormandie, Malraux, prêt in fine ou différé, IFI.

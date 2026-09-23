@@ -177,6 +177,17 @@
             <label class="check" id="fIra"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
           </div>
         </details>
+        <details class="more" id="mCapacite">
+          <summary>Votre capacité d'emprunt</summary>
+          <div class="fields">
+            <div class="f"><div class="fl"><label for="revenus">Revenus nets du foyer</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Avant impôt sur le revenu, par mois, hors ce projet. Ils servent au seul taux d'endettement : ils ne changent pas le rendement, et ne voyagent jamais dans un lien partagé.</span></span></div><div class="wrap uw"><input id="revenus" type="number" step="100" min="0" value="0"><span class="unit">€/m</span></div></div>
+            <div class="f"><div class="fl"><label for="credits">Crédits en cours</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les mensualités que vous remboursez déjà : résidence principale, voiture, autre bien locatif.</span></span></div><div class="wrap uw"><input id="credits" type="number" step="50" min="0" value="0"><span class="unit">€/m</span></div></div>
+            <dl class="derived" id="dCapacite">
+              <dt>Taux d'endettement</dt><dd id="dEndet">—</dd>
+              <dt class="tot">Emprunt maximal<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCapCap" hidden></span></span></dt><dd class="tot" id="dEmpruntMax">—</dd>
+            </dl>
+          </div>
+        </details>
       </div>
     </details>
 
