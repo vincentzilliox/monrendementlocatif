@@ -260,6 +260,11 @@ function compute(p){
     const L = sch.years[y-1] || {int:0,pri:0,ass:0,crd:0};
     const annuite = L.int + L.pri + L.ass;
     const fraisEmprunt = L.int + L.ass;
+    // Au réel, les frais de dossier et de garantie se déduisent l'année de leur
+    // paiement, avec les intérêts : comme eux, ils ne créent au foncier qu'un
+    // déficit reportable. Payés le premier jour, ils sont déjà dans le coût : la
+    // déduction joue sur l'impôt, pas sur la trésorerie.
+    const fraisEmpruntDeduc = fraisEmprunt + (y === 1 ? fraisDossier : 0);
 
     let impot = 0, amortAn = 0;
     if(p.regime === "micro-foncier" || p.regime === "lmnp-micro"){
@@ -270,7 +275,7 @@ function compute(p){
       // comptée dans le coût d'acquisition.
       const travauxDeduits = y===1 ? travauxDeductibles : 0;
       const chargesDeduc = charges + travauxDeduits;
-      const base = loyers - chargesDeduc - fraisEmprunt;
+      const base = loyers - chargesDeduc - fraisEmpruntDeduc;
       deficits = deficits.filter(d => y - d.y <= 10);
       if(base >= 0){
         let reste = base;
@@ -280,7 +285,7 @@ function compute(p){
       } else {
         const netHorsEmprunt = loyers - chargesDeduc;
         let global = 0, report = 0;
-        if(netHorsEmprunt < 0){ global = -netHorsEmprunt; report = fraisEmprunt; }
+        if(netHorsEmprunt < 0){ global = -netHorsEmprunt; report = fraisEmpruntDeduc; }
         else { report = -base; }
         const impute = Math.min(global, p.plafondDeficit);
         report += global - impute;
@@ -292,7 +297,7 @@ function compute(p){
       const dotImm = (deja+y<=p.amortBatiAns?amortBati:0) + (y<=p.amortTvxAns?amortTvx:0);
       const dotMob = y<=p.amortMobAns ? amortMob : 0;
       amortAn = dotImm + dotMob;
-      let base = loyers - charges - fraisEmprunt;
+      let base = loyers - charges - fraisEmpruntDeduc;
       deficitsBIC = deficitsBIC.filter(d => y - d.y <= 10);
       if(base < 0){
         deficitsBIC.push({y, amt:-base});

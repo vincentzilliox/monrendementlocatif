@@ -148,9 +148,10 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   au-delà de 35 % (`endettement()` dans le moteur). Les revenus sont
   `PRIVES` : jamais dans un lien, conservés à l'ouverture du lien d'un autre.
   Reste : le reste à vivre, et la méthode différentielle de certaines banques.
-- **Frais de dossier et de garantie déductibles** au réel foncier (l'année du
-  paiement) et au LMNP réel (étalés sur la durée du prêt). Ils sont aujourd'hui
-  payés sans être déduits : effet faible, mais c'est une inexactitude.
+- ✅ **Frais de dossier et de garantie déductibles** — *fait le 2026-09-23*,
+  l'année de leur paiement, au réel foncier (déficit reportable seulement)
+  comme au LMNP réel. Le rendement d'ouverture ne bouge pas : l'impôt y est
+  déjà nul.
 
 ---
 

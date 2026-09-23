@@ -1068,6 +1068,17 @@ var t30 = tr(mf), t45 = tr(Object.assign({}, mf, {tmi:45})), tl = tr({});
 lignes.push('sensibilite : tranche d imposition|'
   +(t30 && t30.lo<0 && t30.hi>0 && t45 && Math.min(Math.abs(t45.lo),Math.abs(t45.hi))<1e-12 && !tl?1:0)+'|'
   +(t30?pts(t30.lo)+' / '+pts(t30.hi):'absente'));
+// Frais de dossier au reel : deduits l'annee 1, a emprunt egal (l'apport les
+// absorbe), sur un scenario sans amortissement ni travaux ou la base est
+// positive. L'impot de l'annee 1 baisse alors exactement de frais x (TMI + PS).
+var fdAvec = {partBati:0, mobilier:0, loyer:2000, items:[], fraisDossier:2500, apport:37500};
+var fdSans = {partBati:0, mobilier:0, loyer:2000, items:[], fraisDossier:0, apport:35000};
+var ecartFd = function(o){ var a=run(Object.assign({}, fdSans, o)), b=run(Object.assign({}, fdAvec, o));
+  return a.rows[0].impot - b.rows[0].impot; };
+var eLmnp = ecartFd({}), eFoncier = ecartFd({regime:'reel-foncier', ps:17.2, cfe:0}), eMicro = ecartFd({regime:'micro-foncier', ps:17.2, cfe:0, abattement:30});
+lignes.push('frais de dossier deduits l annee 1 au reel, pas au micro|'
+  +(Math.abs(eLmnp-2500*0.486)<0.01 && Math.abs(eFoncier-2500*0.472)<0.01 && Math.abs(eMicro)<1e-9?1:0)
+  +'|'+eLmnp.toFixed(0)+' et '+eFoncier.toFixed(0)+' EUR');
 // Capacite d'emprunt : ratio du HCSF, loyer retenu a 70 %. Reponse connue, puis
 // l'emprunt maximal doit tomber exactement sur 35 %.
 var ce = run({revenus:4000, credits:300}), E1 = endettement(ce.p, ce);
