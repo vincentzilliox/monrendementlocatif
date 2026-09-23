@@ -212,7 +212,14 @@ régimes avec l'ancienne et la nouvelle fonction — les bases de plus-value du
 scénario de référence tombent hors des bandes de lissage, tous les guides
 restent exacts.
 
-### A.2 🟠 Taux de prélèvements sociaux différencié meublé/nu (18,6 % vs 17,2 %)
+### A.2 ✅ Taux de prélèvements sociaux différencié meublé/nu (18,6 % vs 17,2 %)
+
+**Confirmé le 2026-09-23** : le BOFiP (BOI-BIC-CHAMP-40-10, version du 15 avril
+2026) rattache les bénéfices LMNP aux prélèvements sociaux sur les revenus du
+patrimoine (CSS, art. L. 136-6), dont l'article 12 de la loi n° 2025-1403 du
+30 décembre 2025 (LFSS 2026) a porté la CSG à 10,6 %, revenus fonciers et
+plus-values immobilières exceptés. La réserve de la page d'hypothèses est
+remplacée par ces deux références. Historique ci-dessous.
 
 ```js
 const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"18.6", "lmnp-reel":"18.6"};

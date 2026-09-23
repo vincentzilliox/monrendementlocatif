@@ -52,9 +52,9 @@ Tous ces contrôles ont été validés par mutation (huit réintroductions, huit
   (inflation 2 %, Livret A −0,3 %) qui ne suit plus les valeurs d'ouverture.
   C'est voulu pour les invariants ; mais tout chiffre présenté comme « le
   scénario par défaut » doit passer par `site()`, qui relit `index.html`.
-- **Prélèvements sociaux à 18,6 % en meublé.** De nombreuses sources concordent
-  désormais (article 12 de la LFSS 2026). La réserve de la page d'hypothèses
-  peut être allégée après une vérification sur le BOFiP.
+- ✅ **Prélèvements sociaux à 18,6 % en meublé** — *confirmés le 2026-09-23* :
+  BOFiP (BOI-BIC-CHAMP-40-10 du 15 avril 2026, CSS art. L. 136-6) et article 12
+  de la LFSS 2026 ; la page d'hypothèses cite les deux au lieu de sa réserve.
 
 ---
 
