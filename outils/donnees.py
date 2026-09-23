@@ -19,9 +19,13 @@ dépôt ; `--frais` les refait.
 import csv
 import io
 import unicodedata
+import xml.etree.ElementTree as ET
+import zipfile
 import json
 import pathlib
 import sys
+import time
+import urllib.parse
 import urllib.request
 from collections import defaultdict
 
@@ -123,6 +127,35 @@ EUROSTAT = {"url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1
 IRL = {"url": "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/001515333?lastNObservations=5",
        "page": "https://www.insee.fr/fr/statistiques/serie/001515333",
        "titre": "Indice de référence des loyers — INSEE"}
+
+
+# Les DPE depuis juillet 2021 (ADEME) : combien de logements diagnostiqués sont
+# classés F ou G, commune par commune. L'API agrège ; elle limite à 50 requêtes
+# par minute sans compte, d'où l'attente entre deux départements.
+DPE = {"api": "https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant",
+       "page": "https://data.ademe.fr/datasets/dpe03existant",
+       "titre": "DPE des logements existants depuis juillet 2021 — ADEME"}
+# Sous ce nombre de DPE, la part d'une commune dit peu : on se replie sur le département.
+DPE_MIN = 30
+
+
+# La taxe foncière : les taux votés (commune, syndicats, intercommunalité —
+# variables E12, E22 et E32 du REI de la DGFiP) de deux millésimes, et la
+# revalorisation légale des bases entre les deux (article 1518 bis du CGI).
+# Ensemble, ils disent de combien la taxe d'un même logement a augmenté.
+REI = {
+    "url": "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/impots-locaux-fichier-de-recensement-des-elements-dimposition-a-la-fiscalite-dir/attachments/rei_%s",
+    "fichiers": {"2022": "2022_fichier_notice_trace_zip", "2025": "2025_fichier_notice_tracezip"},
+    "page": "https://data.economie.gouv.fr/explore/dataset/impots-locaux-fichier-de-recensement-des-elements-dimposition-a-la-fiscalite-dir/",
+    "titre": "Recensement des éléments d'imposition (REI) — DGFiP",
+    "revalorisation": {"2023": 7.1, "2024": 3.9, "2025": 1.7},
+}
+TAUX_TF = ("E12", "E22", "E32")
+# Le classeur 2022 titre ses colonnes en toutes lettres ; les CSV suivants, par code.
+LIBELLES_REI = {"DEPARTEMENT": "DEP", "COMMUNE": "COM",
+                "FB - COMMUNE / TAUX NET": "E12",
+                "FB - SYNDICATS ET ORG. ASSIMILES / TAUX NET": "E22",
+                "FB - GFP / TAUX APPLICABLE SUR LE TERRITOIRE DE LA COMMUNE": "E32"}
 
 
 def telecharger(url, nom, frais):
@@ -309,6 +342,97 @@ def taux():
     return sortie
 
 
+def passoires(frais, departements):
+    """{code: [DPE classés F ou G, DPE]} par commune, et par département.
+    Un fichier de cache par département : un import interrompu reprend où il
+    s'était arrêté."""
+    dossier = CACHE / "dpe"
+    dossier.mkdir(parents=True, exist_ok=True)
+    def compter(qs):
+        url = DPE["api"] + "/values_agg?field=code_insee_ban&agg_size=1000&qs=" + urllib.parse.quote(qs)
+        with urllib.request.urlopen(url, timeout=120) as r:
+            d = json.loads(r.read().decode("utf-8"))
+        time.sleep(1.4)
+        return {a["value"]: a["total"] for a in d["aggs"]}, d["total"]
+    communes, parDep = {}, {}
+    for dep in sorted(departements):
+        cache = dossier / ("%s.json" % dep)
+        if frais or not cache.exists():
+            tous, n = compter("code_departement_ban:%s" % dep)
+            fg, n_fg = compter("code_departement_ban:%s AND etiquette_dpe:(F OR G)" % dep)
+            cache.write_text(json.dumps({"tous": tous, "fg": fg, "n": n, "n_fg": n_fg}))
+        c = json.loads(cache.read_text())
+        parDep[dep] = [c["n_fg"], c["n"]]
+        for code, n in c["tous"].items():
+            if n >= DPE_MIN:
+                communes[code] = [c["fg"].get(code, 0), n]
+    return communes, parDep
+
+
+def lignes_rei(chemin):
+    """Les lignes d'un REI, qu'il soit livré en CSV (2023 et après) ou en
+    classeur Excel (2022) : celui-ci se lit en flux, 140 Mo compressés."""
+    z = zipfile.ZipFile(chemin)
+    noms = z.namelist()
+    csvs = [n for n in noms if n.lower().endswith(".csv")]
+    if csvs:
+        yield from csv.DictReader(io.TextIOWrapper(z.open(csvs[0]), encoding="utf-8", errors="replace"), delimiter=";")
+        return
+    classeur = zipfile.ZipFile(z.open([n for n in noms if n.startswith("REI_") and n.endswith(".xlsx")][0]))
+    ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+    partages = [("".join(t.text or "" for t in si.iter(ns + "t")))
+                for _, si in ET.iterparse(classeur.open("xl/sharedStrings.xml")) if si.tag == ns + "si"]
+    entete = None
+    colonne = lambda ref: ref.rstrip("0123456789")
+    for _, ligne in ET.iterparse(classeur.open("xl/worksheets/sheet1.xml")):
+        if ligne.tag != ns + "row":
+            continue
+        valeurs = {}
+        for c in ligne.iter(ns + "c"):
+            v = c.find(ns + "v")
+            if v is None:
+                t = c.find(ns + "is")
+                texte = "".join(x.text or "" for x in t.iter(ns + "t")) if t is not None else ""
+            else:
+                texte = partages[int(v.text)] if c.get("t") == "s" else v.text
+            valeurs[colonne(c.get("r"))] = texte
+        ligne.clear()
+        if entete is None:
+            entete = {k: LIBELLES_REI.get(v.strip(), v) for k, v in valeurs.items()}
+            continue
+        yield {entete[k]: v for k, v in valeurs.items() if k in entete}
+
+
+def taxe_fonciere(frais, codes):
+    """{code: [taux an0, taux an1, évolution annuelle en %]} : le taux global
+    de taxe foncière bâtie, et la hausse annuelle moyenne de la taxe d'un même
+    logement — taux votés et revalorisation des bases."""
+    taux = {}
+    for an, suffixe in REI["fichiers"].items():
+        chemin = telecharger(REI["url"] % suffixe, "rei-%s.zip" % an, frais)
+        taux[an] = {}
+        for l in lignes_rei(chemin):
+            try:
+                t = sum(float((l.get(k) or "0").replace(",", ".")) for k in TAUX_TF)
+            except ValueError:
+                continue
+            taux[an][(l.get("DEP") or "").strip() + (l.get("COM") or "").strip()] = t
+    a0, a1 = sorted(taux)
+    bases = 1.0
+    for an, r in REI["revalorisation"].items():
+        if a0 < an <= a1:
+            bases *= 1 + r/100
+    sortie = {}
+    for code, t1 in taux[a1].items():
+        t0 = taux[a0].get(code)
+        if not t0 or not t1:
+            continue
+        evolution = ((t1/t0)*bases) ** (1/(int(a1) - int(a0))) - 1
+        for c in etendre(code, codes):
+            sortie[c] = [round(t0, 2), round(t1, 2), round(evolution*100, 2)]
+    return sortie, (a0, a1)
+
+
 def main():
     frais = "--frais" in sys.argv
     print("Loyers d'annonce (ANIL)")
@@ -318,6 +442,10 @@ def main():
 
     print("Zonages, encadrement, tendance des prix")
     zones = zonages(frais, list(noms))
+    print("Taxe foncière (REI de la DGFiP)")
+    tf, (tf0, tf1) = taxe_fonciere(frais, list(noms))
+    print("Passoires thermiques (ADEME, deux requêtes par département)")
+    dpe, dpeDep = passoires(frais, {departement(c) for c in noms})
     encadre = encadrement(noms)
     tendance, (a0, a1) = evolution(frais)
 
@@ -333,6 +461,10 @@ def main():
         fiche.update(zones.get(code, {}))
         if code in encadre:
             fiche["e"] = encadre[code]
+        if code in dpe:
+            fiche["dpe"] = dpe[code]
+        if code in tf:
+            fiche["tf"] = tf[code]
         marche[dep]["c"][code] = fiche
         n = sum(fiche[k][1] for k in ("pa", "pm") if k in fiche)
         index.append([code, nom, n])
@@ -340,6 +472,8 @@ def main():
         marche[dep]["d"] = dict(ventes.get(dep, {}))
         if tendance.get(dep):
             marche[dep]["d"]["ev"] = tendance[dep]
+        if dpeDep.get(dep, [0, 0])[1] >= DPE_MIN:
+            marche[dep]["d"]["dpe"] = dpeDep[dep]
     # Les communes les plus actives d'abord : à nom égal, c'est celle qu'on cherche.
     index.sort(key=lambda c: (c[1].lower(), -c[2]))
 
@@ -350,6 +484,10 @@ def main():
         "tendance": {"titre": DVF["titre"], "page": DVF["page"], "periode": [a0, a1],
                      "note": "prix typique au m² du département, première et dernière année complète"},
         "zonage": {"titre": ZONAGE_ABC["titre"], "page": ZONAGE_ABC["page"]},
+        "dpe": {"titre": DPE["titre"], "page": DPE["page"], "minimum": DPE_MIN},
+        "taxeFonciere": {"titre": REI["titre"], "page": REI["page"], "periode": [tf0, tf1],
+                         "revalorisation": REI["revalorisation"],
+                         "note": "taux votés (commune, syndicats, intercommunalité) et revalorisation légale des bases"},
         "tension": {"titre": ZONAGE_TLV["titre"], "page": ZONAGE_TLV["page"]},
         "encadrement": {k: ENCADREMENT[k] for k in ("titre", "page", "verifie", "fin")},
         "loyers": {"titre": ANIL["titre"], "page": ANIL["page"], "periode": ANIL["periode"],

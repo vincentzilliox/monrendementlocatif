@@ -753,6 +753,19 @@ function renderMarche(p){
     tuiles.push([`Prix de l'ancien, département`, `${sPct(T.taux)} /an`,
       `${T.an0}-${T.an1} · vous retenez <b class="${retenu > T.taux + 0.01 ? "neg" : ""}">${sPct(retenu)} /an</b>`]);
   }
+  if(C.taxeFonciere && S.taxeFonciere){
+    const F = C.taxeFonciere, P = S.taxeFonciere.periode, retenu = p.indexCharges/100;
+    const tx = v => v.toFixed(1).replace(".", ",") + " %";
+    // Des charges indexées bien sous la hausse récente de la taxe foncière
+    // sous-estiment ce qu'elle coûtera.
+    tuiles.push(["Taxe foncière de la commune", `${sPct(F.evolution)} /an`,
+      `${P[0]}-${P[1]} · taux ${tx(F.taux0)} → ${tx(F.taux1)} · vous indexez les charges de <b class="${retenu < F.evolution - 0.01 ? "neg" : ""}">${sPct(retenu)} /an</b>`]);
+  }
+  if(C.passoires){
+    const P = C.passoires;
+    tuiles.push(["Passoires thermiques", `${Math.round(P.part*100)} %`,
+      `des ${eur1.format(P.dpe)} DPE ${P.echelle === "commune" ? "de la commune" : "du département"} depuis 2021 classés F ou G`]);
+  }
   if(C.zone){
     const tension = C.tension === 1 ? "zone tendue" : C.tension === 2 ? "zone touristique tendue" : "hors zone tendue";
     tuiles.push(["Marché local", `Zone ${C.zone === "Abis" ? "A bis" : C.zone}`,

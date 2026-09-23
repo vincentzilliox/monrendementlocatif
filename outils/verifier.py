@@ -13,6 +13,7 @@ dont une erreur ne se voit pas à l'écran.
 Sortie : une ligne par contrôle, et un code de sortie non nul si l'un échoue.
 """
 
+import gzip
 import html
 import json
 import pathlib
@@ -823,10 +824,12 @@ def main():
         dossier = SITE / "donnees"
         lettres = sorted((dossier / "communes").glob("*.json"))
         departements = sorted((dossier / "marche").glob("*.json"))
-        lourds = [f.name for f in lettres if f.stat().st_size > 250_000] \
-            + [f.name for f in departements if f.stat().st_size > 150_000]
+        # Mesuré compressé : c'est ce que Cloudflare transfère.
+        compresse = lambda f: len(gzip.compress(f.read_bytes()))
+        lourds = [f.name for f in lettres if compresse(f) > 80_000] \
+            + [f.name for f in departements if compresse(f) > 50_000]
         controle("données : chaque fichier chargé à la demande reste léger", bool(lettres) and not lourds,
-                 ", ".join(lourds) or "initiales ≤ 250 Ko, départements ≤ 150 Ko")
+                 ", ".join(lourds) or "compressés : initiales ≤ 80 Ko, départements ≤ 50 Ko")
         communes = [c for f in lettres for c in json.loads(f.read_text(encoding="utf-8"))]
         fiches = {}
         for f in departements:
@@ -842,7 +845,10 @@ def main():
         aberrants = [c for c, v in fiches.items()
                      if any(k in v and v[k][1] >= 10 and not 100 <= v[k][0] <= 60000 for k in ("pa", "pm"))
                      or any(k in v and not (3 <= v[k][0] <= 60 and v[k][1] <= v[k][0] <= v[k][2])
-                            for k in ("la", "l12", "l3", "lm"))]
+                            for k in ("la", "l12", "l3", "lm"))
+                     or ("dpe" in v and not 0 <= v["dpe"][0] <= v["dpe"][1])
+                     # Des taux de taxe foncière dépassent 100 % : Saint-Nazaire-d'Aude vote 100,06 %.
+                     or ("tf" in v and not (0 < v["tf"][0] <= 150 and 0 < v["tf"][1] <= 150 and -50 <= v["tf"][2] <= 60))]
         controle("données : prix et loyers dans des bornes plausibles", not aberrants,
                  ", ".join(aberrants[:3]) or "prix 100-60 000 €/m², loyers 3-60 €/m²")
         sources = json.loads((dossier / "sources.json").read_text(encoding="utf-8"))
@@ -1046,7 +1052,7 @@ def main():
                             (m.get("options") or [""])[0] == "Lyon 3e Arrondissement (69)",
                             "4 000 €/m²" in (m.get("prix") or "").replace("\u202f", " ").replace("\xa0", " "),
                             "hors charges" in (m.get("loyer") or ""),
-                            m.get("lien"), m.get("efface"), m.get("resume") == 4, m.get("encadre"),
+                            m.get("lien"), m.get("efface"), m.get("resume") == 6, m.get("encadre"),
                             m.get("equivalent"), m.get("reprise") == "226000"))
                         controle("repères de marché : recherche, prix, loyer, lien, effacement, résumé, "
                                  "encadrement, équivalent charges comprises, valeur reprise",
@@ -1262,11 +1268,16 @@ lignes.push('reperes de marche : commune ou departement, loyer selon la surface|
     && reperesMarche(M,'11111',{prix:1,loyer:1,surface:0}).prix.saisi===null?1:0)+'|');
 // Contexte local : zonage, tension, encadrement, et tendance des prix du
 // departement en taux annuel compose.
-var Mc = {c:{'11111':{n:'Ville', pa:[3000,120], z:'A', t:1, e:2}}, d:{pa:[2800,900], ev:{pa:[2000,1800,2021,2025]}}};
+var Mc = {c:{'11111':{n:'Ville', pa:[3000,120], z:'A', t:1, e:2, tf:[20,25,9.5]}, '22222':{n:'Autre', pa:[1,1], dpe:[30,100]}},
+          d:{pa:[2800,900], ev:{pa:[2000,1800,2021,2025]}, dpe:[200,1000]}};
+var cx2 = reperesMarche(Mc,'22222',{prix:1,loyer:1,surface:50}).contexte;
 var cx = reperesMarche(Mc,'11111',{prix:1,loyer:1,surface:50}).contexte;
 var tauxAttendu = Math.pow(0.9, 1/4) - 1;
 lignes.push('reperes de marche : zonage, tension, encadrement, tendance annuelle|'
   +(cx.zone==='A' && cx.tension===1 && cx.encadre===2 && Math.abs(cx.tendance.taux-tauxAttendu)<1e-12
+    && !!cx.passoires && cx.passoires.echelle==='departement' && cx.passoires.part===0.2
+    && !!cx2.passoires && cx2.passoires.echelle==='commune' && cx2.passoires.part===0.3
+    && !!cx.taxeFonciere && Math.abs(cx.taxeFonciere.evolution-0.095)<1e-12 && cx2.taxeFonciere===null
     && reperesMarche({c:{'1':{n:'X'}}, d:{}},'1',{}).contexte.tendance===null?1:0)+'|'+(cx.tendance.taux*100).toFixed(2)+' %/an');
 // Frais de dossier au reel : deduits l'annee 1, a emprunt egal (l'apport les
 // absorbe), sur un scenario sans amortissement ni travaux ou la base est

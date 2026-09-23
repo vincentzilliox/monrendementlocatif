@@ -59,7 +59,9 @@ rendement annualisé du portefeuille boursier net d'impôt sert de référence.
 **Repères de marché** — avec la commune et la surface, le prix au m² est situé
 face aux ventes DVF des vingt-quatre derniers mois, et le loyer face aux
 annonces de la Carte des loyers de l'ANIL. Un résumé dans les résultats y ajoute
-le zonage A/B/C, la zone tendue, la tendance des prix du département, et
+le zonage A/B/C, la zone tendue, la tendance des prix du département, la
+hausse de la taxe foncière de la commune (REI), la part de passoires thermiques
+(DPE de l'ADEME), et
 signale l'encadrement des loyers avec un lien vers le simulateur officiel. Les
 données sont servies par le site lui-même, chargées à la demande (voir
 « Mettre à jour les données de marché »). Seuls liens sortants autorisés : les

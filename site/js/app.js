@@ -616,8 +616,18 @@ function reperesMarche(marche, code, p){
     // des loyers (1 : toute la commune, 2 : une partie), et la tendance des prix
     // du département — une commune a trop peu de ventes pour en avoir une.
     contexte: {zone: fiche.z || null, tension: fiche.t || 0, encadre: fiche.e || 0,
-      tendance: tendancePrix(marche.d && marche.d.ev && marche.d.ev[cle])}
+      tendance: tendancePrix(marche.d && marche.d.ev && marche.d.ev[cle]),
+      passoires: partPassoires(fiche.dpe, marche.d && marche.d.dpe),
+      // [taux an0, taux an1, hausse annuelle en %] : la taxe d'un même logement,
+      // taux votés et revalorisation légale des bases compris.
+      taxeFonciere: fiche.tf ? {taux0: fiche.tf[0], taux1: fiche.tf[1], evolution: fiche.tf[2]/100} : null}
   };
+}
+// [DPE classés F ou G, DPE] de la commune, sinon du département — l'import ne
+// garde une commune qu'au-delà de trente diagnostics.
+function partPassoires(commune, departement){
+  const d = commune || departement;
+  return d && d[1] > 0 ? {part: d[0]/d[1], dpe: d[1], echelle: commune ? "commune" : "departement"} : null;
 }
 // [prix an0, prix an1, an0, an1] → variation annuelle moyenne entre les deux.
 function tendancePrix(ev){
@@ -2047,6 +2057,19 @@ function renderMarche(p){
     // Une revalorisation retenue bien au-dessus de la tendance récente est un pari.
     tuiles.push([`Prix de l'ancien, département`, `${sPct(T.taux)} /an`,
       `${T.an0}-${T.an1} · vous retenez <b class="${retenu > T.taux + 0.01 ? "neg" : ""}">${sPct(retenu)} /an</b>`]);
+  }
+  if(C.taxeFonciere && S.taxeFonciere){
+    const F = C.taxeFonciere, P = S.taxeFonciere.periode, retenu = p.indexCharges/100;
+    const tx = v => v.toFixed(1).replace(".", ",") + " %";
+    // Des charges indexées bien sous la hausse récente de la taxe foncière
+    // sous-estiment ce qu'elle coûtera.
+    tuiles.push(["Taxe foncière de la commune", `${sPct(F.evolution)} /an`,
+      `${P[0]}-${P[1]} · taux ${tx(F.taux0)} → ${tx(F.taux1)} · vous indexez les charges de <b class="${retenu < F.evolution - 0.01 ? "neg" : ""}">${sPct(retenu)} /an</b>`]);
+  }
+  if(C.passoires){
+    const P = C.passoires;
+    tuiles.push(["Passoires thermiques", `${Math.round(P.part*100)} %`,
+      `des ${eur1.format(P.dpe)} DPE ${P.echelle === "commune" ? "de la commune" : "du département"} depuis 2021 classés F ou G`]);
   }
   if(C.zone){
     const tension = C.tension === 1 ? "zone tendue" : C.tension === 2 ? "zone touristique tendue" : "hors zone tendue";

@@ -615,8 +615,18 @@ function reperesMarche(marche, code, p){
     // des loyers (1 : toute la commune, 2 : une partie), et la tendance des prix
     // du département — une commune a trop peu de ventes pour en avoir une.
     contexte: {zone: fiche.z || null, tension: fiche.t || 0, encadre: fiche.e || 0,
-      tendance: tendancePrix(marche.d && marche.d.ev && marche.d.ev[cle])}
+      tendance: tendancePrix(marche.d && marche.d.ev && marche.d.ev[cle]),
+      passoires: partPassoires(fiche.dpe, marche.d && marche.d.dpe),
+      // [taux an0, taux an1, hausse annuelle en %] : la taxe d'un même logement,
+      // taux votés et revalorisation légale des bases compris.
+      taxeFonciere: fiche.tf ? {taux0: fiche.tf[0], taux1: fiche.tf[1], evolution: fiche.tf[2]/100} : null}
   };
+}
+// [DPE classés F ou G, DPE] de la commune, sinon du département — l'import ne
+// garde une commune qu'au-delà de trente diagnostics.
+function partPassoires(commune, departement){
+  const d = commune || departement;
+  return d && d[1] > 0 ? {part: d[0]/d[1], dpe: d[1], echelle: commune ? "commune" : "departement"} : null;
 }
 // [prix an0, prix an1, an0, an1] → variation annuelle moyenne entre les deux.
 function tendancePrix(ev){
