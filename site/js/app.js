@@ -123,6 +123,10 @@ const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
+// Loi Climat et résilience : un logement trop énergivore ne peut plus être donné
+// à bail — classé G depuis 2025, F en 2028, E en 2034 (France métropolitaine).
+// Le calcul signale la date, il ne la simule pas : il suppose des travaux.
+const INTERDICTION_DPE = {G:2025, F:2028, E:2034};
 
 function compute(p){
   // Deux situations. « achat » : le bien est à acheter, la mise est l'apport et
@@ -158,6 +162,10 @@ function compute(p){
   // taxe foncière et CFE restent dus : le bien les coûte quelle que soit la
   // fiscalité. L'écart entre les deux affichages est donc ce que coûte l'impôt.
   const avantImpot = p.avantImpot === true;
+  // Classé F ou G, le loyer ne peut plus augmenter depuis août 2022 : ni
+  // révision annuelle, ni hausse entre deux locataires.
+  const gelLoyer = p.dpe === "F" || p.dpe === "G";
+  const indexLoyer = gelLoyer ? 0 : p.indexLoyer;
 
   // Part des travaux ouvrant droit à déduction, poste par poste.
   const travauxDeductibles = (p.items || []).reduce((s, it) => s + it.montant*(it.deduc/100), 0);
@@ -244,7 +252,7 @@ function compute(p){
   portefeuille = pFonds = pLivret = miseTotale = cash0;
 
   for(let y=1; y<=p.horizon; y++){
-    const loyers = p.loyer*12*Math.pow(1+p.indexLoyer/100, y-1)*(1-p.vacance/100);
+    const loyers = p.loyer*12*Math.pow(1+indexLoyer/100, y-1)*(1-p.vacance/100);
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
     const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
     const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn + compta)*Math.pow(1+p.indexCharges/100, y-1);
@@ -381,7 +389,7 @@ function compute(p){
   const prixRenta = detenu ? valeur0 - p.travaux : p.prix;
   const coutRenta = detenu ? valeur0 : besoin;
   return {
-    p, rows, best, detenu, deja, comptant, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
+    p, rows, best, detenu, deja, comptant, gelLoyer, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
     vente0, net0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: prixRenta > 0 ? loyerBrutAn/prixRenta : 0,
@@ -1167,7 +1175,7 @@ const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux
   "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
   "ps","psPV","cfe","compta","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
   "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds"];
-const SELECTS = ["situation","regime","tmi"];
+const SELECTS = ["situation","regime","tmi","dpe"];
 const DEFAULTS = {};
 FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
 DEFAULTS.ira = true;
@@ -1197,6 +1205,7 @@ function read(){
   p.situation = $("situation").value;
   p.regime = $("regime").value;
   p.tmi = parseFloat($("tmi").value);
+  p.dpe = $("dpe").value;
   p.ira = $("ira").checked;
   p.comptant = $("comptant").checked;
   p.avantImpot = fiscalite === "brut";
@@ -1547,6 +1556,20 @@ function render(){
     warns.push(`Votre horizon (${p.horizon} ans) est plus court que le prêt (${dureePret} ans${detenu ? " restants" : ""}) : chaque revente simulée solde le capital restant dû.`);
   if(detenu && R.emprunt > 0 && p.dureeRestante < 1)
     warns.push("Un capital reste dû sans durée restante : le calcul le rembourse en totalité la première année. Indiquez les années de remboursement qu'il reste.");
+  // Le DPE : le gel est calculé, l'interdiction de louer seulement signalée,
+  // datée dans la simulation qui commence cette année.
+  const interdit = INTERDICTION_DPE[p.dpe];
+  if(interdit || R.gelLoyer){
+    const an0 = new Date().getFullYear(), rang = interdit - an0 + 1;
+    const gel = R.gelLoyer ? `Classé ${p.dpe}, le logement ne peut plus voir son loyer augmenter : le calcul le gèle au niveau saisi. ` : "";
+    const quand = !interdit ? ""
+      : rang <= 1 ? `Il ne peut plus être donné à bail depuis ${interdit} : ni nouveau locataire, ni renouvellement.`
+      : rang <= p.horizon ? `À partir de ${interdit} — l'année ${rang} de la simulation —, il ne pourra plus être donné à bail.`
+      : `L'interdiction de le louer, en ${interdit}, tombe après l'horizon simulé.`;
+    warns.push(gel + quand + (interdit && rang <= p.horizon
+      ? " Le calcul suppose qu'il reste loué : comptez les travaux qui le sortent de cette classe dans vos postes."
+      : ""));
+  }
   if(detenu && R.deja >= 30)
     warns.push(`Détenu depuis ${R.deja} ans : la plus-value est déjà exonérée d'impôt et de prélèvements sociaux, revendre ne coûte plus que les frais d'agence.`);
   $("warnBox").innerHTML = warns.map(w=>`<div class="warn">${w}</div>`).join("");

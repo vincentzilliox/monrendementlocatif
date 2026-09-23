@@ -14,7 +14,7 @@ const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux
   "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
   "ps","psPV","cfe","compta","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
   "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds"];
-const SELECTS = ["situation","regime","tmi"];
+const SELECTS = ["situation","regime","tmi","dpe"];
 const DEFAULTS = {};
 FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
 DEFAULTS.ira = true;
@@ -44,6 +44,7 @@ function read(){
   p.situation = $("situation").value;
   p.regime = $("regime").value;
   p.tmi = parseFloat($("tmi").value);
+  p.dpe = $("dpe").value;
   p.ira = $("ira").checked;
   p.comptant = $("comptant").checked;
   p.avantImpot = fiscalite === "brut";
@@ -394,6 +395,20 @@ function render(){
     warns.push(`Votre horizon (${p.horizon} ans) est plus court que le prêt (${dureePret} ans${detenu ? " restants" : ""}) : chaque revente simulée solde le capital restant dû.`);
   if(detenu && R.emprunt > 0 && p.dureeRestante < 1)
     warns.push("Un capital reste dû sans durée restante : le calcul le rembourse en totalité la première année. Indiquez les années de remboursement qu'il reste.");
+  // Le DPE : le gel est calculé, l'interdiction de louer seulement signalée,
+  // datée dans la simulation qui commence cette année.
+  const interdit = INTERDICTION_DPE[p.dpe];
+  if(interdit || R.gelLoyer){
+    const an0 = new Date().getFullYear(), rang = interdit - an0 + 1;
+    const gel = R.gelLoyer ? `Classé ${p.dpe}, le logement ne peut plus voir son loyer augmenter : le calcul le gèle au niveau saisi. ` : "";
+    const quand = !interdit ? ""
+      : rang <= 1 ? `Il ne peut plus être donné à bail depuis ${interdit} : ni nouveau locataire, ni renouvellement.`
+      : rang <= p.horizon ? `À partir de ${interdit} — l'année ${rang} de la simulation —, il ne pourra plus être donné à bail.`
+      : `L'interdiction de le louer, en ${interdit}, tombe après l'horizon simulé.`;
+    warns.push(gel + quand + (interdit && rang <= p.horizon
+      ? " Le calcul suppose qu'il reste loué : comptez les travaux qui le sortent de cette classe dans vos postes."
+      : ""));
+  }
   if(detenu && R.deja >= 30)
     warns.push(`Détenu depuis ${R.deja} ans : la plus-value est déjà exonérée d'impôt et de prélèvements sociaux, revendre ne coûte plus que les frais d'agence.`);
   $("warnBox").innerHTML = warns.map(w=>`<div class="warn">${w}</div>`).join("");

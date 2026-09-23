@@ -102,7 +102,17 @@ Chaque import s'accompagne de contrôles : fichier présent, date de fraîcheur
 inférieure à N mois, valeurs dans des bornes plausibles (un prix médian à
 0 €/m² ou à 80 000 €/m² fait échouer la construction).
 
-### 2.4 Champ « Classe DPE »
+### 2.4 ✅ Champ « Classe DPE » — fait le 2026-09-23
+
+**Fait** : champ facultatif A à G. F ou G gèlent le loyer dans le moteur (`gelLoyer`) ;
+l'interdiction de louer est datée dans la simulation par une alerte
+(`INTERDICTION_DPE`), pas simulée — le calcul suppose les travaux faits.
+Contrôles : « DPE F ou G : loyers gelés, autres classes indexées » et la sonde
+des angles morts. **Reste** : la part de passoires par commune (2.3), et un
+scénario « sans travaux » où le loyer s'arrête à la date d'interdiction.
+
+Le projet initial :
+
 
 Un champ A à G, facultatif :
 

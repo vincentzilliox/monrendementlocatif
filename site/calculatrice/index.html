@@ -147,6 +147,18 @@
         <div class="f" id="fNotaire"><div class="fl"><label for="notairePct">Frais de notaire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>7,5 à 8,5 % dans l'ancien selon le département, depuis la hausse des droits de mutation. 2 à 3 % dans le neuf.</span></span></div><div class="wrap"><input id="notairePct" type="number" step="0.1" value="8"><span class="unit">%</span></div></div>
         <div class="f" id="fFraisAcq"><div class="fl"><label for="fraisAcq">Frais d'agence à l'achat</label></div><div class="wrap"><input id="fraisAcq" type="number" step="500" value="0"><span class="unit">€</span></div></div>
         <div class="f" id="fMobilier"><div class="fl"><label for="mobilier">Mobilier</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Meubles, électroménager, literie : environ 4 % du prix pour un appartement entièrement meublé. Amortissable au LMNP réel, et neutralisé si vous repassez en location nue.</span></span></div><div class="wrap"><input id="mobilier" type="number" step="500" value="8000"><span class="unit">€</span></div></div>
+        <div class="f stack" id="fDpe"><div class="fl"><label for="dpe">Classe énergétique (DPE)</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Classé F ou G, un logement ne peut plus voir son loyer augmenter : le calcul le gèle. Classé G, il ne peut plus être donné à bail depuis 2025 ; F à partir de 2028, E à partir de 2034 (outre-mer : G en 2028, F en 2031). La réforme du 1ᵉʳ janvier 2026 a reclassé de nombreux logements chauffés à l'électricité : un DPE plus ancien mérite d'être recalculé.</span></span></div>
+          <select id="dpe">
+            <option value="" selected>Non renseignée</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+          </select>
+        </div>
       </div>
     </details>
 
@@ -189,7 +201,7 @@
     <details class="group" open>
       <summary>L'exploitation</summary>
       <div class="fields">
-        <div class="f key"><div class="fl"><label for="loyer">Loyer mensuel hors charges</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Deux plafonds à vérifier avant de le fixer. L'encadrement des loyers, dans environ soixante-dix communes (Paris, Lyon, Lille, Bordeaux, Montpellier, Grenoble, Pays basque…). Le DPE : un logement classé F ou G ne peut plus voir son loyer augmenter, et ne peut plus être loué s'il est classé G depuis 2025, F en 2028, E en 2034. Dans ce cas, décochez « Prix, loyers et charges suivent l'inflation » et mettez l'indexation des loyers à zéro.</span></span></div><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
+        <div class="f key"><div class="fl"><label for="loyer">Loyer mensuel hors charges</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Deux plafonds à vérifier avant de le fixer. L'encadrement des loyers, dans environ soixante-dix communes (Paris, Lyon, Lille, Bordeaux, Montpellier, Grenoble, Pays basque…). Le DPE : classé F ou G, le loyer ne peut plus augmenter — renseignez la classe énergétique, le calcul le gèle.</span></span></div><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
         <div class="f key"><div class="fl"><label for="vacance">Vacance locative + impayés</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des loyers que vous n'encaisserez pas : logement vide entre deux locataires, loyers impayés. Comptez 5 % en zone tendue, davantage ailleurs.</span></span></div><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
         <div class="f key"><div class="fl"><label for="tf">Taxe foncière</label></div><div class="wrap uw"><input id="tf" type="number" step="50" value="1200"><span class="unit">€/an</span></div></div>
         <div class="f key"><div class="fl"><label for="copro">Charges de copro non récupérables</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des charges de copropriété qui reste à votre charge : celles qui sont récupérables sont refacturées au locataire et n'entrent pas ici.</span></span></div><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>

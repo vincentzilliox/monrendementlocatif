@@ -317,6 +317,12 @@ setTimeout(function(){
     rg.value = "micro-foncier"; rg.dispatchEvent(new Event("change", {bubbles:true}));
     r.alertes += visibleReel && cpt.hidden ? "1" : "0";
     rg.value = rg0; rg.dispatchEvent(new Event("change", {bubbles:true}));
+    var dpe = document.getElementById("dpe");
+    if(dpe){
+      dpe.value = "G"; dpe.dispatchEvent(new Event("change", {bubbles:true}));
+      r.alertes += /gèle/.test(alertes()) && /2025/.test(alertes()) ? "1" : "0";
+      dpe.value = ""; dpe.dispatchEvent(new Event("change", {bubbles:true}));
+    }
   }
   // Bien déjà détenu : un autre jeu de champs, un rendement calculé, et le
   // retour à l'achat rend le chiffre de départ.
@@ -844,9 +850,10 @@ def main():
                     # « champs du crédit masqués », « rendement changé », « bulle du
                     # loyer couvert : aucun crédit », « décocher rend le départ »
                     # « seuil LMP signalé », « apport nul : rendement calculé et
-                    # expliqué », « comptabilité au seul LMNP réel »
-                    controle("angles morts signalés : LMP, apport nul, comptabilité",
-                             r.get("alertes") == "111", r.get("alertes") or "sonde muette")
+                    # expliqué », « comptabilité au seul LMNP réel », « DPE G :
+                    # gel et interdiction datée »
+                    controle("angles morts signalés : LMP, apport nul, comptabilité, DPE",
+                             r.get("alertes") == "1111", r.get("alertes") or "sonde muette")
                     controle("achat comptant : les champs du crédit s'effacent, le rendement suit",
                              r.get("comptant") == "1111", r.get("comptant") or "sonde muette")
                     controle("bien détenu : ses champs, et seulement eux",
@@ -1048,9 +1055,15 @@ var t30 = tr(mf), t45 = tr(Object.assign({}, mf, {tmi:45})), tl = tr({});
 lignes.push('sensibilite : tranche d imposition|'
   +(t30 && t30.lo<0 && t30.hi>0 && t45 && Math.min(Math.abs(t45.lo),Math.abs(t45.hi))<1e-12 && !tl?1:0)+'|'
   +(t30?pts(t30.lo)+' / '+pts(t30.hi):'absente'));
+// DPE F ou G : le loyer ne bouge plus d'une annee a l'autre ; les autres classes
+// suivent l'indexation, comme sans DPE renseigne.
+var gG = run({dpe:'G'}), gD = run({dpe:'D'}), gN = run({});
+lignes.push('DPE F ou G : loyers geles, autres classes indexees|'
+  +(gG.rows.every(function(r){ return Math.abs(r.loyers-gG.rows[0].loyers)<1e-6; })
+    && run({dpe:'F'}).final.tri===gG.final.tri && gD.final.tri===gN.final.tri && gN.rows[1].loyers>gN.rows[0].loyers?1:0)+'|');
 // Les ordres de grandeur que la page d'hypotheses publie dans ses limites.
 var ref = site({}).final.tri;
-var gel = ref - site({indexLoyer:0}).final.tri;
+var gel = ref - site({dpe:'G'}).final.tri;
 lignes.push('limites : geler les loyers coute pres de deux points|'+(gel>0.015 && gel<0.025?1:0)+'|'+(gel*100).toFixed(2)+' pt');
 var tmiEcart = site(Object.assign({}, mf, {tmi:11})).final.tri - site(Object.assign({}, mf, {tmi:41})).final.tri;
 lignes.push('limites : tranche 11 -> 41 en micro-foncier, plus d un point et demi|'+(tmiEcart>0.015?1:0)+'|'+(tmiEcart*100).toFixed(2)+' pt');

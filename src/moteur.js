@@ -122,6 +122,10 @@ const PS_LOYERS = {"micro-foncier":"17.2", "reel-foncier":"17.2", "lmnp-micro":"
 // La CFE relève d'une activité BIC : elle ne concerne pas la location nue.
 const CFE_DEFAUT = {"micro-foncier":"0", "reel-foncier":"0", "lmnp-micro":"400", "lmnp-reel":"400"};
 const ABATT_DEFAUT = {"micro-foncier":"30", "lmnp-micro":"50"};
+// Loi Climat et résilience : un logement trop énergivore ne peut plus être donné
+// à bail — classé G depuis 2025, F en 2028, E en 2034 (France métropolitaine).
+// Le calcul signale la date, il ne la simule pas : il suppose des travaux.
+const INTERDICTION_DPE = {G:2025, F:2028, E:2034};
 
 function compute(p){
   // Deux situations. « achat » : le bien est à acheter, la mise est l'apport et
@@ -157,6 +161,10 @@ function compute(p){
   // taxe foncière et CFE restent dus : le bien les coûte quelle que soit la
   // fiscalité. L'écart entre les deux affichages est donc ce que coûte l'impôt.
   const avantImpot = p.avantImpot === true;
+  // Classé F ou G, le loyer ne peut plus augmenter depuis août 2022 : ni
+  // révision annuelle, ni hausse entre deux locataires.
+  const gelLoyer = p.dpe === "F" || p.dpe === "G";
+  const indexLoyer = gelLoyer ? 0 : p.indexLoyer;
 
   // Part des travaux ouvrant droit à déduction, poste par poste.
   const travauxDeductibles = (p.items || []).reduce((s, it) => s + it.montant*(it.deduc/100), 0);
@@ -243,7 +251,7 @@ function compute(p){
   portefeuille = pFonds = pLivret = miseTotale = cash0;
 
   for(let y=1; y<=p.horizon; y++){
-    const loyers = p.loyer*12*Math.pow(1+p.indexLoyer/100, y-1)*(1-p.vacance/100);
+    const loyers = p.loyer*12*Math.pow(1+indexLoyer/100, y-1)*(1-p.vacance/100);
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
     const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
     const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn + compta)*Math.pow(1+p.indexCharges/100, y-1);
@@ -380,7 +388,7 @@ function compute(p){
   const prixRenta = detenu ? valeur0 - p.travaux : p.prix;
   const coutRenta = detenu ? valeur0 : besoin;
   return {
-    p, rows, best, detenu, deja, comptant, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
+    p, rows, best, detenu, deja, comptant, gelLoyer, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
     vente0, net0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: prixRenta > 0 ? loyerBrutAn/prixRenta : 0,
