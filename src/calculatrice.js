@@ -597,30 +597,13 @@ function renderComplements(p){
   });
 }
 
-// Ce qu'il faudrait pour faire jeu égal avec la bourse : une tuile par
-// paramètre, la valeur de bascule, et l'écart avec la saisie — une marge quand
-// le projet est devant, un effort à obtenir quand il est derrière.
-const FORMAT_SEUIL = {
-  prix:      {v: x => eur.format(Math.round(x/100)*100), ecart: (x, a) => sPct(x/a - 1)},
-  loyer:     {v: x => eur.format(Math.round(x)) + " /mois", ecart: (x, a) => sPct(x/a - 1)},
-  taux:      {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
-  indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)},
-  vacance:   {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)}
-};
-// La frontière cherchée : la bourse (par défaut) ou l'inflation. Non retenue :
+// La frontière cherchée : la bourse (par défaut) ou l'inflation (« pouvoir »,
+// pour pouvoir d'achat : « inflation » est déjà le nom d'un champ). Non retenue :
 // la page s'ouvre sur la comparaison que porte le verdict.
 let cibleSeuils = "bourse";
 function renderSeuils(p){
-  $("seuilsTitre").textContent = cibleSeuils === "inflation" ? "Pour ne pas perdre de pouvoir d'achat" : "Pour faire jeu égal avec la bourse";
-  $("seuils").innerHTML = seuils(p, cibleSeuils).map(s => {
-    const F = FORMAT_SEUIL[s.k];
-    const valeur = s.valeur === null ? "—" : F.v(s.valeur);
-    const sous = s.valeur === null
-      ? (s.toujours ? `devant ${cibleSeuils === "inflation" ? "l'inflation" : "la bourse"} sur toute la plage`
-                    : `hors de portée : ${cibleSeuils === "inflation" ? "l'inflation" : "la bourse"} reste devant`)
-      : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
-    return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
-  }).join("");
+  $("seuilsTitre").textContent = cibleSeuils === "pouvoir" ? "Pour ne pas perdre de pouvoir d'achat" : "Pour faire jeu égal avec la bourse";
+  $("seuils").innerHTML = tuilesSeuils(seuils(p, cibleSeuils), cibleSeuils);
 }
 
 /* ---------- taux du marché ---------- */
@@ -795,11 +778,11 @@ function renderMarche(p){
 function setCibleSeuils(v){
   cibleSeuils = v;
   $("cibleBourse").setAttribute("aria-pressed", v === "bourse" ? "true" : "false");
-  $("cibleInflation").setAttribute("aria-pressed", v === "inflation" ? "true" : "false");
+  $("cibleInflation").setAttribute("aria-pressed", v === "pouvoir" ? "true" : "false");
   render();
 }
 $("cibleBourse").addEventListener("click", () => setCibleSeuils("bourse"));
-$("cibleInflation").addEventListener("click", () => setCibleSeuils("inflation"));
+$("cibleInflation").addEventListener("click", () => setCibleSeuils("pouvoir"));
 
 /* ---------- persistence & chrome ---------- */
 const STORE = "rentaloc.v2";

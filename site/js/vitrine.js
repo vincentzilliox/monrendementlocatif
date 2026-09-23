@@ -530,7 +530,7 @@ const SEUILS = [
 function ecartBourse(q, cible){
   const f = compute(Object.assign({}, q, {horizonSeul:true})).final;
   if(f.tri === null) return f.mise <= 1 ? 1 : -1;
-  if(cible === "inflation") return f.tri - q.inflation/100;
+  if(cible === "pouvoir") return f.tri - q.inflation/100;
   return f.triBourse === null ? f.tri : f.tri - f.triBourse;
 }
 function seuils(p, cible){
@@ -1302,6 +1302,29 @@ function cfgSensibilite(sens, triRef){
   };
 }
 
+// Ce qu'il faudrait pour faire jeu égal avec la bourse, ou avec l'inflation :
+// une tuile par paramètre, la valeur de bascule, et l'écart avec la saisie —
+// une marge quand le projet est devant, un effort à obtenir quand il est
+// derrière. Partagé par la calculatrice et la page d'accueil.
+const FORMAT_SEUIL = {
+  prix:      {v: x => eur.format(Math.round(x/100)*100), ecart: (x, a) => sPct(x/a - 1)},
+  loyer:     {v: x => eur.format(Math.round(x)) + " /mois", ecart: (x, a) => sPct(x/a - 1)},
+  taux:      {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
+  indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)},
+  vacance:   {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)}
+};
+function tuilesSeuils(liste, cible){
+  const rival = cible === "pouvoir" ? `l'inflation` : "la bourse";
+  return liste.map(s => {
+    const F = FORMAT_SEUIL[s.k];
+    const valeur = s.valeur === null ? "—" : F.v(s.valeur);
+    const sous = s.valeur === null
+      ? (s.toujours ? `devant ${rival} sur toute la plage` : `hors de portée : ${rival} reste devant`)
+      : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
+    return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
+  }).join("");
+}
+
 let sensTimer = null;
 function planifier(fn){
   if(sensTimer !== null){ (window.cancelIdleCallback || clearTimeout)(sensTimer); }
@@ -1477,6 +1500,9 @@ function vitrine(){
   const sens = sensibilite(p, f.tri);
   drawTornado(g("vPlotSens"), g("vTipSens"), cfgSensibilite(sens, f.tri));
   if(sens.length) ecrire("vSens", sens[0].nom.toLowerCase());
+  // Le prix à négocier et le loyer à obtenir, sur le scénario présenté.
+  const vs = g("vSeuils");
+  if(vs) vs.innerHTML = tuilesSeuils(seuils(p), "bourse");
 }
 
 brancherInfobulles();

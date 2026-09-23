@@ -59,6 +59,24 @@ Tous ces contrôles ont été validés par mutation (huit réintroductions, huit
 
 ## 2. Chantier moyen — confronter les hypothèses au marché
 
+**État au 2026-09-23 : fait.** Ce qui reste est volontairement laissé de côté ou
+attend une source :
+
+- les loyers de référence de l'encadrement, disponibles pour Paris seulement
+  (open data sous licence ODbL, par quartier) — le reste de la France n'a pas
+  de source ouverte ;
+- la liste des zones tendues revue par le décret du 25 août 2026, quand le
+  fichier national sera mis à jour ;
+- le Livret A et le taux d'usure, absents des sources sans clé ;
+- les droits de mutation par département, qu'aucune source ouverte ne publie ;
+- la vacance du recensement, écartée : elle ne mesure pas la vacance locative ;
+- un bail en cours qui court jusqu'à son terme, dans le scénario « sans travaux ».
+
+À refaire périodiquement : `python3 outils/donnees.py` (voir le README). Les
+contrôles échouent d'eux-mêmes quand DVF ou les taux vieillissent, quand la
+BCE change son taux de dépôt, et après la fin de l'expérimentation
+d'encadrement.
+
 ### 2.1 ✅ Commune, surface, type de bien — fait le 2026-09-23
 
 Trois champs facultatifs en tête du bien. La commune se cherche dans la liste
@@ -152,8 +170,8 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   sous le graphique des placements (`seuils()`, dichotomie arrêtée à une
   précision par paramètre ; option `horizonSeul` du moteur pour ne résoudre que
   le TRI final — 44 ms les quatre, la sensibilité en profite). La vacance
-  maximale s'y est ajoutée le même jour. Reste : les proposer sur la page
-  d'accueil.
+  maximale s'y est ajoutée le même jour, et la page d'accueil les montre sous
+  sa sensibilité (`tuilesSeuils()`, partagée dans `src/graphiques.js`).
 - ✅ **Seuils de bascule** — *faits le 2026-09-23* : une bascule « Bourse | Inflation »
   au-dessus des seuils cherche l'une ou l'autre frontière de l'avis.
 - ✅ **Capacité d'emprunt** — *fait le 2026-09-23.* Revenus nets et crédits en

@@ -71,6 +71,9 @@ function vitrine(){
   const sens = sensibilite(p, f.tri);
   drawTornado(g("vPlotSens"), g("vTipSens"), cfgSensibilite(sens, f.tri));
   if(sens.length) ecrire("vSens", sens[0].nom.toLowerCase());
+  // Le prix à négocier et le loyer à obtenir, sur le scénario présenté.
+  const vs = g("vSeuils");
+  if(vs) vs.innerHTML = tuilesSeuils(seuils(p), "bourse");
 }
 
 brancherInfobulles();

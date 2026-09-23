@@ -529,7 +529,7 @@ const SEUILS = [
 function ecartBourse(q, cible){
   const f = compute(Object.assign({}, q, {horizonSeul:true})).final;
   if(f.tri === null) return f.mise <= 1 ? 1 : -1;
-  if(cible === "inflation") return f.tri - q.inflation/100;
+  if(cible === "pouvoir") return f.tri - q.inflation/100;
   return f.triBourse === null ? f.tri : f.tri - f.triBourse;
 }
 function seuils(p, cible){

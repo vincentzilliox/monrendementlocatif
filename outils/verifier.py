@@ -430,6 +430,7 @@ setTimeout(function(){
   r.vitrine   = (document.getElementById("vTri")||{}).textContent || "";
   r.vcourbes  = document.querySelectorAll("#vPlotNet path[stroke]").length;
   r.vsens     = document.querySelectorAll("#vPlotSens svg rect").length;
+  r.vseuils   = document.querySelectorAll("#vSeuils .tile .v").length;
   r.vregT     = document.querySelectorAll("#vPlotReg path[stroke]").length;
   // Le panneau d'hypotheses : le bouton de la barre des sections le montre et le
   // cache. Ferme a l'ouverture sur petit ecran (le verdict d'abord), ouvert sur
@@ -925,6 +926,7 @@ def main():
                     controle("accueil : quatre régimes et la bourse dans le temps",
                              r.get("vregT") == 5, "%s courbes" % r.get("vregT"))
                     controle("accueil : sensibilité tracée", r["vsens"] >= 6, "%d barres" % r["vsens"])
+                    controle("accueil : seuils face à la bourse", r.get("vseuils") == 5, "%s tuiles" % r.get("vseuils"))
                     controle("accueil : rendement affiché", "%" in r["vitrine"], r["vitrine"])
                     # L'image de partage montre le scénario de l'accueil. Quand ce
                     # chiffre bouge, elle se corrige puis se régénère avec
@@ -1257,7 +1259,7 @@ lignes.push('seuils : a la valeur trouvee, le projet egale la bourse|'
   +'|'+(ecartsSeuils[0] || 'prix max '+Math.round(sp[0].valeur)+' EUR'));
 // Seconde frontiere : a la valeur trouvee, le rendement egale l'inflation ; et
 // le prix maximal y est plus haut que face a la bourse, plus exigeante.
-var pi = site({}).p, si = seuils(pi, 'inflation'), ecartsInfl = [];
+var pi = site({}).p, si = seuils(pi, 'pouvoir'), ecartsInfl = [];
 si.forEach(function(sl){
   if(sl.valeur === null) return;
   var q = {}; for(var k in pi) q[k] = pi[k]; q[sl.k] = sl.valeur;
