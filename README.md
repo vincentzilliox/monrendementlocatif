@@ -56,6 +56,11 @@ travaux) introduite par la loi de finances 2025.
 du fonds euros imposés à la sortie au taux choisi, Livret A exonéré ; le
 rendement annualisé du portefeuille boursier net d'impôt sert de référence.
 
+**Repères de marché** — avec la commune et la surface, le prix au m² est situé
+face aux ventes DVF des vingt-quatre derniers mois, et le loyer face aux
+annonces de la Carte des loyers de l'ANIL. Les données sont servies par le site
+lui-même, chargées à la demande (voir « Mettre à jour les données de marché »).
+
 **Seuils** — le prix maximal, le loyer minimal, le taux maximal et la
 revalorisation minimale auxquels le projet fait jeu égal avec la bourse,
 trouvés par dichotomie sur le moteur (`seuils()`), affichés sous le graphique
@@ -88,7 +93,7 @@ contrôles le tiennent : aucun bouton sans texte, et le clavier doit pouvoir ouv
 la bulle puis la refermer. Un troisième plafonne à 120 caractères ce qui reste
 visible sous un titre de graphique.
 
-**Le panneau a deux niveaux.** Il s'ouvre sur les douze réglages marqués `key` dans
+**Le panneau a deux niveaux.** Il s'ouvre sur les quatorze réglages marqués `key` dans
 `index.html` — la situation, ceux auxquels le rendement est le plus sensible, et
 ceux sans lesquels il n'y a pas de projet. « Tous les réglages » découvre les
 autres, qui n'ont jamais cessé d'entrer dans le calcul. Chaque situation et
@@ -124,6 +129,8 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `pages/*.html` | Questions fréquentes, hypothèses de calcul, mentions légales, 404. |
 | `guides/*.html` | Les six guides : un bloc `meta` JSON puis un `<article class="prose">`. |
 | `build.py` | Produit `site/` : concatène les sources, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère JSON-LD, sitemap, robots, `security.txt`, en-têtes Cloudflare. |
+| `outils/donnees.py` | Télécharge DVF et la Carte des loyers, les réduit par commune et écrit `donnees/`. Seul outil qui touche au réseau. |
+| `donnees/` | Généré par `outils/donnees.py`, versionné : une liste de communes par initiale, un fichier de marché par département, `sources.json`. `build.py` le recopie tel quel. |
 | `outils/favicon.py` | Le logotype et les icônes qu'on en tire, rastérisées sans dépendance. |
 | `outils/_local.py` | Le serveur local et la détection de Chrome et du moteur JavaScript (JavaScriptCore, ou node), partagés par les trois outils. |
 | `outils/hooks/pre-commit` | Refuse un commit dont `site/` n'a pas été régénéré. |
@@ -192,6 +199,21 @@ python3 outils/servir.py     # construit, sert et ouvre le navigateur
 python3 build.py             # construit seulement
 python3 outils/verifier.py   # plus de 200 contrôles avant publication
 ```
+
+### Mettre à jour les données de marché
+
+Les repères de prix et de loyer viennent de `donnees/`, versionné. La
+construction ne télécharge rien ; pour un nouveau millésime — DVF en avril et en
+octobre, la Carte des loyers en décembre :
+
+```sh
+python3 outils/donnees.py          # réseau requis, cache dans .cache/donnees/
+python3 outils/donnees.py --frais  # ignore le cache
+```
+
+Un contrôle échoue quand les ventes DVF ont plus de dix-huit mois : c'est le
+signal qu'un millésime a été manqué. Pour la Carte des loyers, changer d'année
+suppose de mettre à jour les adresses des quatre fichiers dans le script.
 
 ### Installer le garde-fou
 

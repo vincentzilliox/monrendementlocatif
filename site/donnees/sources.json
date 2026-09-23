@@ -1,0 +1,24 @@
+{
+ "millesime": "2025",
+ "dvf": {
+  "titre": "Statistiques DVF — DGFiP, Etalab",
+  "page": "https://www.data.gouv.fr/datasets/statistiques-dvf",
+  "periode": [
+   "2024-01",
+   "2025-12"
+  ],
+  "note": "moyenne des prix médians mensuels au m², pondérée par le nombre de ventes"
+ },
+ "loyers": {
+  "titre": "Carte des loyers 2025 — ANIL, ministère du Logement",
+  "page": "https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025",
+  "periode": "annonces leboncoin et SeLoger 2019-2025, 3ᵉ trimestre 2025",
+  "references": {
+   "la": 52,
+   "l12": 37,
+   "l3": 72,
+   "lm": 92
+  },
+  "note": "loyer d'annonce prédit au m², charges comprises, pour un logement de référence"
+ }
+}

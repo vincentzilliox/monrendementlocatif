@@ -59,48 +59,44 @@ Tous ces contrôles ont été validés par mutation (huit réintroductions, huit
 
 ## 2. Chantier moyen — confronter les hypothèses au marché
 
-### 2.1 Deux champs de plus : commune et surface
+### 2.1 ✅ Commune, surface, type de bien — fait le 2026-09-23
 
-Sans eux, aucune donnée de marché ne peut s'appliquer. La **commune** se saisit
-avec une autocomplétion sur le Code officiel géographique de l'INSEE ; la
-**surface** en m². Tous deux sont facultatifs : sans eux, la calculatrice se
-comporte comme aujourd'hui.
+Trois champs facultatifs en tête du bien. La commune se cherche dans la liste
+de son initiale (`chercherCommunes()` : chaque mot tapé ouvre un mot du nom,
+« st » vaut « saint », « oe » vaut « œ ») et voyage dans le lien par son code
+INSEE. Commune et surface sont en mode Essentiel, qui passe à quatorze réglages.
 
-### 2.2 Architecture : importer à la construction, jamais appeler un tiers
+### 2.2 ✅ Architecture — faite le 2026-09-23
 
-`verifier.py` interdit tout appel vers un domaine tiers, et la page d'accueil
-promet « ni publicité, ni service tiers ». Les données ne doivent donc **pas**
-être interrogées depuis le navigateur. Le principe :
+`outils/donnees.py`, seul outil qui touche au réseau, écrit `donnees/`
+(versionné) : `communes/<initiale>.json` pour la recherche,
+`marche/<département>.json` pour les chiffres, `sources.json` pour les titres et
+périodes. `build.py` recopie sans rien télécharger ; la page charge une
+initiale quand on tape, un département quand une commune est choisie — aucun
+appel tiers. Budgets et contrôles : fichiers ≤ 250 Ko et ≤ 150 Ko, toutes les
+communes avec leur fiche, bornes de plausibilité, ventes DVF de moins de
+18 mois, initiales identiques en Python et en JavaScript sur 4 346 noms
+délicats. Le poids du site hors données passe de 600 à 650 Ko (voir 2.7).
 
-- un script `outils/donnees.py` télécharge les sources ci-dessous (toutes sous
-  Licence Ouverte), les réduit à quelques indicateurs par commune, et écrit
-  `site/donnees/<département>.json`, servi depuis le même domaine et chargé à
-  la demande ;
-- chaque indicateur garde sa **source et sa date**, affichées à côté de la
-  valeur (« loyer d'annonce médian, ANIL, 3ᵉ trimestre 2025 ») ;
-- une reconstruction mensuelle suffit à suivre toutes les sources ;
-- **pas de scraping** de Leboncoin, SeLoger ou PAP : leurs conditions
-  d'utilisation et le droit des bases de données l'interdisent, et la Carte
-  des loyers de l'ANIL est déjà calculée à partir de leurs annonces.
+Deux pièges rencontrés, à connaître pour les prochains imports : les fichiers de
+l'ANIL sont en Windows-1252 (en latin-1, « Œ » devient un caractère de
+contrôle) ; DVF et l'ANIL codent Paris, Lyon et Marseille par arrondissement,
+jamais par commune.
 
-### 2.3 Les sources
+### 2.3 Les sources — deux branchées, huit à venir
 
-| Source | Indicateur retenu | Usage |
-|---|---|---|
-| [Statistiques DVF](https://www.data.gouv.fr/datasets/statistiques-dvf) (DGFiP / Etalab, semestriel) | Prix médian au m² et nombre de ventes, appartements et maisons, par commune | Situer le prix saisi ; proposer la valeur actuelle en mode « bien détenu » |
-| [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025) (ANIL, annuel) | Loyer d'annonce au m² charges comprises, avec intervalle, selon la taille du logement | Situer le loyer saisi ; le proposer à défaut |
-| Arrêtés d'encadrement des loyers (open data de Paris, Lyon, Lille, Bordeaux, Montpellier…) | Loyer de référence majoré par zone, nombre de pièces, époque, nu ou meublé | Alerte « loyer au-dessus du plafond légal » |
-| Fichier REI de la DGFiP (`data.economie.gouv.fr`) | Taux de taxe foncière et de CFE votés par commune, avec leur historique | Ordre de grandeur de la taxe foncière ; dérive locale au lieu de l'inflation |
-| Taux des droits de mutation par département (DGFiP) | Taux départemental | Frais de notaire exacts au lieu de 8 % partout |
-| Zonage A/B/C et communes en zone tendue | Tension locative | Vacance par défaut ; taxe sur les logements vacants |
-| INSEE (recensement) et LOVAC (Cerema) | Taux de logements vacants, évolution de la population | Vacance par défaut réaliste |
-| [DPE logements existants](https://data.ademe.fr/datasets/dpe03existant) (ADEME, mensuel) | Part de passoires F et G par commune | Contexte du champ DPE (2.4) |
-| Banque de France, BCE, INSEE | Taux moyen des crédits à l'habitat, taux d'usure, Livret A, taux de dépôt de la BCE, IRL, inflation | Valeurs par défaut mises à jour à la construction. Plus de « 2,50 % depuis le 16 septembre 2026 » à réécrire à la main : la date vient de la source. |
-| Indices Notaires-INSEE | Historique des prix de l'ancien par région | Revalorisation par défaut fondée sur l'historique local, présentée comme telle |
-
-Chaque import s'accompagne de contrôles : fichier présent, date de fraîcheur
-inférieure à N mois, valeurs dans des bornes plausibles (un prix médian à
-0 €/m² ou à 80 000 €/m² fait échouer la construction).
+| Source | Indicateur retenu | Usage | État |
+|---|---|---|---|
+| [Statistiques DVF](https://www.data.gouv.fr/datasets/statistiques-dvf) (DGFiP / Etalab, semestriel) | Prix médian au m², appartements et maisons, 24 derniers mois, repli sur le département sous 10 ventes | Situer le prix saisi | ✅ Reste : proposer la valeur actuelle en mode « bien détenu » |
+| [Carte des loyers 2025](https://www.data.gouv.fr/datasets/carte-des-loyers-indicateurs-de-loyers-dannonce-par-commune-en-2025) (ANIL, annuel) | Loyer d'annonce au m² charges comprises, fourchette, selon la surface | Situer le loyer saisi | ✅ Reste : un bouton « reprendre le loyer du marché » |
+| Arrêtés d'encadrement des loyers (open data de Paris, Lyon, Lille, Bordeaux, Montpellier…) | Loyer de référence majoré par zone, pièces, époque, nu ou meublé | Alerte « loyer au-dessus du plafond légal » | À faire. Les zones sont infra-communales : il faudra l'adresse, ou au moins le quartier. Le dispositif expérimental expire le 23 novembre 2026, sauf pérennisation votée. |
+| Fichier REI de la DGFiP (`data.economie.gouv.fr`) | Taux de taxe foncière et de CFE votés par commune, avec leur historique | Dérive locale de la taxe foncière au lieu de l'inflation | À faire. Le montant lui-même dépend de la valeur locative, inconnue : le taux seul ne le donne pas. |
+| Taux des droits de mutation par département (DGFiP) | Taux départemental | Frais de notaire au lieu de 8 % partout | À faire. Gain faible (7,5 % ou 8 %). |
+| Zonage A/B/C et communes en zone tendue | Tension locative | Vacance par défaut ; taxe sur les logements vacants | À faire |
+| INSEE (recensement) et LOVAC (Cerema) | Taux de logements vacants, évolution de la population | Vacance par défaut réaliste | À faire |
+| [DPE logements existants](https://data.ademe.fr/datasets/dpe03existant) (ADEME, mensuel) | Part de passoires F et G par commune | Contexte du champ DPE (2.4) | À faire |
+| Banque de France, BCE, INSEE | Taux moyen des crédits à l'habitat, taux d'usure, Livret A, taux de dépôt de la BCE, IRL, inflation | Valeurs par défaut mises à jour à l'import | À faire. Attention : chaque changement de valeur par défaut déplace le chiffre de l'accueil et impose de régénérer l'image de partage. |
+| Indices Notaires-INSEE | Historique des prix de l'ancien par région | Revalorisation par défaut fondée sur l'historique local | À faire |
 
 ### 2.4 ✅ Champ « Classe DPE » — fait le 2026-09-23
 
@@ -127,7 +123,21 @@ Un champ A à G, facultatif :
 Critère de fin : une mutation qui rend l'indexation à un logement G fait échouer
 un contrôle.
 
-### 2.5 Repères de marché à l'écran
+### 2.5 ✅ Repères de marché à l'écran — faits le 2026-09-23
+
+Sous le prix : le prix au m² saisi, celui des ventes de la commune, l'écart en
+pourcentage. Sous le loyer : le loyer hors charges au m², celui des annonces
+charges comprises pour le logement de référence, la fourchette, et un
+avertissement au-dessus ou en dessous. Une saisie hors norme n'est pas
+bloquée : elle est dite. Contrôles à réponse connue sur `reperesMarche()`, et
+une sonde asynchrone qui tape « lyon 3 », choisit, attend le fichier et lit les
+deux lignes. **Reste** : ces repères ne sont visibles que dans le panneau (tiroir fermé
+sur téléphone) ; un résumé « votre projet face au marché de … » dans les
+résultats les rendrait visibles d'emblée.
+
+Le projet initial :
+
+
 
 Sous le prix et le loyer, une barre discrète situe la saisie par rapport à la
 commune : « 4 000 €/m² — marché : 3 200 à 4 100 €/m², 412 ventes en 2025 ».
@@ -156,6 +166,15 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
   l'année de leur paiement, au réel foncier (déficit reportable seulement)
   comme au LMNP réel. Le rendement d'ouverture ne bouge pas : l'impôt y est
   déjà nul.
+
+### 2.7 Budget de poids
+
+Le contrôle « poids total sous 600 Ko » est devenu « poids du site, hors
+données de marché, sous 650 Ko » : 595 Ko aujourd'hui, dont 66 Ko d'image de
+partage rendue sous Linux (48 Ko sur le Mac). Les données ont leurs propres
+budgets, par fichier chargé. À rediscuter si le site doit rester sous 600 Ko :
+sortir de `vitrine.js` le code que seule la calculatrice utilise (repères,
+seuils) ferait quelques kilo-octets.
 
 ---
 

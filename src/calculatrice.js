@@ -10,7 +10,7 @@ const bulle = txt => `<span class="ihint"><button type="button" class="i" aria-l
 
 /* ---------- formulaire ---------- */
 const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
-  "valeur","prixAchat","depuis","travauxPasses","crd","dureeRestante",
+  "valeur","prixAchat","depuis","travauxPasses","crd","dureeRestante","surface",
   "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
   "ps","psPV","cfe","compta","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
   "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds",
@@ -18,12 +18,15 @@ const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux
 // Ce qui décrit le foyer et non le projet : retenu dans ce navigateur, jamais
 // inscrit dans un lien, et conservé quand on ouvre le lien de quelqu'un d'autre.
 const PRIVES = ["revenus","credits"];
-const SELECTS = ["situation","regime","tmi","dpe"];
+const SELECTS = ["situation","regime","tmi","dpe","typeBien"];
 const DEFAULTS = {};
 FIELDS.concat(SELECTS).forEach(k => DEFAULTS[k] = $(k).value);
 DEFAULTS.ira = true;
 DEFAULTS.prixSuitInflation = true;
 DEFAULTS.comptant = false;
+DEFAULTS.commune = "";
+// La commune voyage par son code INSEE ; le champ, lui, montre son nom.
+let communeCode = "";
 
 let items = TVX_DEFAUT.map(o => ({...o}));
 function renderItems(){
@@ -49,6 +52,8 @@ function read(){
   p.regime = $("regime").value;
   p.tmi = parseFloat($("tmi").value);
   p.dpe = $("dpe").value;
+  p.typeBien = $("typeBien").value;
+  p.commune = communeCode;
   p.ira = $("ira").checked;
   p.comptant = $("comptant").checked;
   p.avantImpot = fiscalite === "brut";
@@ -106,6 +111,7 @@ function render(){
 
   const p = read();
   R = compute(p);
+  renderMarche(p);
   const {rows, best, final} = R;
   const brut = p.avantImpot;
   const detenu = R.detenu;
@@ -595,6 +601,93 @@ function renderSeuils(p){
   }).join("");
 }
 
+/* ---------- données de marché ---------- */
+// Servies par ce site, chargées à la demande : la liste des communes d'une
+// initiale quand on tape, le fichier du département quand une commune est
+// choisie. Un fichier absent ou illisible efface les repères, rien de plus.
+const DONNEES = {communes:{}, marche:{}, pret:{}, sources:null};
+const charger = chemin => fetch(chemin).then(r => r.ok ? r.json() : Promise.reject(r.status));
+const communesDe = lettre => DONNEES.communes[lettre]
+  || (DONNEES.communes[lettre] = charger(`/donnees/communes/${lettre}.json`).catch(() => []));
+function marcheDe(dep){
+  if(!DONNEES.marche[dep]){
+    DONNEES.marche[dep] = Promise.all([
+      charger(`/donnees/marche/${dep}.json`),
+      DONNEES.sources ? Promise.resolve(DONNEES.sources) : charger("/donnees/sources.json")
+    ]).then(([m, src]) => { DONNEES.sources = src; DONNEES.pret[dep] = m; })
+      .catch(() => { DONNEES.pret[dep] = null; });
+  }
+  return DONNEES.marche[dep];
+}
+let suggestions = [];
+function choisirCommune(code, nom){
+  communeCode = code;
+  $("commune").value = libelleCommune(code, nom);
+  $("communesListe").innerHTML = "";
+  render();
+}
+$("commune").addEventListener("input", () => {
+  const saisie = $("commune").value;
+  const choisie = suggestions.find(c => libelleCommune(c[0], c[1]) === saisie);
+  if(choisie){ choisirCommune(choisie[0], choisie[1]); return; }
+  // La saisie ne désigne plus la commune retenue : les repères s'effacent.
+  if(communeCode){ communeCode = ""; render(); }
+  if(normaliser(saisie).length < 2){ $("communesListe").innerHTML = ""; suggestions = []; return; }
+  communesDe(initiale(saisie)).then(liste => {
+    if($("commune").value !== saisie) return;
+    suggestions = chercherCommunes(liste, saisie, 8);
+    $("communesListe").innerHTML = suggestions.map(c => `<option value="${esc(libelleCommune(c[0], c[1]))}"></option>`).join("");
+  });
+});
+// Un nom tapé en entier, sans passer par la liste, vaut choix s'il est sans ambiguïté.
+$("commune").addEventListener("change", () => {
+  if(communeCode) return;
+  const exactes = suggestions.filter(c => normaliser(c[1]) === normaliser($("commune").value));
+  if(exactes.length === 1) choisirCommune(exactes[0][0], exactes[0][1]);
+});
+
+const m2 = v => v.toFixed(1).replace(".", ",") + " €/m²";
+const an = mois => mois.slice(0, 4);
+function renderMarche(p){
+  const rp = $("repPrix"), rl = $("repLoyer");
+  const cacher = () => { rp.hidden = rl.hidden = true; };
+  if(!communeCode) return cacher();
+  const dep = departementDe(communeCode);
+  // Un seul rendu à l'arrivée du fichier, quel que soit le nombre de frappes d'ici là.
+  if(!(dep in DONNEES.pret)){ cacher(); if(!DONNEES.marche[dep]) marcheDe(dep).then(render); return; }
+  const M = reperesMarche(DONNEES.pret[dep], communeCode, p), S = DONNEES.sources;
+  if(!M || !S) return cacher();
+  // Ouvert depuis un lien ou une visite précédente : le champ n'a que le code.
+  if(!$("commune").value) $("commune").value = libelleCommune(communeCode, M.nom);
+  const periode = an(S.dvf.periode[0]) === an(S.dvf.periode[1]) ? an(S.dvf.periode[0]) : `${an(S.dvf.periode[0])}-${an(S.dvf.periode[1])}`;
+  const ecart = (saisi, marche, cherEstMal) => {
+    const e = saisi/marche - 1;
+    if(Math.abs(e) < 0.03) return `<b>dans la moyenne</b>`;
+    const bien = (e < 0) === cherEstMal;
+    return `<b class="${bien ? "pos" : "neg"}">${Math.round(Math.abs(e)*100)} % ${e > 0 ? "au-dessus" : "en dessous"}</b>`;
+  };
+  if(M.prix){
+    const X = M.prix, type = M.maison ? "les maisons" : "les appartements";
+    const ou = X.echelle === "commune" ? `à ${M.nom}` : `dans le département — trop peu de ventes à ${M.nom}`;
+    const vente = `${type} se sont vendus ${eur1.format(X.marche)} €/m² ${ou} en ${periode}, sur ${eur1.format(X.ventes)} ventes`;
+    rp.innerHTML = X.saisi === null
+      ? `${vente.charAt(0).toUpperCase() + vente.slice(1)}. Renseignez la surface pour situer votre prix.`
+      : `<b>${eur1.format(Math.round(X.saisi))} €/m²</b> : ${vente}. Vous êtes ${ecart(X.saisi, X.marche, true)}.`;
+    rp.hidden = false;
+  } else rp.hidden = true;
+  if(M.loyer){
+    const L = M.loyer, ref = S.loyers.references[L.cle];
+    const secteur = L.annonces === 0 ? " — estimation de secteur, la commune ayant peu d'annonces" : "";
+    const annonces = `les annonces à ${M.nom} affichent ${m2(L.marche)} charges comprises pour ${M.maison ? "une maison" : "un appartement"} de ${ref} m², la plupart entre ${m2(L.bas)} et ${m2(L.haut)}${secteur}`;
+    rl.innerHTML = L.saisi === null
+      ? `${annonces.charAt(0).toUpperCase() + annonces.slice(1)}. Renseignez la surface pour situer votre loyer.`
+      : `<b>${m2(L.saisi)}</b> hors charges : ${annonces}.`
+        + (L.saisi > L.haut ? ` <b class="neg">Au-dessus de la fourchette</b> : un loyer difficile à obtenir.`
+          : L.saisi < L.bas ? ` <b class="pos">Sous la fourchette</b> : de la marge, ou un bien moins demandé.` : "");
+    rl.hidden = false;
+  } else rl.hidden = true;
+}
+
 /* ---------- persistence & chrome ---------- */
 const STORE = "rentaloc.v2";
 // v1 enregistrait les taux de placement en nominal ; ils sont désormais saisis
@@ -606,7 +699,7 @@ const TAUX_REDEFINIS = ["bourse","fondsEuros","livretA"];
 function save(){
   try{
     const o = {v:2, ira:$("ira").checked, prixSuitInflation:$("prixSuitInflation").checked,
-      comptant:$("comptant").checked, items};
+      comptant:$("comptant").checked, items, commune:communeCode, communeNom:$("commune").value};
     FIELDS.concat(SELECTS).forEach(k => o[k] = $(k).value);
     localStorage.setItem(STORE, JSON.stringify(o));
   }catch(e){}
@@ -629,6 +722,7 @@ function load(){
     if(typeof o.prixSuitInflation === "boolean") $("prixSuitInflation").checked = o.prixSuitInflation;
     if(typeof o.comptant === "boolean") $("comptant").checked = o.comptant;
     if(o.items !== undefined) items = assainir(o.items);
+    if(CODE_COMMUNE.test(o.commune || "")){ communeCode = o.commune; $("commune").value = String(o.communeNom || ""); }
   }catch(e){}
 }
 function toast(msg){
@@ -821,6 +915,7 @@ function retablirDefauts(){
     else $(k).value = DEFAULTS[k];
   });
   items = TVX_DEFAUT.map(o => ({...o}));
+  communeCode = ""; $("commune").value = "";
 }
 
 // L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
@@ -842,6 +937,7 @@ function valeursFormulaire(){
   const valeurs = {};
   FIELDS.concat(SELECTS).forEach(k => { if(!PRIVES.includes(k)) valeurs[k] = $(k).value; });
   BOOLS.forEach(k => valeurs[k] = $(k).checked);
+  valeurs.commune = communeCode;
   return valeurs;
 }
 // L'adresse de la page reste courte : seuls les écarts à l'ouverture. Mais dès
@@ -880,6 +976,9 @@ function depuisHash(){
       if(![...$(k).options].some(o => o.value === v)) return;
       $(k).value = v; vus.add(k);
       if(k === "regime") regime = v;
+    } else if(k === "commune"){
+      if(v !== "" && !CODE_COMMUNE.test(v)) return;
+      communeCode = v; $("commune").value = "";
     } else if(FIELDS.includes(k) && !PRIVES.includes(k)){
       if(!isFinite(parseFloat(v))) return;
       $(k).value = v; vus.add(k);

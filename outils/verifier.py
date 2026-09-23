@@ -29,6 +29,7 @@ from _local import CHROME, JSC, RACINE, SITE, premier_existant, servir_en_fond
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import build   # pour relire les valeurs par défaut exactement comme lui
+import donnees # pour ranger les communes exactement comme lui
 
 SRC = RACINE / "src"
 SOURCE = RACINE / "index.html"
@@ -502,7 +503,50 @@ setTimeout(function(){
 </script>"""
 
 
-def sonde_navigateur(chrome, base, fichier, largeur):
+# Les repères de marché arrivent par deux chargements successifs — la liste des
+# communes d'une initiale, puis le fichier du département : on tape, on attend,
+# on choisit, on attend encore.
+SONDE_MARCHE = """
+<div id="sonde"></div>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(e.message);});
+setTimeout(function(){
+  var r = {largeur: %d}, c = document.getElementById("commune"), s = document.getElementById("surface");
+  var fin = function(){ r.erreurs = window.__err; document.getElementById("sonde").textContent = "SONDE::" + JSON.stringify(r); };
+  if(!c || !s){ fin(); return; }
+  c.value = "lyon 3"; c.dispatchEvent(new Event("input", {bubbles:true}));
+  setTimeout(function(){
+    r.options = [].map.call(document.querySelectorAll("#communesListe option"), function(o){ return o.value; });
+    c.value = r.options[0] || ""; c.dispatchEvent(new Event("input", {bubbles:true}));
+    s.value = "50"; s.dispatchEvent(new Event("change", {bubbles:true}));
+    setTimeout(function(){
+      var rp = document.getElementById("repPrix"), rl = document.getElementById("repLoyer");
+      r.prix = rp.hidden ? "" : rp.textContent;
+      r.loyer = rl.hidden ? "" : rl.textContent;
+      r.lien = lienHypotheses(valeursFormulaire(), null, items, true).indexOf("commune=69383") >= 0;
+      // Effacer la commune efface les repères.
+      c.value = ""; c.dispatchEvent(new Event("input", {bubbles:true}));
+      r.efface = rp.hidden && rl.hidden;
+      fin();
+    }, 1500);
+  }, 1500);
+}, 1200);
+</script>"""
+
+
+def initiales_delicates():
+    """[nom, initiale selon outils/donnees.py] pour chaque commune dont le nom ne
+    commence pas par une lettre sans accent, plus quelques noms à apostrophe et à
+    « Saint » : ceux où la page et l'import pourraient ne pas s'entendre."""
+    sortie = []
+    for f in sorted((RACINE / "donnees" / "communes").glob("*.json")):
+        for code, nom, _ in json.loads(f.read_text(encoding="utf-8")):
+            if not ("A" <= nom[0] <= "Z") or "'" in nom[:3] or nom.startswith(("Saint", "Sainte")):
+                sortie.append([nom, f.stem])
+    return sortie
+
+
+def sonde_navigateur(chrome, base, fichier, largeur, sonde=SONDE):
     """Charge une page dans Chrome et rapatrie un diagnostic depuis le DOM.
 
     Chrome sans fenêtre refuse moins de 500 px de large : en dessous, on
@@ -512,7 +556,7 @@ def sonde_navigateur(chrome, base, fichier, largeur):
     etroit = f"<style>html{{width:{largeur}px;margin:0}}</style>" if largeur < 500 else ""
     temoin = fichier.parent / "__verif.html"
     temoin.write_text(page.replace("</head>", etroit + "</head>")
-                      .replace("</body>", SONDE % largeur + "</body>"), encoding="utf-8")
+                      .replace("</body>", sonde % largeur + "</body>"), encoding="utf-8")
     try:
         url = base + "/" + temoin.relative_to(SITE).as_posix()
         dom = subprocess.run(
@@ -748,8 +792,47 @@ def main():
         controle("aucun appel vers un domaine tiers", not tiers, ", ".join(tiers))
         controle("aucun script de mesure d'audience",
                  not re.search(r"googletagmanager|google-analytics|gtag\(|plausible\.io|matomo|hotjar|clarity\.ms|cloudflareinsights", textes, re.I))
-        poids = sum(f.stat().st_size for f in SITE.rglob("*") if f.is_file())
-        controle("poids total sous 600 Ko", poids < 600_000, "%d Ko" % (poids // 1024))
+        # Les données de marché ne se chargent qu'à la demande, une initiale et un
+        # département à la fois : elles ont leur propre budget, par fichier. Le
+        # reste du site passe à 650 Ko le 2026-09-23 (seuils, capacité d'emprunt,
+        # repères de marché), dont 18 Ko d'une image de partage rendue sous Linux.
+        hors_donnees = [f for f in SITE.rglob("*") if f.is_file() and "donnees" not in f.relative_to(SITE).parts]
+        poids = sum(f.stat().st_size for f in hors_donnees)
+        controle("poids du site, hors données de marché, sous 650 Ko", poids < 650_000, "%d Ko" % (poids // 1024))
+
+        print("\nDONNÉES DE MARCHÉ")
+        dossier = SITE / "donnees"
+        lettres = sorted((dossier / "communes").glob("*.json"))
+        departements = sorted((dossier / "marche").glob("*.json"))
+        lourds = [f.name for f in lettres if f.stat().st_size > 250_000] \
+            + [f.name for f in departements if f.stat().st_size > 150_000]
+        controle("données : chaque fichier chargé à la demande reste léger", bool(lettres) and not lourds,
+                 ", ".join(lourds) or "initiales ≤ 250 Ko, départements ≤ 150 Ko")
+        communes = [c for f in lettres for c in json.loads(f.read_text(encoding="utf-8"))]
+        fiches = {}
+        for f in departements:
+            fiches.update(json.loads(f.read_text(encoding="utf-8"))["c"])
+        orphelines = [c[0] for c in communes if c[0] not in fiches]
+        controle("données : toutes les communes, chacune avec sa fiche",
+                 len(communes) > 34000 and len(departements) >= 100 and not orphelines,
+                 "%d communes, %d départements%s" % (len(communes), len(departements),
+                                                     ", sans fiche : " + orphelines[0] if orphelines else ""))
+        # Une commune se range sous l'initiale que la page calculera en la tapant.
+        # Des bornes larges mais fermées : un prix à 0 €/m² ou un loyer à 500 €/m²
+        # trahit une colonne décalée ou une unité changée à la source.
+        aberrants = [c for c, v in fiches.items()
+                     if any(k in v and v[k][1] >= 10 and not 100 <= v[k][0] <= 60000 for k in ("pa", "pm"))
+                     or any(k in v and not (3 <= v[k][0] <= 60 and v[k][1] <= v[k][0] <= v[k][2])
+                            for k in ("la", "l12", "l3", "lm"))]
+        controle("données : prix et loyers dans des bornes plausibles", not aberrants,
+                 ", ".join(aberrants[:3]) or "prix 100-60 000 €/m², loyers 3-60 €/m²")
+        sources = json.loads((dossier / "sources.json").read_text(encoding="utf-8"))
+        fin = date.fromisoformat(sources["dvf"]["periode"][1] + "-01")
+        age = (date.today() - fin).days // 30
+        # DVF publie deux fois l'an, avec six mois de retard : au-delà de 18 mois,
+        # un millésime a été manqué — relancer outils/donnees.py.
+        controle("données : ventes DVF de moins de 18 mois", age <= 18,
+                 "jusqu'à %s, il y a %d mois" % (sources["dvf"]["periode"][1], age))
 
         chrome = premier_existant(CHROME)
         if not chrome:
@@ -911,6 +994,18 @@ def main():
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
                     controle("seuils face à la bourse affichés", r.get("seuils") == 4, "%s tuiles" % r.get("seuils"))
+                    if largeur == 1360:
+                        m = sonde_navigateur(chrome, base, fichier_pour("/calculatrice/"), largeur, SONDE_MARCHE) or {}
+                        # « Lyon 3e proposée », « prix au m² situé », « loyer situé »,
+                        # « la commune voyage dans le lien », « effacée, plus de repères »
+                        etat = "".join("1" if v else "0" for v in (
+                            (m.get("options") or [""])[0] == "Lyon 3e Arrondissement (69)",
+                            "4 000 €/m²" in (m.get("prix") or "").replace("\u202f", " ").replace("\xa0", " "),
+                            "hors charges" in (m.get("loyer") or ""),
+                            m.get("lien"), m.get("efface")))
+                        controle("repères de marché : recherche, prix, loyer, lien, effacement",
+                                 etat == "11111" and not m.get("erreurs"),
+                                 etat + (" · " + m["erreurs"][0] if m.get("erreurs") else ""))
                     attendu = {
                         "micro-foncier": ("fAbattement", False),
                         "reel-foncier": ("fPlafondDeficit", True),
@@ -940,8 +1035,8 @@ def main():
                     # tracés, comptés et atteignables, ouverts ou non.
                     controle("analyse et tableau repliés à l'ouverture",
                              r.get("replie") == "analyse,detail", r.get("replie") or "aucun")
-                    controle("mode Essentiel : douze réglages décisifs",
-                             r.get("champsEssentiel") == 12
+                    controle("mode Essentiel : quatorze réglages décisifs",
+                             r.get("champsEssentiel") == 14
                              and (r.get("champsTout") or 0) > 20,
                              "%s champs, %s en mode complet"
                              % (r.get("champsEssentiel"), r.get("champsTout")))
@@ -986,7 +1081,8 @@ def main():
         # vérifient sur les vraies valeurs d'ouverture, relues dans index.html ;
         # base() ci-dessous est un scénario de test figé, qui ne les suit pas.
         essai.write_text('if(typeof print==="undefined"){ var print = console.log; }\n' + moteur
-                         + "\nvar DEFAUTS_SITE = %s;\n" % json.dumps(defauts) + """
+                         + "\nvar DEFAUTS_SITE = %s;\n" % json.dumps(defauts)
+                         + "var INITIALES = %s;\n" % json.dumps(initiales_delicates()) + """
 function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,
@@ -1093,6 +1189,31 @@ lignes.push('seuils : a la valeur trouvee, le projet egale la bourse|'
 var autoS = site({apport:0, loyer:3000});
 lignes.push('seuils : sans mise, le projet compte comme devant la bourse|'
   +(autoS.final.tri===null && ecartBourse(autoS.p)===1?1:0)+'|');
+// Initiales : la page range une commune sous la meme lettre que l'import.
+var desaccords = INITIALES.filter(function(x){ return initiale(x[0]) !== x[1]; });
+lignes.push('donnees : la page et l import rangent chaque commune sous la meme initiale|'
+  +(INITIALES.length > 1000 && desaccords.length===0?1:0)+'|'+(desaccords[0] ? desaccords[0].join(' -> ') : INITIALES.length+' noms delicats'));
+// Recherche de communes : chaque mot ouvre un mot du nom, le nom qui commence
+// par la saisie d'abord, puis la plus active.
+var L = [['69383','Lyon 3e Arrondissement',2671],['69387','Lyon 7e Arrondissement',2447],['27377','Lyons-la-Forêt',5],
+         ['93066','Saint-Denis',900],['97411','Saint-Denis',1200],['14650','Œuilly',3]];
+var r1 = chercherCommunes(L,'lyon 3',8), r2 = chercherCommunes(L,'st denis',8), r3 = chercherCommunes(L,'Lyons',8), r4 = chercherCommunes(L,'oeuil',8);
+lignes.push('recherche de communes : mots, saint, ligatures, activite|'
+  +(r1.length===1 && r1[0][0]==='69383' && r2.length===2 && r2[0][0]==='97411' && r3.length===1 && r4.length===1
+    && chercherCommunes(L,'',8).length===0?1:0)+'|');
+// Reperes : la commune, sauf trop peu de ventes (departement) ; le loyer d'annonce
+// suit la surface ; les valeurs saisies sont ramenees au m².
+var M = {c:{'11111':{n:'Ville',pa:[3000,120],pm:[2500,4],la:[12,9,15,50],l12:[14,11,18,30],l3:[11,8,14,20],lm:[10,7,13,0]}},
+         d:{pa:[2800,900],pm:[2200,700]}};
+var ra = reperesMarche(M,'11111',{prix:150000,loyer:600,surface:50,typeBien:'appartement'});
+var rs = reperesMarche(M,'11111',{prix:100000,loyer:500,surface:30,typeBien:'appartement'});
+var rm = reperesMarche(M,'11111',{prix:200000,loyer:900,surface:100,typeBien:'maison'});
+var rd = reperesMarche(M,'11111',{situation:'detenu',valeur:120000,prix:1,loyer:500,surface:40,typeBien:'appartement'});
+lignes.push('reperes de marche : commune ou departement, loyer selon la surface|'
+  +(ra.prix.saisi===3000 && ra.prix.echelle==='commune' && ra.loyer.cle==='la' && ra.loyer.saisi===12
+    && rs.loyer.cle==='l12' && rm.prix.echelle==='departement' && rm.prix.marche===2200 && rm.loyer.cle==='lm'
+    && rd.prix.saisi===3000 && reperesMarche(M,'22222',{})===null
+    && reperesMarche(M,'11111',{prix:1,loyer:1,surface:0}).prix.saisi===null?1:0)+'|');
 // Frais de dossier au reel : deduits l'annee 1, a emprunt egal (l'apport les
 // absorbe), sur un scenario sans amortissement ni travaux ou la base est
 // positive. L'impot de l'annee 1 baisse alors exactement de frais x (TMI + PS).

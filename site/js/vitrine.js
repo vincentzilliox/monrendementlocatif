@@ -559,6 +559,61 @@ function avis(triReel, bourseReel){
   return `Le rendement ne suit pas l'inflation. Vous récupérerez plus d'euros qu'engagés, mais ils achèteront moins : à ces hypothèses, l'opération vous appauvrit en pouvoir d'achat.`;
 }
 
+/* ---------- repères de marché ---------- */
+// Les données viennent de donnees/, qu'écrit outils/donnees.py : prix de vente
+// DVF et loyers d'annonce de l'ANIL, commune par commune. Ici, rien que du
+// calcul : la page charge les fichiers, le moteur les confronte à la saisie.
+
+// Un nom de commune comparable à ce qu'on tape : sans accent ni tiret, « oe »
+// pour « œ », « saint » pour « st ».
+const normaliser = t => String(t).replace(/œ/gi, "oe").replace(/æ/gi, "ae").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+  .replace(/[-'’]/g, " ").replace(/\b(st|ste)\b/g, m => m === "st" ? "saint" : "sainte")
+  .replace(/\s+/g, " ").trim();
+const initiale = t => { const c = normaliser(t).charAt(0); return c >= "a" && c <= "z" ? c : "_"; };
+const departementDe = code => code.startsWith("97") ? code.slice(0, 3) : code.slice(0, 2);
+// Un code commune INSEE : cinq caractères, la Corse en 2A et 2B.
+const CODE_COMMUNE = /^[0-9][0-9AB][0-9]{3}$/;
+
+// `liste` : [code, nom, ventes] d'une initiale. Chaque mot tapé doit ouvrir un mot
+// du nom ; le nom qui commence par la saisie passe devant, puis les communes
+// les plus actives — à nom égal, c'est celle qu'on cherche.
+function chercherCommunes(liste, requete, n){
+  const mots = normaliser(requete).split(" ").filter(Boolean);
+  if(!mots.length) return [];
+  const debut = mots.join(" ");
+  return liste.map(c => ({c, nom: normaliser(c[1])}))
+    .filter(x => { const w = x.nom.split(" "); return mots.every(m => w.some(v => v.startsWith(m))); })
+    .sort((a, b) => (b.nom.startsWith(debut) - a.nom.startsWith(debut)) || b.c[2] - a.c[2])
+    .slice(0, n).map(x => x.c);
+}
+const libelleCommune = (code, nom) => `${nom} (${departementDe(code)})`;
+
+// Sous ce nombre de ventes sur la période, la médiane d'une commune dit peu :
+// on se replie sur celle du département, et on le dit.
+const REPERE_MIN_VENTES = 10;
+// `marche` : le fichier du département, {c: {code: fiche}, d: {pa, pm}}. Les
+// loyers d'annonce sont charges comprises, pour un logement de référence ; le
+// type retenu suit la surface — un studio ne se loue pas au m² d'un T4.
+function reperesMarche(marche, code, p){
+  const fiche = marche && marche.c && marche.c[code];
+  if(!fiche) return null;
+  const maison = p.typeBien === "maison";
+  const surface = Number(p.surface) || 0;
+  const cle = maison ? "pm" : "pa";
+  let ventes = fiche[cle], echelle = "commune";
+  if(!ventes || ventes[1] < REPERE_MIN_VENTES){ ventes = marche.d && marche.d[cle]; echelle = "departement"; }
+  const cleLoyer = maison ? "lm" : surface > 0 && surface <= 45 ? "l12" : surface >= 60 ? "l3" : "la";
+  const annonces = fiche[cleLoyer];
+  const prixSaisi = p.situation === "detenu" ? p.valeur : p.prix;
+  return {
+    nom: fiche.n, maison, surface,
+    prix: ventes ? {echelle, marche: ventes[0], ventes: ventes[1],
+                    saisi: surface > 0 ? prixSaisi/surface : null} : null,
+    loyer: annonces ? {cle: cleLoyer, marche: annonces[0], bas: annonces[1], haut: annonces[2],
+                       annonces: annonces[3], saisi: surface > 0 ? p.loyer/surface : null} : null
+  };
+}
+
 /* ---------- le lien qui porte les hypothèses ---------- */
 // Un fragment d'URL suffit à transmettre une simulation entière. Le format est
 // écrit ici, et lu par depuisHash() : la calculatrice le produit à partir de son
@@ -1250,6 +1305,7 @@ const DEFAUTS = {
   "travauxPasses": 0.0,
   "crd": 90000.0,
   "dureeRestante": 12.0,
+  "surface": 0.0,
   "fraisDossier": 2500.0,
   "loyer": 900.0,
   "vacance": 5.0,
@@ -1285,6 +1341,7 @@ const DEFAUTS = {
   "regime": "lmnp-reel",
   "tmi": 30.0,
   "dpe": "",
+  "typeBien": "appartement",
   "ira": true,
   "comptant": false
 };

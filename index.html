@@ -68,7 +68,7 @@
         <button type="button" id="railEssentiel" aria-pressed="true">Essentiel</button>
         <button type="button" id="railTout" aria-pressed="false">Tous les réglages</button>
       </div>
-      <span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« Essentiel » ne montre que les douze réglages auxquels le rendement est le plus sensible. Les autres gardent leur valeur et continuent d'entrer dans le calcul : « Tous les réglages » les rend modifiables.</span></span>
+      <span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« Essentiel » ne montre que les quatorze réglages auxquels le rendement est le plus sensible. Les autres gardent leur valeur et continuent d'entrer dans le calcul : « Tous les réglages » les rend modifiables.</span></span>
     </div>
 
     <details class="group" open>
@@ -121,8 +121,20 @@
     <details class="group" open>
       <summary>Le bien</summary>
       <div class="fields">
+        <div class="f stack key" id="fCommune"><div class="fl"><label for="commune">Commune</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Facultative. Elle situe votre prix face aux ventes de la commune (DVF, 2024-2025) et votre loyer face à ses annonces (Carte des loyers de l'ANIL, 2025). Les données sont servies par ce site : aucun service tiers n'est interrogé. Le détail est dans les hypothèses de calcul.</span></span></div>
+          <input id="commune" type="text" list="communesListe" autocomplete="off" spellcheck="false" placeholder="Tapez le nom de la commune">
+          <datalist id="communesListe"></datalist>
+        </div>
+        <div class="f key" id="fSurface"><div class="fl"><label for="surface">Surface habitable</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Facultative. Elle ramène le prix et le loyer au m², pour les comparer au marché de la commune.</span></span></div><div class="wrap uw"><input id="surface" type="number" step="1" min="0" value="0"><span class="unit">m²</span></div></div>
+        <div class="f stack" id="fTypeBien"><div class="fl"><label for="typeBien">Type de bien</label></div>
+          <select id="typeBien">
+            <option value="appartement" selected>Appartement</option>
+            <option value="maison">Maison</option>
+          </select>
+        </div>
         <div class="f key" id="fPrix"><div class="fl"><label for="prix">Prix d'achat</label></div><div class="wrap"><input id="prix" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
         <div class="f key" id="fValeur" hidden><div class="fl"><label for="valeur">Valeur actuelle du bien</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que le bien se vendrait aujourd'hui : regardez les ventes récentes du quartier. C'est le point de départ de la revalorisation et de la revente.</span></span></div><div class="wrap"><input id="valeur" type="number" step="1000" value="200000"><span class="unit">€</span></div></div>
+        <p class="repere" id="repPrix" hidden></p>
         <div class="f key" id="fPrixAchat" hidden><div class="fl"><label for="prixAchat">Prix payé à l'achat</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le prix d'acquisition, hors frais. Il sert d'assiette à la plus-value — majoré de 7,5 % de frais forfaitaires et, après cinq ans, de 15 % de travaux forfaitaires — et à l'amortissement en LMNP au réel.</span></span></div><div class="wrap"><input id="prixAchat" type="number" step="1000" value="160000"><span class="unit">€</span></div></div>
         <div class="f key" id="fDepuis" hidden><div class="fl"><label for="depuis">Détenu depuis</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les années déjà écoulées depuis l'achat. Elles comptent pour les abattements de plus-value — exonération d'impôt à 22 ans, de prélèvements sociaux à 30 — et pour l'amortissement déjà pratiqué en LMNP au réel.</span></span></div><div class="wrap uw"><input id="depuis" type="number" step="1" min="0" max="60" value="8"><span class="unit">ans</span></div></div>
         <div class="f" id="fTravauxPasses" hidden><div class="fl"><label for="travauxPasses">Travaux déjà réalisés</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que vous avez dépensé en travaux depuis l'achat, factures à l'appui : ils majorent le prix d'acquisition dans le calcul de la plus-value. Après cinq ans de détention, le forfait de 15 % s'applique s'il est plus favorable.</span></span></div><div class="wrap"><input id="travauxPasses" type="number" step="1000" min="0" value="0"><span class="unit">€</span></div></div>
@@ -195,6 +207,7 @@
       <summary>L'exploitation</summary>
       <div class="fields">
         <div class="f key"><div class="fl"><label for="loyer">Loyer mensuel hors charges</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Deux plafonds à vérifier avant de le fixer. L'encadrement des loyers, dans environ soixante-dix communes (Paris, Lyon, Lille, Bordeaux, Montpellier, Grenoble, Pays basque…). Le DPE : classé F ou G, le loyer ne peut plus augmenter — renseignez la classe énergétique, le calcul le gèle.</span></span></div><div class="wrap"><input id="loyer" type="number" step="10" value="900"><span class="unit">€</span></div></div>
+        <p class="repere" id="repLoyer" hidden></p>
         <div class="f key"><div class="fl"><label for="vacance">Vacance locative + impayés</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des loyers que vous n'encaisserez pas : logement vide entre deux locataires, loyers impayés. Comptez 5 % en zone tendue, davantage ailleurs.</span></span></div><div class="wrap"><input id="vacance" type="number" step="0.5" value="5"><span class="unit">%</span></div></div>
         <div class="f key"><div class="fl"><label for="tf">Taxe foncière</label></div><div class="wrap uw"><input id="tf" type="number" step="50" value="1200"><span class="unit">€/an</span></div></div>
         <div class="f key"><div class="fl"><label for="copro">Charges de copro non récupérables</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des charges de copropriété qui reste à votre charge : celles qui sont récupérables sont refacturées au locataire et n'entrent pas ici.</span></span></div><div class="wrap uw"><input id="copro" type="number" step="10" value="60"><span class="unit">€/m</span></div></div>

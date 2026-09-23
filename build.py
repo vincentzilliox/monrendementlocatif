@@ -13,6 +13,7 @@ import json
 import math
 import pathlib
 import re
+import shutil
 import sys
 from datetime import date, datetime, timedelta
 
@@ -25,6 +26,7 @@ SRC = RACINE / "src"
 GUIDES = RACINE / "guides"
 PAGES = RACINE / "pages"
 SITE = RACINE / "site"
+DONNEES = RACINE / "donnees"
 
 DOMAINE = "https://monrendementlocatif.fr"
 NOM = "Mon rendement locatif"
@@ -494,6 +496,13 @@ def main():
     # puis recopiée. Sans cette copie, un `rm -rf site` la perdrait.
     (SITE / "assets" / "og-image.png").write_bytes((RACINE / "og-image.png").read_bytes())
     favicon.ecrire_ico(SITE / "favicon.ico")
+    # Données de marché : produites par outils/donnees.py, versionnées dans
+    # donnees/ puis recopiées telles quelles. La construction ne télécharge rien.
+    cible = SITE / "donnees"
+    if cible.exists():
+        shutil.rmtree(cible)
+    if DONNEES.exists():
+        shutil.copytree(DONNEES, cible)
     favicon.ecrire_png(SITE / "assets" / "apple-touch-icon.png", 180)
 
     fil_calc, fil_calc_ld = _fil([("Accueil", "/"), ("Calculatrice", None)])
@@ -555,11 +564,17 @@ def main():
 
 /assets/*
   Cache-Control: public, max-age=604800
+
+/donnees/*
+  Cache-Control: public, max-age=86400
 """, encoding="utf-8")
 
     for chemin in sorted(SITE.rglob("*")):
-        if chemin.is_file():
+        if chemin.is_file() and "donnees" not in chemin.relative_to(SITE).parts:
             print(f"  {chemin.relative_to(SITE)}  ({chemin.stat().st_size:,} o)".replace(",", " "))
+    donnees = [c for c in (SITE / "donnees").rglob("*") if c.is_file()]
+    if donnees:
+        print(f"  donnees/  ({len(donnees)} fichiers — {sum(c.stat().st_size for c in donnees):,} o)".replace(",", " "))
 
 
 if __name__ == "__main__":
