@@ -144,6 +144,7 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `outils/hooks/pre-commit` | Refuse un commit dont `site/` n'a pas été régénéré. |
 | `outils/servir.py` | Construit, sert et ouvre le site en local. |
 | `outils/verifier.py` | Contrôles avant publication. |
+| `outils/chiffres.js` | Les chiffres que publient les guides, recalculés par le moteur sur le scénario d'ouverture ; chaque chiffre d'un guide porte `data-calc="clé"`. |
 | `outils/captures.py` | Captures d'écran clair/sombre, grand et petit écran. |
 | `outils/og_image.py` | Régénère `og-image.png` à partir de `outils/og-image.html`. |
 | `wrangler.jsonc` | Déploiement Cloudflare Pages ; les URL inconnues renvoient `404.html`. |
@@ -251,7 +252,7 @@ Un fichier `guides/mon-sujet.html` devient `/guides/mon-sujet/`. Il commence par
 <article class="prose"> … <!--META--> … </article>
 ```
 
-`<!--META-->` reçoit la date et le temps de lecture. Les `<article>` d'une
+`<!--META-->` reçoit la date et le temps de lecture. Tout chiffre tiré du moteur s'écrit `<span data-calc="clé">4,8 %</span>`, la clé venant de `outils/chiffres.js` : `verifier.py` le compare au calcul, à l'arrondi du texte près (un nombre en toutes lettres porte sa valeur dans `data-valeur`). Les `<article>` d'une
 section `.faqg` deviennent du balisage FAQPage ; une section `.lire` accueille
 les liens croisés ; un `.cta` renvoie à la calculatrice, éventuellement
 pré-réglée (`/calculatrice/#regime=reel-foncier` — l'URL porte toutes les

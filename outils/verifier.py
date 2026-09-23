@@ -575,6 +575,48 @@ def initiales_delicates():
     return sortie
 
 
+def controler_guides(chiffres):
+    """Chaque chiffre d'un guide marqué data-calc="clé" doit égaler, à l'arrondi
+    près de son texte, la valeur que outils/chiffres.js calcule sur le scénario
+    d'ouverture. La tolérance se lit dans le texte : « 4,8 % » admet ±0,05,
+    « 43 400 € » ±50 (deux zéros finaux, arrondi à la centaine), « 3 390 € » ±0,5.
+    Un nombre écrit en toutes lettres porte sa valeur dans data-valeur."""
+    if chiffres is None:
+        controle("guides : chiffres recalculés par le moteur", False, "harnais muet")
+        return
+    derives, vus = [], 0
+    for fichier in sorted((RACINE / "guides").glob("*.html")):
+        texte = fichier.read_text(encoding="utf-8")
+        for cle, valeur, affiche in re.findall(
+                r'<span data-calc="(\w+)"(?: data-valeur="([^"]*)")?>([^<]*)</span>', texte):
+            vus += 1
+            nom = "%s : %s « %s »" % (fichier.stem, cle, affiche)
+            if cle not in chiffres:
+                derives.append(nom + " (clé inconnue)")
+                continue
+            attendu = chiffres[cle]
+            if "non calculable" in affiche:
+                if attendu is not None:
+                    derives.append(nom)
+                continue
+            brut = valeur or affiche
+            nombre = re.sub(r"[\s\u202f\u00a0]", "", brut).replace("−", "-").replace(",", ".")
+            trouve = re.search(r"[-+]?\d+(?:\.\d+)?", nombre)
+            if not trouve or attendu is None:
+                derives.append(nom)
+                continue
+            lu, chiffre = float(trouve.group()), trouve.group().lstrip("+-")
+            if "." in chiffre:
+                tolerance = 0.5*10**-len(chiffre.split(".")[1])
+            else:
+                zeros = len(chiffre) - len(chiffre.rstrip("0")) if lu else 0
+                tolerance = 0.5*10**zeros
+            if abs(lu - attendu) > tolerance + 1e-9:
+                derives.append("%s, moteur %.2f" % (nom, attendu))
+    controle("guides : chaque chiffre publié = moteur, à l'arrondi près",
+             vus >= 40 and not derives, derives[0][:90] if derives else "%d chiffres vérifiés" % vus)
+
+
 def sonde_navigateur(chrome, base, fichier, largeur, sonde=SONDE):
     """Charge une page dans Chrome et rapatrie un diagnostic depuis le DOM.
 
@@ -1155,7 +1197,8 @@ def main():
         # base() ci-dessous est un scénario de test figé, qui ne les suit pas.
         essai.write_text('if(typeof print==="undefined"){ var print = console.log; }\n' + moteur
                          + "\nvar DEFAUTS_SITE = %s;\n" % json.dumps(defauts)
-                         + "var INITIALES = %s;\n" % json.dumps(initiales_delicates()) + """
+                         + "var INITIALES = %s;\n" % json.dumps(initiales_delicates())
+                         + (RACINE / "outils" / "chiffres.js").read_text(encoding="utf-8") + """
 function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,
@@ -1492,6 +1535,8 @@ var cmp = comparerRegimes(base(), run({}));
 lignes.push('comparatif des regimes : une courbe par regime|'
   +(cmp.length===4 && cmp.every(function(c){ return c.tris.length===25 && c.tris[24]===c.tri; })?1:0)+'|');
 print(lignes.join('\\n'));
+// Les chiffres que publient les guides, pour la comparaison faite côté Python.
+print('CHIFFRES::' + JSON.stringify(chiffresGuides()));
 """, encoding="utf-8")
         try:
             sortie = subprocess.run([jsc, str(essai)], capture_output=True,
@@ -1501,10 +1546,15 @@ print(lignes.join('\\n'));
                 controle("moteur exécutable", False,
                          message.splitlines()[0][:70] if message else "échec")
             else:
+                chiffres = None
                 for ligne in sortie.stdout.strip().splitlines():
+                    if ligne.startswith("CHIFFRES::"):
+                        chiffres = json.loads(ligne[len("CHIFFRES::"):])
+                        continue
                     parts = ligne.split("|")
                     if len(parts) == 3:
                         controle(parts[0], parts[1] == "1", parts[2])
+                controler_guides(chiffres)
         finally:
             essai.unlink(missing_ok=True)
 

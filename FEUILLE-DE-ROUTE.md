@@ -40,13 +40,14 @@ Tous ces contrôles ont été validés par mutation (huit réintroductions, huit
   −0,5 pt face à la bourse), rendue sous Linux en DejaVu Sans. *Décision du
   2026-09-23 : on la garde pour le moment* ; la régénérer sur le Mac
   (`python3 outils/og_image.py`) rendra la typographie habituelle.
-- **Guides.** Leurs exemples chiffrés datent d'avant la comptabilité et
-  retiennent 2 % d'inflation, contre 2,5 % aujourd'hui (taux de dépôt de la
-  BCE). Ils restent justes pour les hypothèses qu'ils énoncent, mais le lecteur
-  qui clique sur la calculatrice n'y retrouve pas leurs chiffres. Le plus
-  exposé est `lmnp-reel-ou-micro-bic.html`, qui annonce 4,3 % pour le LMNP au
-  réel sans frais de comptabilité. À recalculer, puis à ancrer par des
-  contrôles comme ceux des limites.
+- ✅ **Guides** — *recalculés le 2026-09-23.* Les six guides suivent le scénario
+  d'ouverture (inflation 2,5 %, comptabilité 500 €, frais de dossier déduits) ;
+  chacun de leurs 142 chiffres issus du moteur porte `data-calc="clé"`, et
+  `outils/chiffres.js` les recalcule à chaque vérification : un guide ne peut plus
+  dériver de la calculatrice. Au passage, trois affirmations fausses corrigées :
+  le TRI « non défini sans apport », l'avance de la bourse qui « se réduit »
+  (elle plafonne puis fond), et la réduction d'impôt pour frais de comptabilité,
+  supprimée par la loi de finances pour 2025.
 - **Harnais de test.** `base()` dans `outils/verifier.py` est un scénario figé
   (inflation 2 %, Livret A −0,3 %) qui ne suit plus les valeurs d'ouverture.
   C'est voulu pour les invariants ; mais tout chiffre présenté comme « le
