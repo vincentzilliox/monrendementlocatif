@@ -12,7 +12,7 @@ const bulle = txt => `<span class="ihint"><button type="button" class="i" aria-l
 const FIELDS = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
   "valeur","prixAchat","depuis","travauxPasses","crd","dureeRestante",
   "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
-  "ps","psPV","cfe","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
+  "ps","psPV","cfe","compta","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
   "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds"];
 const SELECTS = ["situation","regime","tmi"];
 const DEFAULTS = {};
@@ -125,7 +125,7 @@ function render(){
   reelEl.classList.toggle("bad", triF!==null && triReel<0);
   $("heroReelTxt").textContent = triF===null
     ? (detenu ? "une vente aujourd'hui ne vous rendrait rien : aucun capital n'est immobilisé"
-              : "renseignez un apport ou des frais payés comptant")
+              : "rien ne sort de votre poche : un rendement sans mise n'a pas de sens")
     : `en pouvoir d'achat, ${pct(p.inflation/100)} d'inflation retirés`;
 
   $("vdMise").textContent = triF===null ? "—" : eur.format(final.mise);
@@ -230,7 +230,8 @@ function render(){
   // Le point mort a rejoint le verdict ; sa place revient à l'effort d'épargne,
   // qui répond à la question qu'on se pose vraiment : combien ça me coûte, et
   // pendant combien de temps. Chaque phrase d'explication part en infobulle.
-  const effort = -R.cumulEffort;
+  // Math.max écarte le zéro négatif, que le format afficherait « -0 € ».
+  const effort = Math.max(0, -R.cumulEffort);
   $("indicateurs").innerHTML = [
     ["Rentabilité brute", pct(R.brute),
       detenu
@@ -376,10 +377,19 @@ function render(){
     warns.push("Vos loyers dépassent 15 000 € par an : le micro-foncier n'est pas accessible, le régime réel s'applique d'office.");
   if(p.regime==="lmnp-micro" && rows[0].loyers>77700)
     warns.push("Vos recettes dépassent 77 700 € par an : le micro-BIC n'est pas accessible, le LMNP au réel s'applique d'office.");
-  if(R.cash0 < 1)
+  // Sans apport, le rendement se mesure sur l'effort d'épargne. Il n'est hors
+  // de portée que si rien ne sort jamais de la poche.
+  if(R.cash0 < 1 && triF === null)
     warns.push(detenu
       ? "Une vente aujourd'hui ne vous rendrait rien : aucun capital n'est immobilisé, le rendement n'a pas de sens mathématique. Vérifiez la valeur du bien et le capital restant dû."
-      : "Sans apport ni frais payés comptant, le rendement sur fonds propres n'a pas de sens mathématique. Ajoutez au moins les frais de dossier.");
+      : "Rien ne sort de votre poche : ni apport, ni effort d'épargne, les loyers paient tout dès le premier jour. Un rendement rapporté à une mise nulle n'a pas de sens — le gain net et la trésorerie disent ce que rapporte le projet.");
+  else if(R.cash0 < 1 && !detenu)
+    warns.push("Sans apport, votre mise est l'effort d'épargne : le rendement se mesure sur les mensualités que les loyers ne couvrent pas. Une banque qui finance aussi les frais demandera en général un dossier solide.");
+  // Au-delà de 23 000 € de recettes meublées, le statut dépend des revenus
+  // d'activité du foyer, que la calculatrice ne connaît pas : on prévient.
+  const seuilLMP = (p.regime === "lmnp-micro" || p.regime === "lmnp-reel") ? rows.find(r => r.loyers > 23000) : null;
+  if(seuilLMP)
+    warns.push(`Vos recettes meublées dépassent 23 000 € par an${seuilLMP.y > 1 ? ` à partir de l'année ${seuilLMP.y}` : ""} : si elles dépassent aussi les revenus d'activité de votre foyer, vous devenez loueur professionnel (LMP) — cotisations sociales à la place des prélèvements sociaux, plus-value professionnelle. Ce statut n'est pas modélisé : le résultat affiché est celui d'un LMNP.`);
   if(dureePret > 0 && R.emprunt > 0 && p.horizon < dureePret)
     warns.push(`Votre horizon (${p.horizon} ans) est plus court que le prêt (${dureePret} ans${detenu ? " restants" : ""}) : chaque revente simulée solde le capital restant dû.`);
   if(detenu && R.emprunt > 0 && p.dureeRestante < 1)
@@ -583,7 +593,7 @@ const CHAMPS_REGIME = {
   "micro-foncier": ["fAbattement"],
   "reel-foncier":  ["fPlafondDeficit"],
   "lmnp-micro":    ["fAbattement", "fCfe", "fMobilier"],
-  "lmnp-reel":     ["fCfe", "fMobilier", "fPartBati", "fAmortBati", "fAmortTvx", "fAmortMob"]
+  "lmnp-reel":     ["fCfe", "fCompta", "fMobilier", "fPartBati", "fAmortBati", "fAmortTvx", "fAmortMob"]
 };
 const TOUS_CHAMPS_REGIME = [...new Set(Object.values(CHAMPS_REGIME).flat())];
 function syncRegime(){
@@ -766,6 +776,16 @@ function retablirDefauts(){
 // L'état complet tient dans l'URL : un lien suffit à partager une simulation, et
 // un guide peut ouvrir le calculateur pré-réglé (/#regime=reel-foncier).
 const BOOLS = ["ira","prixSuitInflation","comptant"];
+// Les champs que « Copier le lien » inscrit depuis qu'il existe (11 septembre
+// 2026). Un lien qui les porte tous est un lien partagé, pas une adresse
+// retouchée à la main ni un lien de l'assistant. Liste figée : c'est un fait passé.
+const LIEN_ORIGINE = ["prix","notairePct","fraisAcq","mobilier","apport","duree","taux","assur",
+  "fraisDossier","loyer","vacance","copro","tf","pno","gestion","entretien",
+  "ps","psPV","cfe","abattement","plafondDeficit","partBati","amortBatiAns","amortTvxAns","amortMobAns","horizon",
+  "inflation","indexPrix","indexLoyer","indexCharges","fraisVente","bourse","fondsEuros","livretA","fiscBourse","fiscFonds"];
+// Les champs apparus depuis qui pèsent sur le résultat, avec la valeur qui
+// reproduit un lien copié avant eux : 0 € de comptabilité, par exemple.
+const CHAMPS_TARDIFS = {compta: "0"};
 // Le format du lien vit dans le moteur : l'assistant de la page d'accueil en
 // produit un sans jamais voir ce formulaire. Ici on ne fait que lire les champs.
 function valeursFormulaire(){
@@ -811,6 +831,11 @@ function depuisHash(){
       $(k).value = v; vus.add(k);
     }
   });
+  // Un lien partagé inscrit chaque hypothèse. S'il les porte toutes sauf un champ
+  // apparu depuis, il a été copié avant que ce champ existe : on lui rend la
+  // valeur qui reproduit le scénario d'alors, pas la valeur d'ouverture actuelle.
+  if(parts.includes(LIEN_COMPLET) && LIEN_ORIGINE.every(k => vus.has(k)))
+    Object.keys(CHAMPS_TARDIFS).forEach(k => { if(!vus.has(k)) $(k).value = CHAMPS_TARDIFS[k]; });
   // Un lien qui ne fixe que le régime emporte les réglages qui en découlent.
   if(regime){
     if(!vus.has("ps")) $("ps").value = PS_LOYERS[regime] || "17.2";

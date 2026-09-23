@@ -2,7 +2,7 @@
 {"titre": "Hypothèses de calcul de la calculatrice de rendement",
  "court": "Hypothèses de calcul",
  "description": "La méthode complète : TRI sur fonds propres, fiscalité des quatre régimes, plus-value, inflation, placements comparés — et ce qui n'est pas modélisé.",
- "maj": "2026-09-21"}
+ "maj": "2026-09-23"}
 </script>
 <article class="methode">
   <header class="mhead">
@@ -154,6 +154,7 @@
               <li style="--ans:7"><span>Mobilier</span><i></i><b data-defaut="amortMobAns">7 ans</b></li>
             </ul>
             <p>Un déficit hors amortissement — charges et intérêts supérieurs aux loyers — se reporte dix ans sur les bénéfices de même nature et s'impute avant l'amortissement.</p>
+            <p>La liasse fiscale du réel se confie en général à un expert-comptable : le calcul retient <span data-defaut="compta">500 €</span> par an, déductibles, indexés comme les charges. Les régimes micro et le foncier se déclarent seuls et n'en supportent pas.</p>
             <p>Depuis la loi de finances 2025, les amortissements du bâti et des travaux effectivement déduits sont réintégrés dans le calcul de la plus-value ; ceux du mobilier ne le sont pas, le mobilier n'entrant pas dans la cession immobilière. La loi de finances pour 2026 (loi n° 2026-103 du 19 février 2026) n'a pas modifié ce régime : le plafonnement de l'amortissement à 2 % qui avait été proposé n'a pas été retenu, et aucun plafond ne limite la réintégration.</p>
           </div>
         </article>
@@ -300,18 +301,48 @@
         </div>
         <article class="mfiche">
           <div>
-            <h3>Ce qui n'est pas modélisé</h3>
-            <p class="messentiel">Ce que la calculatrice laisse volontairement de côté.</p>
+            <h3>Ce que vous pouvez corriger vous-même</h3>
+            <p class="messentiel">Non calculé, mais un champ du panneau permet d'en tenir compte.</p>
+          </div>
+          <div class="mdetail">
+            <p><b>DPE et gel des loyers.</b> Le loyer d'un logement classé F ou G ne peut plus être augmenté ; classé G, il ne peut plus être loué depuis 2025, F à partir de 2028, E à partir de 2034. Le calcul indexe les loyers quel que soit le DPE : il surestime donc une passoire thermique. Sur le scénario par défaut, geler les loyers coûte près de deux points de rendement annualisé. Décochez « Prix, loyers et charges suivent l'inflation » et mettez l'indexation des loyers à zéro — et prévoyez les travaux qui lèveraient l'interdiction.</p>
+            <p><b>Encadrement des loyers.</b> Dans environ soixante-dix communes (Paris, Lyon, Villeurbanne, Lille, Bordeaux, Montpellier, Grenoble, Plaine Commune, Est Ensemble, Pays basque), un loyer de référence majoré plafonne ce que vous pouvez demander. Le calcul ne le connaît pas : vérifiez le plafond de votre adresse avant de saisir le loyer.</p>
+            <p><b>Gros travaux à venir.</b> Ravalement, toiture ou chaudière votés dans dix ans n'ont pas de date dans le calcul, qui ne connaît que les travaux du premier jour. La provision d'entretien, en pourcentage des loyers, en tient lieu : relevez-la pour un immeuble ancien.</p>
+            <p><b>Mois sans loyer.</b> Un chantier avant la première location ou une longue relocation se paient la première année, pas en moyenne sur vingt-cinq ans comme la vacance locative. Sur le scénario par défaut, six mois sans loyer au départ pèsent autant que deux à trois points de vacance de plus sur toute la période.</p>
+            <p><b>Taxe foncière.</b> Elle suit l'inflation dans le calcul, alors qu'elle augmente plus vite dans beaucoup de communes. Réglez l'inflation des charges séparément si c'est le cas de la vôtre.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Ce qui peut changer la réponse</h3>
+            <p class="messentiel">Non calculé, et sans champ pour le corriger : à garder en tête en lisant le résultat.</p>
+          </div>
+          <div class="mdetail">
+            <p><b>Capacité d'emprunt.</b> Les banques plafonnent l'endettement à 35 % des revenus, assurance comprise, et ne retiennent en général que 70 % des loyers. Le calcul ne connaît pas vos revenus : un projet rentable ici peut être refusé, et l'effort d'épargne mensuel doit tenir dans votre budget.</p>
+            <p><b>Une tranche d'imposition fixe.</b> Elle reste la même sur toute la durée simulée, alors qu'elle baisse souvent à la retraite, et que les loyers peuvent eux-mêmes faire franchir un palier. En micro-foncier, passer de 11 % à 41 % coûte plus d'un point et demi de rendement. Le graphique de sensibilité montre ce que vaut une tranche de plus ou de moins sur votre projet.</p>
+            <p><b>Statut de loueur professionnel.</b> Au-delà de 23 000 € de recettes meublées, et si elles dépassent les revenus d'activité du foyer, le loueur devient professionnel : cotisations sociales, plus-value professionnelle. La calculatrice le signale et calcule comme en LMNP.</p>
+            <p><b>Changer de régime en cours de route.</b> Le régime choisi vaut pour toute la durée. Un passage du nu au meublé, ou du micro au réel, n'est pas simulé ; pour un bien déjà détenu au LMNP réel, le calcul suppose que l'amortissement a été pratiqué depuis l'achat.</p>
+            <p><b>Transmission ou résidence principale.</b> La plus-value latente disparaît au décès, et la résidence principale en est exonérée : si le bien doit être transmis ou habité, la logique de la revente ne s'applique plus.</p>
+            <p><b>Changements de législation.</b> Les règles sont celles de la loi de finances pour 2026, appliquées telles quelles pendant toute la durée simulée. La revente a lieu en fin d'année, jamais en cours de mois.</p>
+            <p>Les plafonds du micro-foncier (15 000 €) et du micro-BIC (77 700 €) sont signalés, mais pas imposés.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Ce qui sort du cadre</h3>
+            <p class="messentiel">D'autres montages, d'autres règles : la calculatrice n'est pas le bon outil.</p>
           </div>
           <div class="mdetail">
             <ul class="mpuces">
-              <li>IFI</li>
-              <li>Changements de législation</li>
-              <li>Gros travaux ponctuels</li>
-              <li>Revente en cours de mois</li>
+              <li>SCI à l'impôt sur les sociétés</li>
+              <li>Démembrement de propriété</li>
+              <li>Location courte durée</li>
+              <li>Colocation</li>
               <li>Pinel, Denormandie, Malraux</li>
+              <li>Prêt in fine ou différé</li>
+              <li>IFI</li>
             </ul>
-            <p>Les plafonds du micro-foncier (15 000 €) et du micro-BIC (77 700 €) sont signalés, mais pas imposés.</p>
+            <p>La location courte durée relève d'un abattement propre — 30 % sous 15 000 € de recettes pour un meublé de tourisme non classé, réglable dans le panneau — mais ni sa saisonnalité ni ses frais de conciergerie ne sont simulés.</p>
           </div>
         </article>
       </section>

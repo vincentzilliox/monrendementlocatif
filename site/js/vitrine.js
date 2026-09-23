@@ -71,6 +71,11 @@ function schedule(capital, tauxPct, dureeAns, assurPct){
 }
 
 function irr(flows){
+  // Un rendement suppose une mise, puis un retour. Si le premier flux est une
+  // rentrée, le taux trouvé serait celui d'un emprunt, pas d'un placement ; si
+  // aucun flux ne revient, il n'existe pas.
+  const premier = flows.find(c => Math.abs(c) > 1e-9);
+  if(!(premier < 0) || !flows.some(c => c > 0)) return null;
   const f = r => flows.reduce((s,c,i)=> s + c/Math.pow(1+r,i), 0);
   let lo=-0.9999, hi=10, flo=f(lo), fhi=f(hi);
   if(!isFinite(flo)||!isFinite(fhi)||flo*fhi>0) return null;
@@ -167,6 +172,9 @@ function compute(p){
   const amortMob = surAns(mobilier, p.amortMobAns);
   // La CFE relève du BIC : elle ne concerne pas la location nue.
   const cfeApplicable = meuble;
+  // Le LMNP au réel exige une liasse fiscale : un expert-comptable, déductible
+  // comme toute charge. Les autres régimes se déclarent seuls, sans ce coût.
+  const compta = p.regime === "lmnp-reel" ? Math.max(0, Number(p.compta) || 0) : 0;
 
   // Déficits fonciers reportables : chaque millésime expire au bout de 10 ans.
   // Imputations sur le revenu global : reprises si le bien est vendu avant le
@@ -239,7 +247,7 @@ function compute(p){
     const loyers = p.loyer*12*Math.pow(1+p.indexLoyer/100, y-1)*(1-p.vacance/100);
     // CFE : exonérée la première année d'activité, et sous 5 000 € de recettes.
     const cfeAn = (!cfeApplicable || (y === 1 && !detenu) || loyers <= 5000) ? 0 : p.cfe;
-    const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn)*Math.pow(1+p.indexCharges/100, y-1);
+    const chargesFixes = (p.copro*12 + p.tf + p.pno + cfeAn + compta)*Math.pow(1+p.indexCharges/100, y-1);
     const charges = chargesFixes + loyers*(p.gestion+p.entretien)/100;
     const L = sch.years[y-1] || {int:0,pri:0,ass:0,crd:0};
     const annuite = L.int + L.pri + L.ass;
@@ -333,12 +341,16 @@ function compute(p){
     const fondsNet = netDe(pFonds, miseTotale, fiscF);
     const potImmoNet = netDe(potImmo, surplusCumul, fiscB);
 
+    // Sans apport, la mise est l'effort d'épargne : les mensualités que les loyers
+    // ne couvrent pas sortent de votre poche, et le rendement se mesure sur elles.
+    // Quand l'argent commence par rentrer — loyers qui couvrent tout sans mise,
+    // bien détenu dont la vente coûterait de l'argent —, irr() rend null.
     const flows = [-cash0].concat(cfHist.slice(0,-1)).concat([cfNet + netVente]);
-    const tri = cash0 > 1 ? irr(flows) : null;
+    const tri = irr(flows);
     // Même chronique de versements, placée en bourse : le rendement annualisé
     // net d'impôt directement opposable au TRI du bien.
     const flowsBourse = [-cash0].concat(efforts.slice(0,-1).map(e => -e)).concat([portefeuilleNet - effort]);
-    const triBourse = cash0 > 1 ? irr(flowsBourse) : null;
+    const triBourse = irr(flowsBourse);
     const gain = cumulCF + netVente - cash0;
 
     rows.push({y, loyers, charges, interets:L.int, assurance:L.ass, principal:L.pri, annuite,
@@ -417,8 +429,15 @@ const SENS = [
   {k:"taux",      nom:"Taux du crédit",          pas:() => 1,     txt:"1 pt"},
   {k:"vacance",   nom:"Vacance locative",        pas:() => 5,     txt:"5 pts"},
   {k:"indexPrix", nom:"Revalorisation du bien",  pas:() => 1,     txt:"1 pt/an"},
-  {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"}
+  {k:"travaux",   nom:"Montant des travaux",     pas:v => v*0.20, txt:"20 %"},
+  // La tranche ne se déplace pas d'un pourcentage : elle change de palier. Elle
+  // change aussi dans la vie d'un investisseur — à la retraite, ou quand les
+  // loyers eux-mêmes font franchir un seuil —, alors que le calcul la tient fixe.
+  {k:"tmi",       nom:"Tranche d'imposition",    txt:"1 tranche"}
 ];
+// Les tranches du barème, dans l'ordre : ce sont les choix de la liste « tmi »
+// de index.html, et outils/verifier.py contrôle qu'elles n'en divergent pas.
+const TRANCHES = [0, 11, 30, 41, 45];
 function sensibilite(p, triRef){
   const detenu = p.situation === "detenu";
   const cle = s => detenu && s.kDetenu ? s.kDetenu : s.k;
@@ -427,6 +446,10 @@ function sensibilite(p, triRef){
     if(s.k === "travaux"){
       q.items = p.items.map(it => Object.assign({}, it, {montant: it.montant*(1 + signe*0.2)}));
       q.travaux = q.items.reduce((a,it) => a + it.montant, 0);
+    } else if(s.k === "tmi"){
+      // Au bout du barème, il n'y a pas de palier suivant : ce côté ne bouge pas.
+      const i = TRANCHES.reduce((m, t, j) => Math.abs(t - p.tmi) < Math.abs(TRANCHES[m] - p.tmi) ? j : m, 0);
+      q.tmi = TRANCHES[Math.max(0, Math.min(TRANCHES.length - 1, i + signe))];
     } else {
       const k = cle(s);
       const v = p[k] + signe*s.pas(p[k]);
@@ -1162,6 +1185,7 @@ const DEFAUTS = {
   "ps": 18.6,
   "psPV": 17.2,
   "cfe": 400.0,
+  "compta": 500.0,
   "abattement": 50.0,
   "plafondDeficit": 10700.0,
   "partBati": 85.0,

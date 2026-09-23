@@ -36,7 +36,8 @@ de plus-value, et la mise est ce qu'une vente aujourd'hui rendrait — net de
 frais, de crédit et d'impôt. Le rendement répond alors à « garder ou vendre ? ».
 
 **Exploitation** — loyers indexés, vacance locative, charges de copropriété,
-taxe foncière, PNO, gestion, provision d'entretien, CFE.
+taxe foncière, PNO, gestion, provision d'entretien, CFE, et au LMNP au réel la
+comptabilité (500 €/an par défaut, déductible).
 
 **Fiscalité** — quatre régimes (micro-foncier, réel foncier avec déficit
 imputable et reportable dix ans, micro-BIC, LMNP au réel avec amortissement par
@@ -121,6 +122,8 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `outils/og_image.py` | Régénère `og-image.png` à partir de `outils/og-image.html`. |
 | `wrangler.jsonc` | Déploiement Cloudflare Pages ; les URL inconnues renvoient `404.html`. |
 | `site/` | Généré. À déployer tel quel, à ne pas éditer à la main. |
+| `AUDIT.md` | Audit technique du 2026-09-05 : bugs, refactor, accessibilité — et ce qui en a été corrigé. |
+| `FEUILLE-DE-ROUTE.md` | Audit produit du 2026-09-23 : ce que la calculatrice apporte à un investisseur, ses angles morts, et les chantiers qui les ferment. |
 
 ### Les pages
 
@@ -176,7 +179,7 @@ Trois règles, et ce sont des contrôles, pas des conventions :
 ```sh
 python3 outils/servir.py     # construit, sert et ouvre le navigateur
 python3 build.py             # construit seulement
-python3 outils/verifier.py   # 150 contrôles avant publication
+python3 outils/verifier.py   # plus de 200 contrôles avant publication
 ```
 
 ### Installer le garde-fou
@@ -216,7 +219,7 @@ FAQPage), `script` et `priorite`.
 python3 outils/verifier.py
 ```
 
-Plus de cent cinquante contrôles : ressources servies, métadonnées de chaque
+Plus de deux cents contrôles : ressources servies, métadonnées de chaque
 page, sitemap complet et sans fantôme, liens internes, charte respectée, absence
 d'appel vers un domaine tiers et de mesure d'audience, erreurs JavaScript et
 débordement à 1360 et 390 px sur cinq pages — panneau replié puis déployé —,
@@ -235,9 +238,21 @@ python3 outils/captures.py captures/ / /calculatrice/ /guides/
 ## Limites
 
 Les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un
-conseiller fiscal. Ne sont pas modélisés : IFI, statut LMP, dispositifs Pinel,
-Denormandie et Malraux, SCI à l'impôt sur les sociétés, démembrement, et le taux
-d'endettement — un projet rentable ici peut être refusé par une banque. Les
-plafonds du micro-foncier et du micro-BIC sont signalés, pas imposés.
+conseiller fiscal. La page `/hypotheses-de-calcul/` tient la liste publique, en
+trois groupes, chacun avec le sens du biais et le moyen de le contourner :
 
-Les hypothèses de calcul détaillées figurent en bas du calculateur.
+- **corrigeables dans le panneau** — DPE et gel des loyers, encadrement des
+  loyers, gros travaux futurs, mois sans loyer, dérive de la taxe foncière ;
+- **pouvant changer la réponse** — capacité d'emprunt (35 % d'endettement),
+  tranche d'imposition fixe, statut LMP, changement de régime en cours de
+  route, transmission ou résidence principale, changements de législation ;
+- **hors du cadre** — SCI à l'IS, démembrement, location courte durée,
+  colocation, Pinel, Denormandie, Malraux, prêt in fine ou différé, IFI.
+
+Les ordres de grandeur qu'elle publie (« geler les loyers coûte près de deux
+points »…) sont recalculés par `outils/verifier.py` sur le scénario d'ouverture.
+Les plafonds du micro-foncier et du micro-BIC, et le seuil LMP, sont signalés,
+pas imposés.
+
+Ce qui reste à faire pour fermer ces angles morts est dans
+[`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).

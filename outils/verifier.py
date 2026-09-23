@@ -298,6 +298,26 @@ setTimeout(function(){
     cComptant.checked = false; cComptant.dispatchEvent(new Event("change", {bubbles:true}));
     r.comptant += document.getElementById("heroTri").textContent === triAvantComptant && !cache("fDuree") ? "1" : "0";
   }
+  // Trois angles morts signales : recettes meublees au-dela du seuil LMP, apport
+  // nul (le rendement reste calcule, sur l'effort d'epargne), et la comptabilite
+  // visible au LMNP reel seulement. Chaque champ retrouve sa valeur.
+  var fLoyer = document.getElementById("loyer"), fApport = document.getElementById("apport");
+  if(fLoyer && fApport && select){
+    var alertes = function(){ return document.getElementById("warnBox").textContent; };
+    var poser = function(el, v){ el.value = v; el.dispatchEvent(new Event("change", {bubbles:true})); };
+    var loyer0 = fLoyer.value, apport0 = fApport.value;
+    poser(fLoyer, "2500");
+    r.alertes = /LMP/.test(alertes()) ? "1" : "0";
+    poser(fLoyer, loyer0); poser(fApport, "0");
+    r.alertes += (/Sans apport/.test(alertes()) && /%%/.test(document.getElementById("heroTri").textContent)) ? "1" : "0";
+    poser(fApport, apport0);
+    var cpt = document.getElementById("fCompta"), rg = document.getElementById("regime"), rg0 = rg.value;
+    rg.value = "lmnp-reel"; rg.dispatchEvent(new Event("change", {bubbles:true}));
+    var visibleReel = cpt && !cpt.hidden;
+    rg.value = "micro-foncier"; rg.dispatchEvent(new Event("change", {bubbles:true}));
+    r.alertes += visibleReel && cpt.hidden ? "1" : "0";
+    rg.value = rg0; rg.dispatchEvent(new Event("change", {bubbles:true}));
+  }
   // Bien déjà détenu : un autre jeu de champs, un rendement calculé, et le
   // retour à l'achat rend le chiffre de départ.
   var situ = document.getElementById("situation");
@@ -447,6 +467,16 @@ setTimeout(function(){
                     && document.getElementById("loyer").value === "1234";
     r.lienGuide = essai("#regime=reel-foncier") === "9.99"
                   && document.getElementById("regime").value === "reel-foncier";
+    // Un lien copie avant l'apparition d'un champ garde le scenario d'alors : il
+    // porte tous les champs d'origine mais pas la comptabilite, qui y vaut 0 €.
+    // Un lien de l'assistant, lui, prend la valeur d'ouverture.
+    var compta = document.getElementById("compta");
+    if(typeof LIEN_ORIGINE !== "undefined" && compta){
+      essai("#complet=1&" + LIEN_ORIGINE.map(function(k){ return k + "=" + encodeURIComponent(DEFAULTS[k]); }).join("&"));
+      var ancien = compta.value;
+      essai("#complet=1");
+      r.lienAncien = ancien + "|" + compta.value;
+    }
   }
   document.getElementById("sonde").textContent = "SONDE::" + JSON.stringify(r);
 }, 1800);
@@ -662,6 +692,21 @@ def main():
                            if re.search(r"(?<![\d.])%g(?![\d.])" % defauts[cle], assistant_src)})
         controle("l'assistant ne recopie aucune valeur par défaut",
                  not recopies, ", ".join(recopies))
+        # Le graphique de sensibilité déplace la tranche d'un palier : ses paliers
+        # doivent être ceux de la liste du formulaire, pas une copie qui dériverait.
+        tranches = json.loads(re.search(r"const TRANCHES = (\[.*?\]);", moteur_src).group(1))
+        bloc = re.search(r'<select id="tmi">(.*?)</select>', balisage, re.S).group(1)
+        options = [float(v) for v in re.findall(r'<option value="([^"]*)"', bloc)]
+        controle("sensibilité : tranches du barème = liste du formulaire",
+                 tranches == options, "%s vs %s" % (tranches, options))
+        # Le lien d'origine et les champs apparus depuis : tous des champs réels,
+        # et aucun dans les deux listes à la fois.
+        origine = json.loads(re.search(r"const LIEN_ORIGINE = (\[.*?\]);", calc_src, re.S)
+                             .group(1).replace("\n", " "))
+        tardifs = re.findall(r"(\w+):", re.search(r"const CHAMPS_TARDIFS = \{(.*?)\};", calc_src).group(1))
+        intrus = sorted(set(origine + tardifs) - set(champs)) + sorted(set(origine) & set(tardifs))
+        controle("liens anciens : champs d'origine et tardifs connus", not intrus and tardifs,
+                 ", ".join(intrus))
         # La page de méthode, elle, affiche des chiffres : chacun de ceux qui
         # viennent du formulaire porte data-defaut et doit en égaler la valeur.
         # Sans quoi la page annoncerait 8 % de frais quand l'outil en retient 7,5.
@@ -798,6 +843,10 @@ def main():
                              "%s courbes, note : %s" % (r.get("regT"), (r.get("regTNote") or "—")[:40]))
                     # « champs du crédit masqués », « rendement changé », « bulle du
                     # loyer couvert : aucun crédit », « décocher rend le départ »
+                    # « seuil LMP signalé », « apport nul : rendement calculé et
+                    # expliqué », « comptabilité au seul LMNP réel »
+                    controle("angles morts signalés : LMP, apport nul, comptabilité",
+                             r.get("alertes") == "111", r.get("alertes") or "sonde muette")
                     controle("achat comptant : les champs du crédit s'effacent, le rendement suit",
                              r.get("comptant") == "1111", r.get("comptant") or "sonde muette")
                     controle("bien détenu : ses champs, et seulement eux",
@@ -820,6 +869,10 @@ def main():
                              r.get("lienComplet") is True, str(r.get("lienComplet")))
                     controle("lien de guide : conserve la saisie du visiteur",
                              r.get("lienGuide") is True, str(r.get("lienGuide")))
+                    # « lien copié avant la comptabilité | lien de l'assistant »
+                    controle("lien copié avant un nouveau champ : scénario d'alors",
+                             r.get("lienAncien") == "0|" + str(int(defauts["compta"])),
+                             r.get("lienAncien") or "sonde muette")
                     # « rendement change », « colonnes d'impôt retirées »,
                     # « verdict avant impôt », « brut jamais retenu » (la page
                     # s'ouvre toujours en net), « retour net identique »
@@ -907,13 +960,22 @@ def main():
         moteur = (SRC / "moteur.js").read_text(encoding="utf-8")
         essai = RACINE / "outils" / "__moteur.js"
         # jsc expose print() ; node non. Le harnais s'écrit une fois pour les deux.
-        essai.write_text('if(typeof print==="undefined"){ var print = console.log; }\n' + moteur + """
+        # Les chiffres que les pages attribuent au « scénario par défaut » se
+        # vérifient sur les vraies valeurs d'ouverture, relues dans index.html ;
+        # base() ci-dessous est un scénario de test figé, qui ne les suit pas.
+        essai.write_text('if(typeof print==="undefined"){ var print = console.log; }\n' + moteur
+                         + "\nvar DEFAUTS_SITE = %s;\n" % json.dumps(defauts) + """
 function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
  duree:20,taux:3.4,assur:0.34,fraisDossier:2500,loyer:900,vacance:5,copro:60,tf:1200,pno:180,
  gestion:0,entretien:5,ps:18.6,psPV:17.2,cfe:400,abattement:50,plafondDeficit:10700,partBati:85,
  amortBatiAns:30,amortTvxAns:15,amortMobAns:7,horizon:25,inflation:2,indexPrix:2,indexLoyer:2,
  indexCharges:2,fraisVente:5,bourse:4,fondsEuros:0,livretA:-0.3,fiscBourse:31.4,fiscFonds:30,
  regime:'lmnp-reel',tmi:30,ira:true,items:[{nom:'R',montant:20000,taux:5,duree:20,deduc:100}]}; }
+// Le scenario d'ouverture du site, comme la vitrine le rejoue : prix, loyers et
+// charges suivent l'inflation tant que la case est cochee.
+function site(o){ var p=Object.assign({}, DEFAUTS_SITE, {items:TVX_DEFAUT.map(function(t){ return Object.assign({}, t); })});
+ p.indexPrix=p.indexLoyer=p.indexCharges=p.inflation; for(var k in o) p[k]=o[k];
+ p.travaux=p.items.reduce(function(s,i){return s+i.montant;},0); return compute(p); }
 function run(o){ var p=base(); for(var k in o) p[k]=o[k];
  p.travaux=p.items.reduce(function(s,i){return s+i.montant;},0); return compute(p); }
 var lignes=[];
@@ -960,7 +1022,43 @@ lignes.push('mobilier neutralise en location nue|'
   +(Math.abs(run({regime:'reel-foncier',mobilier:8000}).final.tri-run({regime:'reel-foncier',mobilier:0}).final.tri)<1e-9?1:0)+'|');
 lignes.push('mobilier compte en meuble|'
   +(Math.abs(run({mobilier:8000}).final.tri-run({mobilier:0}).final.tri)>1e-6?1:0)+'|');
-lignes.push('apport nul : TRI non calculable|'+(run({apport:0}).final.tri===null?1:0)+'|');
+// Sans apport, la mise est l'effort d'epargne : le TRI existe, et il prolonge
+// continument celui d'un apport minime.
+var a0 = run({apport:0}).final.tri, a100 = run({apport:100}).final.tri;
+lignes.push('apport nul : TRI sur l effort d epargne|'+(a0!==null && Math.abs(a0-a100)<1e-3?1:0)+'|'
+  +(a0===null?'non calculable':(a0*100).toFixed(2)+' %'));
+// Si rien ne sort jamais de la poche, il n'y a pas de rendement — ni a
+// l'horizon, ni a une annee de revente ou l'argent commencerait par rentrer.
+var auto = run({apport:0, loyer:3000});
+lignes.push('autofinance sans mise : TRI non calculable, chaque annee|'
+  +(auto.rows.every(function(r){ return r.tri===null; }) && auto.best===null?1:0)+'|');
+// Comptabilite : une charge du seul LMNP au reel, deductible.
+var c0 = run({}), c5 = run({compta:500});
+lignes.push('comptabilite comptee au LMNP reel|'
+  +(Math.abs(c5.rows[0].charges-c0.rows[0].charges-500)<0.01 && c5.final.tri<c0.final.tri?1:0)
+  +'|'+(c0.final.tri*100).toFixed(2)+' -> '+(c5.final.tri*100).toFixed(2)+' %');
+lignes.push('comptabilite neutre hors LMNP reel|'
+  +(['micro-foncier','reel-foncier','lmnp-micro'].every(function(rg){
+     return run({regime:rg, compta:500}).final.tri===run({regime:rg}).final.tri; })?1:0)+'|');
+// La tranche entre dans la sensibilite quand elle pese, en sort quand l'impot
+// est nul, et ne bouge que d'un cote au bout du bareme.
+var mf = {regime:'micro-foncier', ps:17.2, cfe:0, abattement:30};
+var tr = function(o){ var R=run(o); return sensibilite(R.p, R.final.tri).filter(function(s){ return s.nom==="Tranche d'imposition"; })[0]; };
+var t30 = tr(mf), t45 = tr(Object.assign({}, mf, {tmi:45})), tl = tr({});
+lignes.push('sensibilite : tranche d imposition|'
+  +(t30 && t30.lo<0 && t30.hi>0 && t45 && Math.min(Math.abs(t45.lo),Math.abs(t45.hi))<1e-12 && !tl?1:0)+'|'
+  +(t30?pts(t30.lo)+' / '+pts(t30.hi):'absente'));
+// Les ordres de grandeur que la page d'hypotheses publie dans ses limites.
+var ref = site({}).final.tri;
+var gel = ref - site({indexLoyer:0}).final.tri;
+lignes.push('limites : geler les loyers coute pres de deux points|'+(gel>0.015 && gel<0.025?1:0)+'|'+(gel*100).toFixed(2)+' pt');
+var tmiEcart = site(Object.assign({}, mf, {tmi:11})).final.tri - site(Object.assign({}, mf, {tmi:41})).final.tri;
+lignes.push('limites : tranche 11 -> 41 en micro-foncier, plus d un point et demi|'+(tmiEcart>0.015?1:0)+'|'+(tmiEcart*100).toFixed(2)+' pt');
+var rm = site({}), cfm = rm.rows.map(function(r){ return r.cfNet; });
+cfm[0] -= rm.p.loyer*6;
+var tri6 = irr([-rm.cash0].concat(cfm.slice(0,-1)).concat([cfm[cfm.length-1]+rm.final.netVente]));
+lignes.push('limites : six mois sans loyer = deux a trois points de vacance|'
+  +(tri6<=site({vacance:rm.p.vacance+2}).final.tri && tri6>=site({vacance:rm.p.vacance+3}).final.tri?1:0)+'|'+(tri6*100).toFixed(2)+' %');
 lignes.push('duree amortissement nulle sans plantage|'+(isFinite(run({amortBatiAns:0}).final.tri)?1:0)+'|');
 lignes.push('horizon 1 an sans plantage|'+(isFinite(run({horizon:1}).final.tri)?1:0)+'|');
 lignes.push('champs fiscaux absents toleres|'+(isFinite(run({fiscBourse:undefined,fiscFonds:undefined}).final.gainBourse)?1:0)+'|');
