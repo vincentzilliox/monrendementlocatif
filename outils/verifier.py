@@ -1002,10 +1002,10 @@ def main():
                              bool(r["tri"]) and r["tri"] == vitrine.get("vitrine"),
                              "%s vs %s" % (vitrine.get("vitrine", "—"), r["tri"]))
                     controle("six tuiles d'indicateurs", r["tuiles"] == 6, str(r["tuiles"]))
-                    controle("huit graphiques tracés", r["graphes"] == 8, str(r["graphes"]))
-                    controle("huit équivalents textuels", r.get("equiv") == 8, str(r.get("equiv")))
-                    controle("huit graphiques atteignables au clavier",
-                             r.get("focalisables") == 8, str(r.get("focalisables")))
+                    controle("sept graphiques tracés", r["graphes"] == 7, str(r["graphes"]))
+                    controle("sept équivalents textuels", r.get("equiv") == 7, str(r.get("equiv")))
+                    controle("sept graphiques atteignables au clavier",
+                             r.get("focalisables") == 7, str(r.get("focalisables")))
                     controle("quatre régimes et la bourse dans le temps",
                              r.get("regT") == 5 and len(r.get("regTNote") or "") > 20,
                              "%s courbes, note : %s" % (r.get("regT"), (r.get("regTNote") or "—")[:40]))
@@ -1104,7 +1104,7 @@ def main():
                     # un par un sous chaque graphique.
                     controle("descriptions courtes sous chaque titre",
                              not r.get("tropLong"), (r.get("tropLong") or "")[:60])
-                    # Replié ne veut pas dire absent : les huit graphiques sont
+                    # Replié ne veut pas dire absent : les sept graphiques sont
                     # tracés, comptés et atteignables, ouverts ou non.
                     controle("analyse et tableau repliés à l'ouverture",
                              r.get("replie") == "analyse,detail", r.get("replie") or "aucun")

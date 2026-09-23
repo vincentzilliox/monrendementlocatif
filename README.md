@@ -82,8 +82,7 @@ prix.
 
 **Graphiques** — rendement annualisé par année de revente, comparatif des quatre
 régimes à l'horizon puis année par année, gain net face aux trois placements,
-cascade du gain, trésorerie annuelle, patrimoine net et dette, sensibilité du
-TRI aux six paramètres clés.
+cascade du gain, trésorerie annuelle, sensibilité du TRI aux paramètres clés.
 
 **Brut ou net** — une bascule de la barre de navigation passe toute la
 calculatrice avant impôt : verdict, graphiques, tableau et export CSV. Seule la
@@ -108,7 +107,7 @@ ceux sans lesquels il n'y a pas de projet. « Tous les réglages » découvre le
 autres, qui n'ont jamais cessé d'entrer dans le calcul. Chaque situation et
 chaque régime n'exposent que les champs qui les concernent. De même côté résultats :
 le verdict, les indicateurs et les trois graphiques qui décident restent à
-l'écran ; trésorerie, cascade, patrimoine, sensibilité et tableau annuel attendent
+l'écran ; trésorerie, cascade, sensibilité et tableau annuel attendent
 d'être dépliés — tracés quand même, et redessinés à l'ouverture. Le panneau
 lui-même se range : sur grand écran il se rabat contre le bord gauche, et le
 choix est retenu ; sur téléphone il vient en tiroir par-dessus la page, fermé à

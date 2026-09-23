@@ -559,29 +559,6 @@ function renderComplements(p){
     `Fin d'année ${anCasc} : ${eur.format(f.cumulLoyers)} de loyers et ${revalorisation >= 0 ? eur.format(revalorisation) + " de revalorisation" : eur.format(-revalorisation) + " de dévalorisation"}, contre ${eur.format(sorties)} de ${p.avantImpot ? "charges, frais et intérêts" : "charges, frais, intérêts et impôts"}`
     + (R.detenu ? " au-delà d'une vente aujourd'hui." : ".");
 
-  // Patrimoine net et dette.
-  const xs = rows.map(r => String(r.y));
-  drawChart($("plotPat"), $("tipPat"), {
-    x: xs, height:250, padLeft:78, zero:true, label:"Valeur du bien, capital restant dû et patrimoine net",
-    fmtAxis: kEur,
-    fmtVal: v => eur.format(v),
-    series: [
-      {color:"--d1", nom:"Patrimoine net", values: rows.map(r => r.patrimoine), fill:true, width:2.4},
-      {color:"--d2", nom:"Valeur du bien", values: rows.map(r => r.valeur)},
-      {color:"--text-muted", nom:"Capital restant dû", values: rows.map(r => r.crd)},
-      {color:"--d4", nom:"Sorti de votre poche", values: rows.map(r => r.mise), dash:"2 3"}
-    ],
-    tip: i => {
-      const r = rows[i];
-      return `<div class="th">Fin d'année ${r.y}</div>` +
-        tipRow(css("--d1"),"Patrimoine net", eur.format(r.patrimoine)) +
-        tipRow(css("--d2"),"Valeur du bien", eur.format(r.valeur)) +
-        tipRow(css("--text-muted"),"Capital restant dû", eur.format(r.crd)) +
-        tipRow(css("--d4"),"Sorti de votre poche", eur.format(r.mise)) +
-        tipRow("transparent","Net si revente", eur.format(r.netVente));
-    }
-  });
-
   // Sensibilité : douze calculs de plus, différés pour ne pas freiner la saisie.
   const host = $("plotSens");
   if(!host.querySelector("svg")) host.insertAdjacentHTML("beforeend", '<p class="pending">Calcul…</p>');
