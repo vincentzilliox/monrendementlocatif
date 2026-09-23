@@ -232,13 +232,14 @@ données ont leurs propres budgets, par fichier chargé.
 
 ## 4. Petites dettes repérées en chemin
 
-- Quand le rendement n'est calculable à aucune année (loyers qui couvrent tout,
-  sans mise), le graphique « Rendement selon l'année de revente » reste un
-  cadre vide. Il faudrait une phrase à la place.
-- Au bout du barème (tranche 0 % ou 45 %), la ligne « Tranche d'imposition » de
-  la sensibilité n'a qu'un côté ; l'infobulle affiche quand même les deux, le
-  second identique au rendement actuel.
-- **Mesure d'audience** : il n'y en a aucune, par choix. Les statistiques
-  côté serveur de Cloudflare ne demandent ni script ni appel tiers ; elles
-  diraient au moins quelles pages et quels guides sont lus, sans renier la
-  promesse « ni service tiers ».
+- ✅ *Fait le 2026-09-23.* Quand aucune année ne donne de rendement (loyers qui
+  couvrent tout, sans mise), le graphique de rendement laisse place à une
+  phrase au lieu d'un cadre vide.
+- ✅ *Fait le 2026-09-23.* Au bout du barème (tranche 0 % ou 45 %), l'infobulle de
+  sensibilité n'affiche plus que le côté qui bouge.
+- **Mesure d'audience** : rien à coder, c'est un réglage du compte Cloudflare.
+  Les statistiques côté serveur (onglet *Analytics* du domaine, ou *Metrics* du
+  projet Pages) comptent requêtes et pages vues sans script ni cookie, donc
+  sans renier la promesse « ni service tiers ». À éviter en revanche : *Web
+  Analytics*, qui injecte un script `cloudflareinsights.com` à la volée —
+  `verifier.py` ne le verrait pas, puisqu'il est ajouté à la diffusion.

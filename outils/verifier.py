@@ -196,6 +196,11 @@ setTimeout(function(){
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
   r.sens      = document.querySelectorAll("#plotSens svg rect").length;
   r.seuils    = document.querySelectorAll("#seuils .tile .v").length;
+  if(typeof cfgSensibilite === "function"){
+    var t = cfgSensibilite([{nom:"Tranche", txt:"1 tranche", hi:0.01, lo:0,
+      fav:{d:0.01, tri:0.05, s:"+"}, def:{d:0, tri:0.04, s:"−"}}], 0.04).tip(0);
+    r.tipUnCote = /Tranche \+1 tranche/.test(t) && !/Tranche −1 tranche/.test(t) && !/±/.test(t);
+  }
 
   var rt = document.getElementById("repTaux"), ri = document.getElementById("repInflation");
   r.tauxMarche = !!(rt && !rt.hidden && /BCE/.test(rt.textContent) && ri && !ri.hidden && /Eurostat/.test(ri.textContent));
@@ -316,6 +321,11 @@ setTimeout(function(){
     r.alertes = /LMP/.test(alertes()) ? "1" : "0";
     poser(fLoyer, loyer0); poser(fApport, "0");
     r.alertes += (/Sans apport/.test(alertes()) && /%%/.test(document.getElementById("heroTri").textContent)) ? "1" : "0";
+    // Sans apport et loyers qui couvrent tout : pas de rendement, une phrase au lieu d'un cadre vide.
+    poser(fLoyer, "3000");
+    r.alertes += document.getElementById("plotTri").hidden && /Aucune année/.test(document.getElementById("triNote").textContent) ? "1" : "0";
+    poser(fLoyer, loyer0);
+    r.alertes += !document.getElementById("plotTri").hidden ? "1" : "0";
     poser(fApport, apport0);
     var cpt = document.getElementById("fCompta"), rg = document.getElementById("regime"), rg0 = rg.value;
     rg.value = "lmnp-reel"; rg.dispatchEvent(new Event("change", {bubbles:true}));
@@ -1057,8 +1067,10 @@ def main():
                     # expliqué », « comptabilité au seul LMNP réel », « DPE G :
                     # gel et interdiction datée », « endettement au-delà de 35 %,
                     # revenus hors du lien », « revenus gardés à l'ouverture d'un lien »
-                    controle("angles morts signalés : LMP, apport nul, comptabilité, endettement, DPE, sans travaux",
-                             r.get("alertes") == "11111111", r.get("alertes") or "sonde muette")
+                    controle("angles morts signalés : LMP, apport nul, rendement introuvable, comptabilité, endettement, DPE, sans travaux",
+                             r.get("alertes") == "1111111111", r.get("alertes") or "sonde muette")
+                    controle("sensibilité : un côté immobile n'apparaît pas dans l'infobulle",
+                             r.get("tipUnCote") is True, str(r.get("tipUnCote")))
                     controle("achat comptant : les champs du crédit s'effacent, le rendement suit",
                              r.get("comptant") == "1111", r.get("comptant") or "sonde muette")
                     controle("bien détenu : ses champs, et seulement eux",

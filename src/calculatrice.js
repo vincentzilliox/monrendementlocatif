@@ -316,7 +316,13 @@ function render(){
   const floor = plancherLisible([rows.map(r => r.tri)], echelleTri === "complete");
   const hidden = floor === undefined ? 0 : rows.filter(r => r.tri !== null && r.tri < floor).length;
   const pire = rows.reduce((m,r) => r.tri !== null && r.tri < m ? r.tri : m, 0);
-  $("triNote").textContent = echelleTri === "complete"
+  // Aucune année ne donne de rendement (rien ne sort de la poche, ou rien n'y
+  // revient) : une phrase plutôt qu'un cadre vide.
+  const aucunTri = rows.every(r => r.tri === null);
+  $("plotTri").hidden = aucunTri;
+  $("triNote").textContent = aucunTri
+    ? "Aucune année de revente ne donne de rendement : rien ne sort de votre poche, ou rien n'y revient. Le gain net et la trésorerie disent ce que rapporte le projet."
+    : echelleTri === "complete"
     ? (pire < -0.30
         ? `L'année 1 descend à ${sPct(pire)} et écrase le reste : « zone lisible » détaille les rendements courants.`
         : "")

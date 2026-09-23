@@ -1294,9 +1294,12 @@ function cfgSensibilite(sens, triRef){
     rows: sens.map(s => ({label:s.nom, lo:s.lo, hi:s.hi, loText:pts(s.lo), hiText:pts(s.hi)})),
     tip: i => {
       const s = sens[i];
-      return `<div class="th">${s.nom} · ±${s.txt}</div>` +
-        tipRow(css("--up"), `${s.nom} ${s.fav.s}${s.txt}`, sPct(s.fav.tri)) +
-        tipRow(css("--down"), `${s.nom} ${s.def.s}${s.txt}`, sPct(s.def.tri)) +
+      // Au bout d'une échelle — la tranche à 0 % ou à 45 % —, un côté ne bouge
+      // pas : il n'a rien à dire, on ne l'affiche pas.
+      const bouge = c => Math.abs(c.d) > 1e-9;
+      return `<div class="th">${s.nom} · ${bouge(s.fav) && bouge(s.def) ? "±" : ""}${s.txt}</div>` +
+        (bouge(s.fav) ? tipRow(css("--up"), `${s.nom} ${s.fav.s}${s.txt}`, sPct(s.fav.tri)) : "") +
+        (bouge(s.def) ? tipRow(css("--down"), `${s.nom} ${s.def.s}${s.txt}`, sPct(s.def.tri)) : "") +
         tipRow("transparent","Aujourd'hui", sPct(triRef));
     }
   };
@@ -1650,7 +1653,13 @@ function render(){
   const floor = plancherLisible([rows.map(r => r.tri)], echelleTri === "complete");
   const hidden = floor === undefined ? 0 : rows.filter(r => r.tri !== null && r.tri < floor).length;
   const pire = rows.reduce((m,r) => r.tri !== null && r.tri < m ? r.tri : m, 0);
-  $("triNote").textContent = echelleTri === "complete"
+  // Aucune année ne donne de rendement (rien ne sort de la poche, ou rien n'y
+  // revient) : une phrase plutôt qu'un cadre vide.
+  const aucunTri = rows.every(r => r.tri === null);
+  $("plotTri").hidden = aucunTri;
+  $("triNote").textContent = aucunTri
+    ? "Aucune année de revente ne donne de rendement : rien ne sort de votre poche, ou rien n'y revient. Le gain net et la trésorerie disent ce que rapporte le projet."
+    : echelleTri === "complete"
     ? (pire < -0.30
         ? `L'année 1 descend à ${sPct(pire)} et écrase le reste : « zone lisible » détaille les rendements courants.`
         : "")
