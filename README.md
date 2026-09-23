@@ -56,6 +56,11 @@ travaux) introduite par la loi de finances 2025.
 du fonds euros imposés à la sortie au taux choisi, Livret A exonéré ; le
 rendement annualisé du portefeuille boursier net d'impôt sert de référence.
 
+**Seuils** — le prix maximal, le loyer minimal, le taux maximal et la
+revalorisation minimale auxquels le projet fait jeu égal avec la bourse,
+trouvés par dichotomie sur le moteur (`seuils()`), affichés sous le graphique
+des placements.
+
 **Monnaie** — inflation explicite, fixée par défaut au taux directeur de la BCE
 (facilité de dépôt). Prix, loyers et charges la suivent :
 le rendement vient alors du levier du crédit et des loyers, pas d'un pari sur les

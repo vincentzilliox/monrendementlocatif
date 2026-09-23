@@ -155,7 +155,7 @@ setTimeout(function(){
   r.deborde   = largeur < 500
     ? Array.prototype.some.call(document.body.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e) && !cache(e); })
     : d.scrollWidth > d.clientWidth + 1;
-  r.tuiles    = document.querySelectorAll(".tile").length;
+  r.tuiles    = document.querySelectorAll("#indicateurs .tile").length;
   // Un SVG n'annonce que son titre : chaque graphique doit doubler ses valeurs
   // d'un tableau hors ecran, et rester atteignable au clavier.
   r.equiv     = document.querySelectorAll(".plot .visually-hidden table").length;
@@ -193,6 +193,7 @@ setTimeout(function(){
   r.courbes   = document.querySelectorAll("#plotNet path[stroke]").length;
   r.regimes   = document.querySelectorAll("#plotReg svg path").length;
   r.sens      = document.querySelectorAll("#plotSens svg rect").length;
+  r.seuils    = document.querySelectorAll("#seuils .tile .v").length;
   r.liens     = document.querySelectorAll("#suite a").length;
   var boite = document.getElementById("avisBox");
   r.avis = boite && !boite.hidden ? (document.getElementById("avisText").textContent || "").slice(0, 40) : "";
@@ -909,6 +910,7 @@ def main():
                     controle("quatre courbes comparées", r["courbes"] == 4, str(r["courbes"]))
                     controle("quatre régimes comparés", r["regimes"] == 4, str(r["regimes"]))
                     controle("sensibilité calculée", r["sens"] >= 6, "%d barres" % r["sens"])
+                    controle("seuils face à la bourse affichés", r.get("seuils") == 4, "%s tuiles" % r.get("seuils"))
                     attendu = {
                         "micro-foncier": ("fAbattement", False),
                         "reel-foncier": ("fPlafondDeficit", True),
@@ -1068,6 +1070,29 @@ var t30 = tr(mf), t45 = tr(Object.assign({}, mf, {tmi:45})), tl = tr({});
 lignes.push('sensibilite : tranche d imposition|'
   +(t30 && t30.lo<0 && t30.hi>0 && t45 && Math.min(Math.abs(t45.lo),Math.abs(t45.hi))<1e-12 && !tl?1:0)+'|'
   +(t30?pts(t30.lo)+' / '+pts(t30.hi):'absente'));
+// Seuils : a la valeur trouvee, le projet egale la bourse a moins d'un
+// centieme de point pres ; et le prix maximal est sous le prix saisi quand la
+// bourse est devant. Scenario d'ouverture, bien detenu et achat comptant.
+var ecartsSeuils = [];
+[{}, {situation:'detenu', valeur:200000, crd:90000, depuis:8, prixAchat:160000, dureeRestante:12, travauxPasses:0}, {comptant:true}]
+ .forEach(function(o){
+  var ps = site(o).p;
+  seuils(ps).forEach(function(sl){
+    if(sl.valeur === null) return;
+    var q = {}; for(var k in ps) q[k] = ps[k]; q[sl.k] = sl.valeur;
+    var fq = compute(q).final;
+    if(Math.abs(fq.tri - fq.triBourse) > 1e-4) ecartsSeuils.push(sl.k+' '+((fq.tri-fq.triBourse)*100).toFixed(3)+' pt');
+  });
+});
+var sp = seuils(site({}).p);
+lignes.push('seuils : a la valeur trouvee, le projet egale la bourse|'
+  +(ecartsSeuils.length===0 && sp.length===4 && sp[0].k==='prix' && (sp[0].valeur < sp[0].actuel) === !sp[0].devant?1:0)
+  +'|'+(ecartsSeuils[0] || 'prix max '+Math.round(sp[0].valeur)+' EUR'));
+// Un projet qui s'autofinance sans mise n'a pas de TRI : pour la recherche des
+// seuils, il est infiniment devant la bourse, pas « non comparable ».
+var autoS = site({apport:0, loyer:3000});
+lignes.push('seuils : sans mise, le projet compte comme devant la bourse|'
+  +(autoS.final.tri===null && ecartBourse(autoS.p)===1?1:0)+'|');
 // Frais de dossier au reel : deduits l'annee 1, a emprunt egal (l'apport les
 // absorbe), sur un scenario sans amortissement ni travaux ou la base est
 // positive. L'impot de l'annee 1 baisse alors exactement de frais x (TMI + PS).

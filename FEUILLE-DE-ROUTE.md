@@ -136,12 +136,16 @@ passage d'une hypothèse devinée à une hypothèse vérifiée.
 
 ### 2.6 Outils de décision, sans nouvelle donnée
 
-- **Calculs inversés** : « prix maximum pour égaler la bourse », « loyer
-  minimum », « taux au-delà duquel le verdict change ». Une bissection sur
-  `compute()`, dans le moteur, donc aussi sur l'accueil. C'est l'outil de
-  négociation qui manque le plus.
-- **Seuils de bascule** dans le graphique de sensibilité : la valeur de chaque
-  paramètre à laquelle l'avis éditorial change de phrase.
+- ✅ **Calculs inversés** — *fait le 2026-09-23.* Prix maximal, loyer minimal,
+  taux maximal et revalorisation minimale pour faire jeu égal avec la bourse,
+  sous le graphique des placements (`seuils()`, dichotomie arrêtée à une
+  précision par paramètre ; option `horizonSeul` du moteur pour ne résoudre que
+  le TRI final — 44 ms les quatre, la sensibilité en profite). Reste : les
+  proposer sur la page d'accueil, et un seuil « taux de vacance maximal ».
+- **Seuils de bascule** dans le graphique de sensibilité — *en partie fait* :
+  les seuils face à la bourse sont exactement la frontière entre « excellente
+  affaire » et « belle réserve de valeur ». Reste la seconde frontière, celle
+  de l'inflation (rendement réel nul).
 - ✅ **Capacité d'emprunt** — *fait le 2026-09-23.* Revenus nets et crédits en
   cours (facultatifs, repliés dans le financement) donnent le taux
   d'endettement au sens du HCSF, l'emprunt maximal au même taux et une alerte

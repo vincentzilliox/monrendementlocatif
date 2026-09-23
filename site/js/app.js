@@ -162,6 +162,10 @@ function compute(p){
   // taxe foncière et CFE restent dus : le bien les coûte quelle que soit la
   // fiscalité. L'écart entre les deux affichages est donc ce que coûte l'impôt.
   const avantImpot = p.avantImpot === true;
+  // Les explorations — sensibilité, seuils — ne lisent que le rendement à
+  // l'horizon : inutile de résoudre un TRI pour chacune des années d'avant.
+  // Leurs lignes intermédiaires portent alors tri = null, et `best` n'a pas de sens.
+  const horizonSeul = p.horizonSeul === true;
   // Classé F ou G, le loyer ne peut plus augmenter depuis août 2022 : ni
   // révision annuelle, ni hausse entre deux locataires.
   const gelLoyer = p.dpe === "F" || p.dpe === "G";
@@ -359,11 +363,12 @@ function compute(p){
     // Quand l'argent commence par rentrer — loyers qui couvrent tout sans mise,
     // bien détenu dont la vente coûterait de l'argent —, irr() rend null.
     const flows = [-cash0].concat(cfHist.slice(0,-1)).concat([cfNet + netVente]);
-    const tri = irr(flows);
+    const calcule = !horizonSeul || y === p.horizon;
+    const tri = calcule ? irr(flows) : null;
     // Même chronique de versements, placée en bourse : le rendement annualisé
     // net d'impôt directement opposable au TRI du bien.
     const flowsBourse = [-cash0].concat(efforts.slice(0,-1).map(e => -e)).concat([portefeuilleNet - effort]);
-    const triBourse = irr(flowsBourse);
+    const triBourse = calcule ? irr(flowsBourse) : null;
     const gain = cumulCF + netVente - cash0;
 
     rows.push({y, loyers, charges, interets:L.int, assurance:L.ass, principal:L.pri, annuite,
@@ -489,8 +494,8 @@ function sensibilite(p, triRef){
       const v = p[k] + signe*s.pas(p[k]);
       q[k] = k === "indexPrix" ? v : Math.max(0, v);
     }
-    const t = compute(q).final.tri;
-    return t === null ? null : t;
+    q.horizonSeul = true;
+    return compute(q).final.tri;
   };
   return SENS.map(s => {
     const moins = essai(s, -1), plus = essai(s, 1);
@@ -502,6 +507,43 @@ function sensibilite(p, triRef){
       amplitude: Math.max(Math.abs(dp), Math.abs(dm))};
   }).filter(r => r && r.amplitude > 1e-6).sort((a,b) => b.amplitude - a.amplitude);
 }
+/* ---------- seuils : ce qu'il faudrait pour égaler la bourse ---------- */
+// Pour chaque paramètre, la valeur à laquelle le rendement du projet rejoint
+// celui du même argent placé en bourse, net d'impôt, les autres hypothèses
+// restant fixes. Au-dessus d'un prix maximal ou sous un loyer minimal, la
+// bourse fait mieux. `borne` encadre la recherche, `precision` l'arrête.
+const SEUILS = [
+  {k:"prix",      nom:"Prix d'achat maximal",     achat:true,  borne:v => [v*0.2, v*4], precision:50},
+  {k:"loyer",     nom:"Loyer minimal",            borne:v => [v*0.2, v*4], precision:1},
+  {k:"taux",      nom:"Taux du crédit maximal",   credit:true, borne:() => [0, 12], precision:0.005},
+  {k:"indexPrix", nom:"Revalorisation minimale",  borne:() => [-5, 10], precision:0.005}
+];
+// Rendement du projet moins celui de la bourse, à l'horizon. Sans TRI, deux cas
+// opposés : rien n'est jamais sorti de la poche (infiniment bon), ou rien n'y
+// revient (infiniment mauvais).
+function ecartBourse(q){
+  const f = compute(Object.assign({}, q, {horizonSeul:true})).final;
+  if(f.tri === null) return f.mise <= 1 ? 1 : -1;
+  return f.triBourse === null ? f.tri : f.tri - f.triBourse;
+}
+function seuils(p){
+  const detenu = p.situation === "detenu";
+  const credit = !p.comptant && (detenu ? p.crd > 0 : true);
+  const devant = ecartBourse(p) >= 0;
+  return SEUILS.filter(s => !(s.achat && detenu) && !(s.credit && !credit)).map(s => {
+    const essai = v => ecartBourse(Object.assign({}, p, {[s.k]: v}));
+    const actuel = p[s.k];
+    let [a, b] = s.borne(actuel), fa = essai(a), fb = essai(b);
+    // Pas de changement de signe : la bourse gagne, ou perd, sur toute la plage.
+    if(fa*fb > 0) return {k:s.k, nom:s.nom, actuel, valeur:null, toujours: fa > 0, devant};
+    while(b - a > s.precision){
+      const m = (a + b)/2, fm = essai(m);
+      if(fa*fm <= 0){ b = m; fb = fm; } else { a = m; fa = fm; }
+    }
+    return {k:s.k, nom:s.nom, actuel, valeur:(a + b)/2, devant};
+  });
+}
+
 const pts = v => (v>=0?"+":"−") + Math.abs(v*100).toFixed(1).replace(".",",") + " pt" + (Math.abs(v*100) >= 1.95 ? "s" : "");
 const kEur = (v, ref) => ref >= 10000 ? eur1.format(v/1000)+" k€" : eur1.format(v)+" €";
 
@@ -1752,13 +1794,34 @@ function renderComplements(p){
   if(!host.querySelector("svg")) host.insertAdjacentHTML("beforeend", '<p class="pending">Calcul…</p>');
   planifier(() => {
     host.querySelectorAll(".pending").forEach(el => el.remove());
-    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; return; }
+    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; $("seuils").innerHTML = ""; return; }
+    renderSeuils(p);
     const sens = sensibilite(p, f.tri);
     drawTornado(host, $("tipSens"), cfgSensibilite(sens, f.tri));
     $("sensNote").textContent = sens.length
       ? `Le paramètre le plus sensible est ${sens[0].nom.toLowerCase()} : ${sens[0].txt} d'écart déplace le rendement de ${pts(sens[0].lo)} à ${pts(sens[0].hi)} par an.`
       : "";
   });
+}
+
+// Ce qu'il faudrait pour faire jeu égal avec la bourse : une tuile par
+// paramètre, la valeur de bascule, et l'écart avec la saisie — une marge quand
+// le projet est devant, un effort à obtenir quand il est derrière.
+const FORMAT_SEUIL = {
+  prix:      {v: x => eur.format(Math.round(x/100)*100), ecart: (x, a) => sPct(x/a - 1)},
+  loyer:     {v: x => eur.format(Math.round(x)) + " /mois", ecart: (x, a) => sPct(x/a - 1)},
+  taux:      {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
+  indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)}
+};
+function renderSeuils(p){
+  $("seuils").innerHTML = seuils(p).map(s => {
+    const F = FORMAT_SEUIL[s.k];
+    const valeur = s.valeur === null ? "—" : F.v(s.valeur);
+    const sous = s.valeur === null
+      ? (s.toujours ? "devant la bourse sur toute la plage" : "hors de portée : la bourse reste devant")
+      : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
+    return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
+  }).join("");
 }
 
 /* ---------- persistence & chrome ---------- */

@@ -565,13 +565,34 @@ function renderComplements(p){
   if(!host.querySelector("svg")) host.insertAdjacentHTML("beforeend", '<p class="pending">Calcul…</p>');
   planifier(() => {
     host.querySelectorAll(".pending").forEach(el => el.remove());
-    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; return; }
+    if(f.tri === null){ host.querySelectorAll("svg").forEach(el => el.remove()); $("sensNote").textContent = ""; $("seuils").innerHTML = ""; return; }
+    renderSeuils(p);
     const sens = sensibilite(p, f.tri);
     drawTornado(host, $("tipSens"), cfgSensibilite(sens, f.tri));
     $("sensNote").textContent = sens.length
       ? `Le paramètre le plus sensible est ${sens[0].nom.toLowerCase()} : ${sens[0].txt} d'écart déplace le rendement de ${pts(sens[0].lo)} à ${pts(sens[0].hi)} par an.`
       : "";
   });
+}
+
+// Ce qu'il faudrait pour faire jeu égal avec la bourse : une tuile par
+// paramètre, la valeur de bascule, et l'écart avec la saisie — une marge quand
+// le projet est devant, un effort à obtenir quand il est derrière.
+const FORMAT_SEUIL = {
+  prix:      {v: x => eur.format(Math.round(x/100)*100), ecart: (x, a) => sPct(x/a - 1)},
+  loyer:     {v: x => eur.format(Math.round(x)) + " /mois", ecart: (x, a) => sPct(x/a - 1)},
+  taux:      {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
+  indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)}
+};
+function renderSeuils(p){
+  $("seuils").innerHTML = seuils(p).map(s => {
+    const F = FORMAT_SEUIL[s.k];
+    const valeur = s.valeur === null ? "—" : F.v(s.valeur);
+    const sous = s.valeur === null
+      ? (s.toujours ? "devant la bourse sur toute la plage" : "hors de portée : la bourse reste devant")
+      : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
+    return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
+  }).join("");
 }
 
 /* ---------- persistence & chrome ---------- */
