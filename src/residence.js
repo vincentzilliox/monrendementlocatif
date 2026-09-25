@@ -375,6 +375,20 @@ function endettementRP(p, R){
     mensualiteMax: PLAFOND_ENDETTEMENT*revenus - credits};
 }
 
+// Acheter n'est pas qu'un placement : quand la location l'emporte, le verdict le
+// rappelle — et dit que l'écart calculé est le prix de ces raisons-là.
+const AUTRES_RAISONS_RP = "Acheter peut rester le bon choix pour d'autres raisons : se sentir vraiment chez soi, un coup de cœur, la stabilité d'une vie de famille. L'écart calculé en donne le prix.";
+
+// Le titre du verdict : l'année où l'achat devient gagnant ou, s'il ne l'est à
+// aucune date, que louer est plus intéressant. `phrase` : un titre en toutes
+// lettres, composé plus petit qu'une année ; `perdant` : à la date de départ
+// prévue, la location mène.
+function verdictRP(R){
+  if(R.bascule === null)
+    return {sur:`Sur vos hypothèses, jusqu'à ${HORIZON_MAX_RP} ans`, titre:"Louer est plus intéressant", phrase:true, perdant:false};
+  return {sur:"Acheter devient gagnant", titre:"Année " + R.bascule, phrase:false, perdant:R.final.ecartReel < 0};
+}
+
 // Le verdict en une phrase, écrit ici pour que la calculatrice et l'accueil
 // disent la même chose. Il répond pour la durée d'occupation prévue, et situe
 // l'année où la réponse change.
@@ -383,11 +397,12 @@ function avisRP(R){
   const somme = eur.format(Math.abs(e)), eme = n => n === 1 ? "1re" : n + "e";
   const ans = n => n + (n > 1 ? " ans" : " an");
   if(b === null)
-    return `Sur vos hypothèses, louer et placer la différence reste plus avantageux à toute date, jusqu'à ${HORIZON_MAX_RP} ans : acheter vous laisserait ${somme} de moins dans ${ans(h)}, en euros d'aujourd'hui.`;
+    return `Sur vos hypothèses, louer et placer la différence est plus intéressant qu'acheter, à toute date jusqu'à ${HORIZON_MAX_RP} ans : acheter vous laisserait ${somme} de moins dans ${ans(h)}, en euros d'aujourd'hui. ` + AUTRES_RAISONS_RP;
   if(e < 0)
-    return b > h
-      ? `Pour ${ans(h)}, louer l'emporte de ${somme} en euros d'aujourd'hui. Acheter ne devient gagnant qu'à partir de la ${eme(b)} année : c'est la durée d'occupation qui décide.`
-      : `Acheter passe devant la ${eme(b)} année, mais louer et placer repasse devant la ${eme(r)} : au bout de ${ans(h)}, louer l'emporte de ${somme}, en euros d'aujourd'hui.`;
+    return (b > h
+      ? `Pour ${ans(h)}, louer est plus intéressant qu'acheter, de ${somme} en euros d'aujourd'hui. Acheter ne devient gagnant qu'à partir de la ${eme(b)} année : c'est la durée d'occupation qui décide.`
+      : `Acheter passe devant la ${eme(b)} année, mais louer et placer repasse devant la ${eme(r)} : au bout de ${ans(h)}, louer est plus intéressant, de ${somme} en euros d'aujourd'hui.`)
+      + " " + AUTRES_RAISONS_RP;
   const fragile = h - b <= 2 ? " La marge est mince : un départ un peu plus tôt que prévu inverserait la réponse." : "";
   const retour = r ? ` Au-delà de ${ans(r - 1)}, louer et placer repasserait devant.` : "";
   return (b <= 3

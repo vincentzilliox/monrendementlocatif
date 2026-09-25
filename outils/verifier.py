@@ -533,6 +533,12 @@ setTimeout(function(){
   // sa vitrine, et cache ceux de l'investisseur ; le questionnaire se parcourt
   // comme celui de l'investisseur, et rejoue par défaut le scénario d'ouverture.
   var cVivre = document.getElementById("choixVivre"), cInvestir = document.getElementById("choixInvestir");
+  // Les deux exemples de l'accueil, visibles l'un sous l'autre, chacun avec la
+  // calculatrice dont il vient.
+  var cas1 = document.querySelector("#exemple-investir .cashead a[href='/calculatrice/']"),
+      cas2 = document.querySelector("#exemple-y-vivre .cashead a[href='/acheter-ou-louer/']");
+  if(cVivre) r.deuxCas = (cas1 && cas2 && cas1.offsetParent !== null && cas2.offsetParent !== null ? "1" : "0")
+    + (document.querySelectorAll("#vitrineVivre svg").length >= 1 && document.querySelectorAll("#exemple-y-vivre .audela li").length >= 6 ? "1" : "0");
   // Dans les deux questionnaires, l'unité posée dans le champ (€, ans, pers.) ne
   // doit jamais passer sous la saisie, calée à droite : chaque étape est montrée
   // le temps d'une mesure.
@@ -556,7 +562,7 @@ setTimeout(function(){
   if(cVivre && cInvestir){
     var cache2 = function(id){ var e = document.getElementById(id); return !e || e.hidden; };
     cVivre.click();
-    r.parcoursVivre = (cache2("assistant") && !cache2("assistantRP") && cache2("vitrineInvestir") && !cache2("vitrineVivre") ? "1" : "0")
+    r.parcoursVivre = (cache2("assistant") && !cache2("assistantRP") && !cache2("vitrineInvestir") && !cache2("vitrineVivre") ? "1" : "0")
       + (cVivre.getAttribute("aria-pressed") === "true" && cInvestir.getAttribute("aria-pressed") === "false" ? "1" : "0");
     r.vrBascule = (document.getElementById("vrBascule") || {}).textContent || "";
     r.vrGraphe = document.querySelectorAll("#vrPlotPat svg path[stroke]").length;
@@ -603,7 +609,7 @@ setTimeout(function(){
       r.rRecapToujours = /pour toujours/.test(document.getElementById("rRecap").textContent);
     }
     cInvestir.click();
-    r.parcoursRetour = !cache2("assistant") && cache2("assistantRP") && !cache2("vitrineInvestir") && cache2("vitrineVivre");
+    r.parcoursRetour = !cache2("assistant") && cache2("assistantRP") && !cache2("vitrineInvestir") && !cache2("vitrineVivre");
   }
   // La calculatrice « acheter ou louer » : les champs suivent les choix, le
   // verdict bouge avec eux et revient, et le lien porte tout sauf le foyer.
@@ -637,6 +643,14 @@ setTimeout(function(){
     poserRP("dejaLocataire", false);
     r.rpDeja += vu("fFraisAgenceLoc") ? "1" : "0";
     r.rpRetour = texte("rpBascule") + texte("rpPill") === verdict0;
+    // Quand louer l'emporte à toute date : une phrase, pas « jamais », et l'avis
+    // rappelle qu'acheter a d'autres raisons que financières.
+    var g2 = function(id){ return document.getElementById(id); };
+    poserRP("loyer", "700");
+    r.rpLouer = texte("rpBascule") + "|" + (/chez soi/.test(texte("rpAvis")) ? "raisons" : "sans raisons")
+      + (g2("rpEcartCourant").classList.contains("bad") ? "" : "|écart négatif affiché en vert");
+    poserRP("loyer", String(DEFAULTS_RP.loyer));
+    r.rpAudela = document.querySelectorAll("#audela .audela li").length;
     // Revenus et revenu fiscal : jamais dans un lien, gardés à l'ouverture d'un lien complet.
     poserRP("revenus", "2000"); poserRP("rfr", "40000");
     var lienRP = lienHypotheses(valeursRP(), null, null, true);
@@ -1182,7 +1196,10 @@ def main():
                     controle("accueil %d px : le menu montre les cinq liens" % largeur,
                              r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
-                    controle("accueil : trois graphiques tracés", r["graphes"] == 3, str(r["graphes"]))
+                    controle("accueil : quatre graphiques tracés, trois pour investir, un pour y vivre",
+                             r["graphes"] == 4, str(r["graphes"]))
+                    controle("accueil : les deux exemples affichés, chacun sous son bandeau",
+                             r.get("deuxCas") == "11", r.get("deuxCas") or "sonde muette")
                     controle("accueil : quatre placements comparés", r["vcourbes"] == 4, str(r["vcourbes"]))
                     controle("accueil : quatre régimes et la bourse dans le temps",
                              r.get("vregT") == 5, "%s courbes" % r.get("vregT"))
@@ -1232,11 +1249,11 @@ def main():
                              bool(r.get("qLienRetour")) and r.get("qLienRetour") == r.get("qLienModifie"),
                              (r.get("qLienRetour") or "—")[-58:])
                     # Le second parcours de l'accueil : acheter pour y vivre.
-                    controle("accueil : la carte « y vivre » montre son questionnaire et sa vitrine, et revient",
+                    controle("accueil : la carte « y vivre » montre son questionnaire, et revient",
                              r.get("parcoursVivre") == "11" and r.get("parcoursRetour") is True,
                              "%s, retour %s" % (r.get("parcoursVivre"), r.get("parcoursRetour")))
                     controle("accueil « y vivre » : bascule, patrimoine, placements et seuils",
-                             (r.get("vrBascule") or "").startswith(("Année", "Jamais")) and r.get("vrGraphe") == 2
+                             (r.get("vrBascule") or "").startswith(("Année", "Louer est plus intéressant")) and r.get("vrGraphe") == 2
                              and r.get("vrTuiles") == 9 and len(r.get("vrAvis") or "") > 20,
                              "%s, %s courbes, %s tuiles" % (r.get("vrBascule"), r.get("vrGraphe"), r.get("vrTuiles")))
                     controle("questionnaire « y vivre » : une question à la fois, sept puis le récapitulatif",
@@ -1438,7 +1455,7 @@ def main():
                              bool(r.get("rpBascule")) and r.get("rpBascule") == vitrine.get("vrBascule"),
                              "%s vs %s" % (vitrine.get("vrBascule", "—"), r.get("rpBascule")))
                     controle("acheter ou louer : année de bascule affichée",
-                             (r.get("rpBascule") or "").startswith(("Année", "Jamais")), r.get("rpBascule") or "—")
+                             (r.get("rpBascule") or "").startswith(("Année", "Louer est plus intéressant")), r.get("rpBascule") or "—")
                     controle("acheter ou louer : avis rendu", len(r.get("rpAvis") or "") > 20, r.get("rpAvis") or "absent")
                     controle("acheter ou louer : six indicateurs, cinq graphiques, chacun avec son tableau et au clavier",
                              r["tuiles"] == 6 and r["graphes"] == 5 and r.get("equiv") == 5 and r.get("focalisables") == 5,
@@ -1469,6 +1486,9 @@ def main():
                              "%s, retour %s" % (r.get("rpDeja"), r.get("rpRetour")))
                     controle("acheter ou louer : revenus hors des liens, conservés à l'ouverture d'un lien",
                              r.get("rpPrive") == "11", r.get("rpPrive") or "sonde muette")
+                    controle("acheter ou louer : quand louer l'emporte, le verdict le dit et rappelle les autres raisons",
+                             r.get("rpLouer") == "Louer est plus intéressant|raisons" and (r.get("rpAudela") or 0) >= 6,
+                             "%s, %s raisons listées" % (r.get("rpLouer"), r.get("rpAudela")))
                     controle("acheter ou louer : un lien complet repart des valeurs d'ouverture",
                              r.get("rpComplet") is True, str(r.get("rpComplet")))
                     controle("acheter ou louer : le lien partagé rend le formulaire de l'auteur",

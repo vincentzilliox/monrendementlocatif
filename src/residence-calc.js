@@ -82,14 +82,19 @@ function render(){
 
   // Le verdict : l'année où l'achat prend l'avantage, et l'écart à la date prévue.
   const b = R.bascule;
-  $("rpBascule").textContent = b === null ? "Jamais" : "Année " + b;
-  $("rpBascule").classList.toggle("bad", e < 0);
+  const V = verdictRP(R);
+  $("rpSur").textContent = V.sur;
+  $("rpBascule").textContent = V.titre;
+  $("rpBascule").classList.toggle("bad", V.perdant);
+  $("rpBascule").classList.toggle("phrase", V.phrase);
   const pill = $("rpPill");
   pill.textContent = sEur(e);
   pill.className = "pill num " + (Math.abs(e) < 500 ? "flat" : e > 0 ? "win" : "lose");
   $("rpPer").textContent = (e >= 0 ? "d'avance pour l'achat" : "d'avance pour la location")
     + ` au bout de ${an(p.horizon)}, ${unite}`;
-  $("rpEcartCourant").textContent = sEur(reel ? final.ecart : final.ecartReel);
+  const autre = reel ? final.ecart : final.ecartReel;
+  $("rpEcartCourant").textContent = sEur(autre);
+  $("rpEcartCourant").classList.toggle("bad", autre < 0);
   $("rpEcartTxt").textContent = reel ? `en euros courants de l'année ${p.horizon}` : "en euros d'aujourd'hui";
   $("rpRatio").textContent = R.ratioPrixLoyer === null ? "—"
     : R.ratioPrixLoyer.toFixed(1).replace(".", ",") + " ans de loyer";
@@ -99,8 +104,8 @@ function render(){
   const mot = avisRP(R);
   $("rpAvisBox").hidden = !mot;
   $("rpAvis").textContent = mot || "";
-  $("railTri").textContent = b === null ? "louer gagne" : "achat gagnant an " + b;
-  $("navTri").innerHTML = `<b>${b === null ? "Louer l'emporte" : "Achat gagnant dès l'année " + b}</b> · ${sEur(e)} à ${an(p.horizon)}`;
+  $("railTri").textContent = b === null ? "louer plus intéressant" : "achat gagnant dès l'an " + b;
+  $("navTri").innerHTML = `<b>${b === null ? "Louer est plus intéressant" : "Achat gagnant dès l'année " + b}</b> · ${sEur(e)} à ${an(p.horizon)}`;
 
   const v = (r, cle) => reel ? r[cle + "Reel"] : r[cle];
   $("rpHorizonTitre").textContent = `Au bout de ${an(p.horizon)}, ${unite}`;
@@ -158,7 +163,7 @@ function render(){
   // Patrimoine des deux ménages.
   drawChart($("plotPat"), $("tipPat"), cfgPatrimoineRP(R, reel));
   $("patNote").textContent = b === null
-    ? `Sur quarante ans, la courbe du propriétaire ne rattrape jamais celle du locataire.`
+    ? `Jusqu'à quarante ans, louer et placer reste plus intéressant : la courbe du propriétaire reste sous celle du locataire.`
     : b > p.horizon
       ? `La courbe du propriétaire ne passe devant qu'en année ${b}, après votre départ prévu.`
       : b === 1 ? `Le propriétaire est devant dès la première année.`
@@ -285,8 +290,8 @@ function renderPlacements(p, reel){
   // « 4,5 % /an » ne se coupe pas en fin de ligne.
   const taux = r => pct(r).replace(" ", "\u00a0") + "\u00a0/an net";
   const tuile = (nom, bascule, rendement) =>
-    `<div class="tile"><span class="k">${nom}</span><span class="v num">${bascule === null ? "Louer gagne" : "Année " + bascule}</span>`
-    + `<span class="s">${bascule === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · ${taux(rendement)}</span></div>`;
+    `<div class="tile"><span class="k">${nom}</span><span class="v num">${bascule === null ? "Louer" : "Année " + bascule}</span>`
+    + `<span class="s">${bascule === null ? "plus intéressant qu'acheter" : "l'achat passe devant"} · ${taux(rendement)}</span></div>`;
   $("rpPlacTuiles").innerHTML = tuile("Votre répartition", R.bascule, R.rendementPlacement)
     + variantes.map(x => tuile(x.nom, x.bascule, x.rendement)).join("");
 }

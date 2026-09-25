@@ -244,7 +244,6 @@ function scenarioRP(surcharges){
   return p;
 }
 function vitrineRP(){
-  oublierTheme();
   const g = id => document.getElementById(id);
   const ecrire = (id, txt) => { const el = g(id); if(el) el.textContent = txt; };
   const p = scenarioRP(), R = acheterOuLouer(p), f = R.final, b = R.bascule;
@@ -253,7 +252,10 @@ function vitrineRP(){
   ecrire("vrApport", eur.format(p.apport));
   ecrire("vrLoyer", eur.format(p.loyer));
   ecrire("vrHorizon", an(p.horizon));
-  ecrire("vrBascule", b === null ? "Jamais" : "Année " + b);
+  const Vd = verdictRP(R), grand = g("vrBascule");
+  ecrire("vrSur", Vd.sur);
+  ecrire("vrBascule", Vd.titre);
+  if(grand){ grand.classList.toggle("bad", Vd.perdant); grand.classList.toggle("phrase", Vd.phrase); }
   const pill = g("vrPill");
   if(pill){
     pill.textContent = sEur(f.ecartReel);
@@ -275,8 +277,8 @@ function vitrineRP(){
     `<dt>Rendement net du placement</dt><dd>${pct(R.rendementPlacement)} /an</dd>`;
   ecrire("vrHorizonTexte", "Les deux ménages ont sorti exactement les mêmes sommes de leur poche : seul l'usage qu'ils en ont fait diffère.");
   drawChart(g("vrPlotPat"), g("vrTipPat"), cfgPatrimoineRP(R, true, {height: 280}));
-  const tuile = (nom, x, r) => `<div class="tile"><span class="k">${nom}</span><span class="v num">${x === null ? "Louer gagne" : "Année " + x}</span>`
-    + `<span class="s">${x === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · ${pct(r).replace(" ", "\u00a0")}\u00a0/an net</span></div>`;
+  const tuile = (nom, x, r) => `<div class="tile"><span class="k">${nom}</span><span class="v num">${x === null ? "Louer" : "Année " + x}</span>`
+    + `<span class="s">${x === null ? "plus intéressant qu'acheter" : "l'achat passe devant"} · ${pct(r).replace(" ", "\u00a0")}\u00a0/an net</span></div>`;
   const pl = g("vrPlacements");
   if(pl) pl.innerHTML = tuile("Répartition par défaut", b, R.rendementPlacement)
     + comparerPlacementsRP(p).map(x => tuile(x.nom, x.bascule, x.rendement)).join("");
@@ -286,20 +288,15 @@ function vitrineRP(){
 
 /* ---------- deux parcours ---------- */
 // Investir pour louer, ou acheter pour y vivre : chaque carte ouvre son
-// questionnaire et sa vitrine. La vitrine « y vivre » n'est tracée qu'une fois
-// visible : un graphique tracé dans un conteneur masqué n'a pas de largeur.
-let parcours = "investir";
+// questionnaire. Les deux exemples restent affichés plus bas, l'un sous l'autre.
 function choisirParcours(v, defiler){
-  parcours = v;
   const vivre = v === "vivre", g = id => document.getElementById(id);
   g("choixInvestir").setAttribute("aria-pressed", vivre ? "false" : "true");
   g("choixVivre").setAttribute("aria-pressed", vivre ? "true" : "false");
   g("assistant").hidden = vivre; g("assistantRP").hidden = !vivre;
-  g("vitrineInvestir").hidden = vivre; g("vitrineVivre").hidden = !vivre;
-  redessiner();
   if(defiler) g(vivre ? "assistantRP" : "assistant").scrollIntoView({behavior:"smooth", block:"center"});
 }
-function redessiner(){ if(parcours === "vivre") vitrineRP(); else vitrine(); }
+function redessiner(){ vitrine(); vitrineRP(); }
 const parcoursDuLien = () => location.hash === "#acheter-pour-y-vivre" ? "vivre" : location.hash === "#investir" ? "investir" : null;
 document.getElementById("choixInvestir").addEventListener("click", () => choisirParcours("investir"));
 document.getElementById("choixVivre").addEventListener("click", () => choisirParcours("vivre"));
@@ -311,7 +308,7 @@ let vid;
 addEventListener("resize", () => { clearTimeout(vid); vid = setTimeout(redessiner, 140); });
 matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => setTimeout(redessiner, 30));
 document.addEventListener("theme", redessiner);
-vitrine();
+redessiner();
 if(parcoursDuLien() === "vivre") choisirParcours("vivre");
 /* ═════════════════════════════════════════════════════════════════
    assistant — l'accroche pose les questions, la calculatrice répond.

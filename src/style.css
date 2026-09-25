@@ -323,6 +323,9 @@ input[type=number]{-moz-appearance:textfield}
 .hero{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
 .hero .big{font-size:clamp(36px,4.4vw,50px); font-weight:600; line-height:1; letter-spacing:-.025em; color:var(--up-ink)}
 .hero .big.bad{color:var(--down-ink)}
+/* Un verdict en toutes lettres (« Louer est plus intéressant ») plutôt qu'une
+   année : même encre, corps plus petit pour tenir sur une ou deux lignes. */
+.hero .big.phrase{font-size:clamp(24px,2.8vw,32px); line-height:1.15; color:var(--text)}
 .hero .per{font-size:12.5px; color:var(--text-muted); flex:1 1 12ch; min-width:0}
 .reel{
   margin:13px 0 0; padding:6px 11px; border-radius:var(--radius); background:var(--surface-2);
@@ -567,6 +570,21 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
 @media (max-width:480px){ .choix{grid-template-columns:minmax(0,1fr)} }
 .choix + .quiz{margin-top:14px}
 .qapercu{margin:14px 0 0; padding:10px 12px; border-radius:var(--radius); background:var(--surface-2); font-size:13.5px; line-height:1.5}
+/* L'accueil présente deux cas, l'un sous l'autre : chacun s'ouvre sur un
+   bandeau qui dit de quelle calculatrice vient l'exemple. */
+.cas{display:flex; flex-direction:column; gap:clamp(28px,4vw,52px)}
+.cashead{text-align:center; border-top:2px solid var(--text); padding-top:clamp(20px,3vw,32px)}
+.cashead .eyebrow{margin:0 0 6px}
+.cashead h2{font-size:clamp(24px,3.4vw,34px); font-weight:600; letter-spacing:-.03em; margin:0 0 10px}
+.cashead p{margin:0 auto 16px; max-width:62ch; font-size:14.5px; color:var(--text-muted); line-height:1.6}
+.features h3.groupe{font-size:15px; font-weight:600; margin:22px 0 0; letter-spacing:-.01em}
+/* Ce que le calcul ne mesure pas : deux colonnes, acheter et louer. */
+.audela{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px 32px; text-align:left}
+.audela h3{font-size:14px; font-weight:600; margin:0 0 10px}
+.audela ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+.audela li{font-size:13.5px; color:var(--text-muted); line-height:1.55; padding-left:16px; position:relative}
+.audela li::before{content:""; position:absolute; left:0; top:8px; width:6px; height:6px; border-radius:2px; background:var(--text)}
+.audela li b{color:var(--text); font-weight:600}
 .parcours{display:flex; flex-direction:column; gap:clamp(28px,4vw,52px)}
 .parcours[hidden]{display:none}
 .qsitu{margin:0 0 14px}
