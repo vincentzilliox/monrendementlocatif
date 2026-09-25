@@ -83,7 +83,7 @@ function render(){
   // Le verdict : l'année où l'achat prend l'avantage, et l'écart à la date prévue.
   const b = R.bascule;
   $("rpBascule").textContent = b === null ? "Jamais" : "Année " + b;
-  $("rpBascule").classList.toggle("bad", b === null || b > p.horizon);
+  $("rpBascule").classList.toggle("bad", e < 0);
   const pill = $("rpPill");
   pill.textContent = sEur(e);
   pill.className = "pill num " + (Math.abs(e) < 500 ? "flat" : e > 0 ? "win" : "lose");
@@ -163,7 +163,7 @@ function render(){
       ? `La courbe du propriétaire ne passe devant qu'en année ${b}, après votre départ prévu.`
       : b === 1 ? `Le propriétaire est devant dès la première année.`
       : `Les frais d'achat se rattrapent en ${an(b - 1)} : le propriétaire passe devant en année ${b}.`
-        + (R.premier ? ` Il était déjà passé devant en année ${R.premier}, puis repassé derrière.` : "");
+        + (R.repli ? ` Le locataire repasse devant en année ${R.repli}.` : "");
 
   // Le vrai coût de la propriété, en cascade, face au loyer.
   const marches = [
@@ -249,6 +249,8 @@ function render(){
   const parts = p.partBourse + p.partFonds + p.partLivret;
   if(Math.abs(parts - 100) > 0.5)
     warns.push(parts > 0 ? `Les parts de placement totalisent ${eur1.format(parts)} % : le calcul les ramène à 100 % en gardant leurs proportions.` : "Aucune part de placement : le calcul place tout en actions.");
+  if(R.repli && R.repli > b && R.repli <= HORIZON_MAX_RP)
+    warns.push(`L'achat passe devant en année ${b}, puis louer et placer repasse devant en année ${R.repli} : sans crédit, le portefeuille du locataire capitalise sur tout le prix, et finit par rattraper le logement.`);
   if(b !== null && b <= p.horizon && p.horizon - b <= 2)
     warns.push(`L'achat ne passe devant qu'en année ${b}, pour un départ prévu en année ${p.horizon} : une mutation, une séparation ou une famille qui s'agrandit plus tôt que prévu inverserait la réponse.`);
   if(marche && marche.contexte.encadre)

@@ -137,5 +137,65 @@ function chiffresGuides(){
   c.pointMortMicroBic = pm({regime: "lmnp-micro"});
   c.rfImpotAn1 = F1.impot;
   c.rfGain25 = RF.final.gain;
+  return Object.assign(c, chiffresRP());
+}
+
+/* ---------- acheter ou louer ---------- */
+// Le scénario d'ouverture de la calculatrice « acheter ou louer » (DEFAUTS_RP_SITE,
+// relu dans acheter-ou-louer.html), prix, loyers et charges suivant l'inflation.
+function scenarioRPGuide(o){
+  const p = Object.assign({}, DEFAUTS_RP_SITE);
+  if(p.prixSuitInflation) p.indexPrix = p.indexLoyer = p.indexCharges = p.inflation;
+  return acheterOuLouer(Object.assign(p, o || {}));
+}
+function chiffresRP(){
+  const c = {}, pc = v => v === null ? null : v*100;
+  const R = scenarioRPGuide(), f = R.final, S = R.suite, C = R.couts1, p = R.p;
+  c.rpPrix = p.prix; c.rpApport = p.apport; c.rpLoyer = p.loyer; c.rpHorizon = p.horizon;
+  c.rpTaux = p.taux; c.rpDuree = p.duree;
+  c.rpRatio = R.ratioPrixLoyer;
+  c.rpBascule = R.bascule;
+  c.rpEcartHorizon = f.ecartReel;
+  c.rpEcartHorizonCourant = f.ecart;
+  c.rpLiqHorizon = f.liquidationReel;
+  c.rpLocHorizon = f.patrimoineLocReel;
+  c.rpMise0 = R.cash0Achat;
+  c.rpMiseLoc0 = R.cash0Loc;
+  c.rpPlace0 = R.mise0;
+  c.rpNotaire = R.notaire;
+  c.rpEmprunt = R.emprunt;
+  c.rpMensualite = R.mensualite;
+  c.rpCoutCredit = R.coutCredit;
+  c.rpCoutProprioMois1 = S[0].coutProprio/12;
+  c.rpCoutLocMois1 = S[0].coutLoc/12;
+  c.rpVersLocMois1 = S[0].versLoc/12;
+  c.rpCapitalMois1 = S[0].principal/12;
+  ["interets", "tf", "copro", "entretien", "assurHab", "opportunite", "frais", "plusValue"].forEach(k => {
+    c["rpCout_" + k] = C[k]/12;
+  });
+  c.rpCoutReelMois = C.proprio/12;
+  c.rpLocataireMois = C.locataire/12;
+  c.rpRendement = pc(R.rendementPlacement);
+  c.rpTriAchat = pc(f.triAchat);
+  [1, 5, 10, 20, 25, 30].forEach(y => { c["rpEcart" + y] = S[y - 1].ecartReel; });
+  const P = comparerPlacementsRP(p);
+  c.rpBasculeFonds = P[1].bascule;
+  c.rpBasculeLivret = P[2].bascule;
+  c.rpRendementActions = pc(P[0].rendement);
+  c.rpEcartActions = P[0].ecartReel;
+  c.rpRendementFonds = pc(P[1].rendement);
+  const T = {}; seuilsRP(p).forEach(x => { T[x.k] = x.valeur; });
+  c.rpSeuilPrix = T.prix; c.rpSeuilLoyer = T.loyer; c.rpSeuilRevalo = T.indexPrix;
+  c.rpSeuilTaux = T.taux; c.rpSeuilBourse = T.bourse;
+  const N = scenarioRPGuide({etat: "neuf", zone: "B1", notairePct: 2.5, travaux: 0});
+  c.rpPtzNeufB1 = N.ptz; c.rpBasculeNeufB1 = N.bascule; c.rpPtzDiffereNeufB1 = N.differe;
+  c.rpBasculeLoyer1300 = scenarioRPGuide({loyer: 1300}).bascule;
+  c.rpBasculeLoyer1000 = scenarioRPGuide({loyer: 1000}).bascule;
+  c.rpEcartLoyer900 = scenarioRPGuide({loyer: 900}).final.ecartReel;
+  c.rpBasculeTaux44 = scenarioRPGuide({taux: p.taux + 1}).bascule;
+  const K = scenarioRPGuide({comptant: true});
+  c.rpBasculeComptant = K.bascule; c.rpRepliComptant = K.repli;
+  const sens = sensibiliteRP(p, f.ecartReel), revalo = sens.find(x => x.k === "indexPrix");
+  c.rpRevaloMoins1 = revalo.def.tri; c.rpRevaloPlus1 = revalo.fav.tri;
   return c;
 }

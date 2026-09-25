@@ -553,9 +553,13 @@ def main():
     if marqueur not in vitrine:
         raise SystemExit("src/vitrine.js : ligne OPTIONS introuvable")
     vitrine = vitrine.replace(marqueur, "const OPTIONS = %s;" % _options(src))
+    marqueur = "const DEFAUTS_RP = {/* build.py : valeurs par défaut RP */};"
+    if marqueur not in vitrine:
+        raise SystemExit("src/vitrine.js : ligne DEFAUTS_RP introuvable")
+    vitrine = vitrine.replace(marqueur, "const DEFAUTS_RP = %s;" % _defauts_rp(src_rp, residence_calc))
     # L'assistant de l'accroche ferme la marche : il s'appuie sur le moteur pour
     # départager les régimes, et sur scenario() pour compléter les hypothèses.
-    _ecrire_statique("/js/vitrine.js", prelude + "\n".join((vitrine, assistant)) + "\n")
+    _ecrire_statique("/js/vitrine.js", prelude + "\n".join((vitrine, assistant, lire("assistant-rp.js"))) + "\n")
     (SITE / "assets" / "favicon.svg").write_text(favicon.svg(), encoding="utf-8")
     # Image de partage : produite par outils/og_image.py, versionnée à la racine
     # puis recopiée. Sans cette copie, un `rm -rf site` la perdrait.

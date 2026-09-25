@@ -1696,13 +1696,15 @@ function acheterOuLouer(p){
       ecartReel: ecart/deflateur, liquidationReel: liquidation/deflateur, patrimoineLocReel: patrimoineLoc/deflateur,
       triAchat});
   }
-  // L'année à partir de laquelle acheter reste gagnant, jusqu'au bout de la
-  // simulation ; `premier` : la première année où il passe devant, s'il repasse
-  // derrière ensuite. L'année ne dépend pas de l'unité : euros courants ou
-  // d'aujourd'hui, l'écart change de taille, jamais de signe.
-  let bascule = null;
-  for(let i = rows.length - 1; i >= 0 && rows[i].ecart >= 0; i--) bascule = rows[i].y;
-  const premier = (rows.find(r => r.ecart >= 0) || {}).y || null;
+  // `bascule` : la première année où acheter passe devant. `repli` : la
+  // première année d'après où louer repasse devant, s'il y en a une — un achat
+  // comptant laisse le portefeuille du locataire capitaliser, et le rattraper
+  // parfois au bout de trente ans. Aucune des deux ne dépend de l'unité : en
+  // euros courants ou d'aujourd'hui, l'écart change de taille, jamais de signe.
+  const iB = rows.findIndex(r => r.ecart >= 0);
+  const bascule = iB < 0 ? null : rows[iB].y;
+  const iR = iB < 0 ? -1 : rows.findIndex((r, i) => i > iB && r.ecart < 0);
+  const repli = iR < 0 ? null : rows[iR].y;
   const final = rows[p.horizon - 1];
 
   // Le rendement net du placement du locataire : un euro versé le premier jour,
@@ -1737,7 +1739,7 @@ function acheterOuLouer(p){
     mensualite: sch.mensualite, mensualitePTZ: schPTZ.mensualite,
     coutCredit: sch.years.reduce((s, L) => s + L.int + L.ass, 0),
     ratioPrixLoyer: p.loyer > 0 ? p.prix/(p.loyer*12) : null,
-    rows: rows.slice(0, p.horizon), suite: rows, final, bascule, premier: bascule !== null && premier < bascule ? premier : null,
+    rows: rows.slice(0, p.horizon), suite: rows, final, bascule, repli,
     rendementPlacement, couts1};
 }
 
@@ -1829,15 +1831,21 @@ function endettementRP(p, R){
 }
 
 // Le verdict en une phrase, écrit ici pour que la calculatrice et l'accueil
-// disent la même chose.
+// disent la même chose. Il répond pour la durée d'occupation prévue, et situe
+// l'année où la réponse change.
 function avisRP(R){
-  const h = R.p.horizon, b = R.bascule, e = R.final.ecartReel;
+  const h = R.p.horizon, b = R.bascule, r = R.repli, e = R.final.ecartReel;
+  const somme = eur.format(Math.abs(e)), eme = n => n === 1 ? "1re" : n + "e";
   if(b === null)
-    return `Sur vos hypothèses, louer et placer la différence reste plus avantageux, même au bout de ${HORIZON_MAX_RP} ans : acheter vous laisserait ${eur.format(Math.abs(e))} de moins dans ${h} ans, en euros d'aujourd'hui.`;
-  if(b > h)
-    return `Pour ${h} ans, louer l'emporte de ${eur.format(Math.abs(e))} en euros d'aujourd'hui. Acheter ne devient gagnant qu'à partir de la ${b}e année : c'est la durée d'occupation qui décide.`;
+    return `Sur vos hypothèses, louer et placer la différence reste plus avantageux à toute date, jusqu'à ${HORIZON_MAX_RP} ans : acheter vous laisserait ${somme} de moins dans ${h} ans, en euros d'aujourd'hui.`;
+  if(e < 0)
+    return b > h
+      ? `Pour ${h} ans, louer l'emporte de ${somme} en euros d'aujourd'hui. Acheter ne devient gagnant qu'à partir de la ${eme(b)} année : c'est la durée d'occupation qui décide.`
+      : `Acheter passe devant la ${eme(b)} année, mais louer et placer repasse devant la ${eme(r)} : au bout de ${h} ans, louer l'emporte de ${somme}, en euros d'aujourd'hui.`;
   const fragile = h - b <= 2 ? " La marge est mince : un départ un peu plus tôt que prévu inverserait la réponse." : "";
-  if(b <= 3)
-    return `Acheter l'emporte presque d'emblée, dès la ${b === 1 ? "1re" : b + "e"} année. Dans ${h} ans, vous posséderiez ${eur.format(e)} de plus qu'en louant, en euros d'aujourd'hui.${fragile}`;
-  return `Acheter devient gagnant à partir de la ${b}e année. Dans ${h} ans, vous posséderiez ${eur.format(e)} de plus qu'en louant et plaçant la différence, en euros d'aujourd'hui.${fragile}`;
+  const retour = r ? ` Au-delà de ${r - 1} ans, louer et placer repasserait devant.` : "";
+  return (b <= 3
+    ? `Acheter l'emporte presque d'emblée, dès la ${eme(b)} année. Dans ${h} ans, vous posséderiez ${somme} de plus qu'en louant, en euros d'aujourd'hui.`
+    : `Acheter devient gagnant à partir de la ${eme(b)} année. Dans ${h} ans, vous posséderiez ${somme} de plus qu'en louant et plaçant la différence, en euros d'aujourd'hui.`)
+    + fragile + retour;
 }

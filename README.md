@@ -1,7 +1,8 @@
 # Mon rendement locatif
 
-Calculateur de rentabilité d'un investissement locatif en France, et six guides
-qui expliquent ce qu'il mesure.
+Deux calculatrices pour la France — la rentabilité d'un investissement locatif,
+et « acheter ou louer » pour le logement où l'on vit — et huit guides qui
+expliquent ce qu'elles mesurent.
 
 > **Pour voir le site :** `python3 outils/servir.py`.
 > Ouvrir `index.html` en double-clic ne marche pas — c'est un fichier source,
@@ -135,9 +136,13 @@ tête du `<style>` de `index.html` ; rien n'est codé en dur ailleurs, et
 | `src/calculatrice.js` | L'interface : lecture du formulaire, rendu, persistance. Seul fichier à connaître les identifiants des champs. |
 | `src/vitrine.js` | Le pilote de la page d'accueil. |
 | `src/assistant.js` | Les sept questions de l'accroche, et le lien préréglé qu'elles construisent. |
+| `src/assistant-rp.js` | Le questionnaire « acheter pour y vivre » de l'accroche : sept questions, un aperçu du verdict, et le lien vers `/acheter-ou-louer/`. Comme le premier, il ne connaît aucun chiffre : tout vient de `DEFAUTS_RP`, et accepter chaque proposition rend `/acheter-ou-louer/#complet=1`. |
+| `acheter-ou-louer.html` | Le balisage de la calculatrice « acheter ou louer ». |
+| `src/residence.js` | Son moteur : patrimoine du propriétaire et du locataire à sorties égales, prêt à taux zéro, fiscalité des placements, sensibilité, seuils. Aucun accès au document. |
+| `src/residence-calc.js` | Son interface. Seul fichier à connaître les identifiants de ses champs. |
 | `pages/accueil.html` | La page d'accueil, servie sur `/`. |
 | `pages/*.html` | Questions fréquentes, hypothèses de calcul, mentions légales, 404. |
-| `guides/*.html` | Les six guides : un bloc `meta` JSON puis un `<article class="prose">`. |
+| `guides/*.html` | Les huit guides : un bloc `meta` JSON puis un `<article class="prose">`. |
 | `build.py` | Produit `site/` : concatène les sources, habille les autres pages avec l'en-tête et le pied de la calculatrice, génère JSON-LD, sitemap, robots, `security.txt`, en-têtes Cloudflare. |
 | `outils/donnees.py` | Télécharge DVF et la Carte des loyers, les réduit par commune et écrit `donnees/`. Seul outil qui touche au réseau. |
 | `donnees/` | Généré par `outils/donnees.py`, versionné : une liste de communes par initiale, un fichier de marché par département, `sources.json`. `build.py` le recopie tel quel. |

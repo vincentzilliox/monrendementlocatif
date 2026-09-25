@@ -1,0 +1,75 @@
+<script type="application/json" id="meta">
+{
+ "titre": "Le vrai coût d'être propriétaire de son logement",
+ "h1": "Le vrai coût d'être propriétaire : ce qui part, ce qui reste",
+ "court": "Le vrai coût d'être propriétaire",
+ "description": "La mensualité n'est pas le coût d'un logement : le capital remboursé reste à vous, l'apport immobilisé cesse de rapporter. Le calcul, poste par poste.",
+ "date": "2026-09-25",
+ "lecture": "7 min",
+ "ordre": 8
+}
+</script>
+<article class="prose">
+  <h1>Le vrai coût d'être propriétaire : ce qui part, ce qui reste</h1>
+  <p class="chapo">Comparer sa mensualité à un loyer, c'est comparer une dépense à un mélange de dépense et d'épargne. Une partie de ce que verse le propriétaire lui reste acquise ; une autre, qu'on oublie souvent, lui coûte sans sortir de sa poche. Voici le coût réel, poste par poste, sur l'exemple de la calculatrice.</p>
+  <!--META-->
+
+  <h2>La mensualité n'est pas un coût</h2>
+  <p>Un logement de <span data-calc="rpPrix">300 000 €</span> acheté avec <span data-calc="rpApport">50 000 €</span> d'apport se finance par un crédit de <span data-calc="rpEmprunt">285 500 €</span> sur 25 ans, frais de notaire, de dossier et travaux compris. La mensualité, assurance incluse, est de <span data-calc="rpMensualite">1 495 €</span>. Mais la première année, <span data-calc="rpCapitalMois1">615 €</span> par mois remboursent du capital : cet argent n'est pas perdu, il s'accumule dans le logement et se retrouve à la revente. Ce qui part vraiment, ce sont les intérêts et l'assurance emprunteur : <span data-calc="rpCout_interets">880 €</span> par mois au début, de moins en moins ensuite. Sur toute la durée du prêt, ils coûtent <span data-calc="rpCoutCredit">163 000 €</span>.</p>
+
+  <h2>Ce qui part sans retour</h2>
+  <p>Le coût réel de la propriété additionne tout ce qui ne revient pas, et retranche ce que le logement gagne en valeur. Pour la première année, ramené au mois :</p>
+  <table>
+    <thead><tr><th>Poste</th><th class="r">Par mois</th></tr></thead>
+    <tbody>
+      <tr><td>Intérêts et assurance emprunteur</td><td class="r"><span data-calc="rpCout_interets">880 €</span></td></tr>
+      <tr><td>Taxe foncière</td><td class="r"><span data-calc="rpCout_tf">125 €</span></td></tr>
+      <tr><td>Charges de copropriété non récupérables</td><td class="r"><span data-calc="rpCout_copro">80 €</span></td></tr>
+      <tr><td>Entretien et gros travaux</td><td class="r"><span data-calc="rpCout_entretien">129 €</span></td></tr>
+      <tr><td>Assurance habitation</td><td class="r"><span data-calc="rpCout_assurHab">21 €</span></td></tr>
+      <tr><td>Coût d'opportunité de l'apport</td><td class="r"><span data-calc="rpCout_opportunite">186 €</span></td></tr>
+      <tr><td>Frais d'achat et de revente, étalés sur quinze ans</td><td class="r"><span data-calc="rpCout_frais">277 €</span></td></tr>
+      <tr><td>Hausse de la valeur du logement</td><td class="r"><span data-calc="rpCout_plusValue">−603 €</span></td></tr>
+      <tr><td><b>Coût réel de la propriété</b></td><td class="r"><b><span data-calc="rpCoutReelMois">1 095 €</span></b></td></tr>
+      <tr><td>Loyer, assurance et frais d'agence du locataire</td><td class="r"><span data-calc="rpLocataireMois">1 117 €</span></td></tr>
+    </tbody>
+  </table>
+  <p>Sur cet exemple, le coût réel de la propriété et celui de la location se tiennent à quelques euros près la première année. Le propriétaire dépense pourtant bien plus chaque mois — <span data-calc="rpCoutProprioMois1">1 850 €</span> contre <span data-calc="rpCoutLocMois1">1 113 €</span> — : la différence, c'est de l'épargne, logée dans les murs.</p>
+
+  <h2>Le coût d'opportunité : l'argent qui dort</h2>
+  <p>Les <span data-calc="rpMise0">51 500 €</span> sortis le premier jour ne rapportent plus rien de liquide. Placés comme le ferait un locataire — actions, fonds euros et Livret A —, ils rapporteraient <span data-calc="rpRendement">4,5 %</span> par an nets d'impôt. C'est un coût aussi réel qu'un intérêt, même s'il n'apparaît sur aucun relevé : il grossit avec l'apport. Payer comptant supprime les intérêts, mais porte le coût d'opportunité sur tout le prix.</p>
+
+  <h2>Les frais d'entrée et de sortie</h2>
+  <p>Les frais de notaire — <span data-calc="rpNotaire">22 500 €</span> ici, 7,5 % du prix dans l'ancien —, les frais de dossier et de garantie du crédit, puis les frais d'agence à la revente sont payés une fois, mais se rapportent à toute la durée d'occupation. Étalés sur quinze ans, ils pèsent <span data-calc="rpCout_frais">277 €</span> par mois ; sur cinq ans, trois fois plus. C'est pourquoi l'achat est presque toujours perdant quand on revend vite.</p>
+
+  <h2>La hausse de la valeur, qui vient en déduction</h2>
+  <p>Un logement dont le prix suit l'inflation, <span data-calc="rpHorizon">15</span> ans durant, gagne chaque année quelques pour cent de sa valeur : c'est le poste qui équilibre tous les autres. S'il stagne, le coût réel de la propriété bondit d'autant ; s'il baisse, l'achat devient une perte sèche. La revalorisation est l'hypothèse qui déplace le plus la réponse, avant le taux du crédit.</p>
+
+  <h2>Un coût qui change avec le temps</h2>
+  <p>Les intérêts fondent à mesure que le capital se rembourse, et disparaissent avec le crédit ; le loyer, lui, augmente chaque année. Le coût réel de la propriété baisse donc avec le temps, quand celui de la location monte : c'est ce qui finit par faire basculer le calcul en faveur de l'achat — ici, à partir de la <span data-calc="rpBascule">11</span><sup>e</sup> année.</p>
+
+  <div class="cta">
+    <p><b>Le coût réel, sur votre projet</b>La calculatrice décompose la première année poste par poste, face au loyer, et compare les deux patrimoines jusqu'à quarante ans.</p>
+    <a class="btn primary" href="/acheter-ou-louer/">Acheter ou louer</a>
+  </div>
+
+  <section class="lire">
+    <h2>Lire aussi</h2>
+    <ul>
+      <li><a href="/guides/acheter-ou-louer/">Acheter ou louer sa résidence principale<span>L'année de bascule, et les trois chiffres qui tranchent.</span></a></li>
+      <li><a href="/hypotheses-de-calcul/#acheter-ou-louer">Hypothèses de calcul<span>La méthode complète de la calculatrice acheter ou louer.</span></a></li>
+    </ul>
+  </section>
+
+  <section class="faqg">
+    <h2>Questions fréquentes</h2>
+    <article>
+      <h3>Le remboursement du capital est-il de l'épargne ?</h3>
+      <p>Oui : chaque euro de capital remboursé réduit la dette et se retrouve dans le produit de la revente. Ce n'est pas un coût, mais ce n'est pas non plus une épargne disponible — elle n'est récupérable qu'en vendant ou en empruntant à nouveau.</p>
+    </article>
+    <article>
+      <h3>Combien compter pour l'entretien d'un logement ?</h3>
+      <p>De 0,5 % de sa valeur par an pour un appartement dont la copropriété entretient les parties communes, à 1 % pour une maison, dont le propriétaire paie seul la toiture, la façade et la chaudière. Les gros travaux arrivent par à-coups : une moyenne annuelle les lisse.</p>
+    </article>
+  </section>
+</article>

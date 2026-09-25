@@ -195,6 +195,34 @@ données de marché, sous 650 Ko », et le mode Essentiel passe à quatorze
 réglages (commune et surface) : deux décisions validées le 2026-09-23. Les
 données ont leurs propres budgets, par fichier chargé.
 
+### 2.8 ✅ Acheter ou louer sa résidence principale — fait le 2026-09-25
+
+Une seconde calculatrice, `/acheter-ou-louer/`, et l'accueil séparé en deux
+parcours (investir pour louer, acheter pour y vivre), chacun avec son
+questionnaire et sa vitrine. Deux ménages sortent les mêmes sommes chaque
+année ; celui dont le logement coûte le moins place l'écart. Le moteur
+(`src/residence.js`) compare leurs patrimoines une fois tout revendu, jusqu'à
+quarante ans : année de bascule (et de repli, pour un achat comptant), coût
+réel de la propriété, sensibilité, seuils, placements comparés.
+
+- **Sources vérifiées le 2026-09-25 :** barème du PTZ (service-public F10871,
+  vérifiée le 15 septembre 2026 ; durées de remboursement de l'ANIL), taux des
+  prélèvements sociaux 2026 (F2329 : 18,6 % sur le PEA et le compte-titres,
+  17,2 % sur l'assurance-vie), Livret A à 1,7 % et plafond de 22 950 €
+  (F2365), exonération des primo-accédants de la hausse des droits de mutation.
+- **Budget de poids :** relevé à 800 000 octets hors données (673 Ko à la mise
+  en ligne de la calculatrice, 780 857 octets avec l'accueil et les guides).
+  Le moteur et les graphiques ne sont plus servis qu'une fois (`commun.js`), et
+  chaque script est appelé avec l'empreinte de son contenu.
+- **Contrôles :** une soixantaine de plus, validés par mutation, dont
+  « hypothèses de marché identiques dans les deux calculatrices » et « même
+  année de bascule sur l'accueil et dans la calculatrice ».
+- **À reprendre :** le barème du PTZ expire le 31 décembre 2027 ; le prêt
+  Action Logement et le prêt relais ne sont pas modélisés ; le code du panneau,
+  de la navigation et des repères de marché est dupliqué entre
+  `calculatrice.js` et `residence-calc.js` — à regrouper dans un
+  `src/cadre.js` commun.
+
 ---
 
 ## 3. Chantier long

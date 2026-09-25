@@ -535,7 +535,7 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
 .accroche{border-bottom:1px solid var(--border); background:var(--surface); padding:clamp(40px,6vw,80px) clamp(16px,3vw,32px) clamp(32px,4vw,56px)}
 .accroche-in{max-width:1180px; margin:0 auto; text-align:center}
 .accroche .eyebrow{margin:0 0 14px}
-.accroche h1{font-size:clamp(30px,5vw,50px); font-weight:600; letter-spacing:-.03em; line-height:1.08; margin:0 auto; max-width:19ch; text-wrap:balance}
+.accroche h1{font-size:clamp(30px,5vw,50px); font-weight:600; letter-spacing:-.03em; line-height:1.08; margin:0 auto; max-width:22ch; text-wrap:balance}
 .pitch{font-size:clamp(15px,1.6vw,17px); color:var(--text-muted); max-width:62ch; margin:20px auto 0; line-height:1.6}
 .pitch b{color:var(--text); font-weight:600}
 .accroche-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; justify-content:center}
@@ -551,6 +551,24 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
   max-width:560px; margin:30px auto 0; padding:18px clamp(15px,3vw,22px) 16px;
   background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); text-align:left;
 }
+/* Le choix du parcours : investir, ou acheter pour y vivre. Deux cartes côte à
+   côte, chacune ouvre son questionnaire et sa vitrine. */
+.choix{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:560px; margin:28px auto 0; text-align:left}
+.choixcarte{
+  font:inherit; color:var(--text); cursor:pointer; text-align:left;
+  display:flex; flex-direction:column; gap:5px; padding:14px 16px;
+  background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg);
+}
+.choixcarte b{font-size:15.5px; font-weight:600; letter-spacing:-.01em}
+.choixcarte span{font-size:12.5px; color:var(--text-muted); line-height:1.45}
+.choixcarte:hover{border-color:var(--text-muted)}
+.choixcarte[aria-pressed="true"]{border-color:var(--text); background:var(--surface-2)}
+.choixcarte:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (max-width:480px){ .choix{grid-template-columns:minmax(0,1fr)} }
+.choix + .quiz{margin-top:14px}
+.qapercu{margin:14px 0 0; padding:10px 12px; border-radius:var(--radius); background:var(--surface-2); font-size:13.5px; line-height:1.5}
+.parcours{display:flex; flex-direction:column; gap:clamp(28px,4vw,52px)}
+.parcours[hidden]{display:none}
 .qsitu{margin:0 0 14px}
 .qsitu button{padding:6px 13px}
 .qprog{display:flex; align-items:center; gap:12px; margin:0 0 16px}

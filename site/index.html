@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rendement locatif : votre TRI net d'impôt, année par année</title>
-<meta name="description" content="Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleure année de revente, comparaison bourse à mise égale.">
+<title>Rendement locatif, acheter ou louer : le vrai calcul</title>
+<meta name="description" content="Investir pour louer : TRI net d'impôt et meilleure année de revente. Acheter pour y vivre : acheter ou louer et placer, année par année, PTZ compris.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://monrendementlocatif.fr/">
-<meta property="og:title" content="Rendement locatif : votre TRI net d'impôt, année par année">
-<meta property="og:description" content="Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleure année de revente, comparaison bourse à mise égale.">
+<meta property="og:title" content="Rendement locatif, acheter ou louer : le vrai calcul">
+<meta property="og:description" content="Investir pour louer : TRI net d'impôt et meilleure année de revente. Acheter pour y vivre : acheter ou louer et placer, année par année, PTZ compris.">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:image" content="https://monrendementlocatif.fr/assets/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -23,12 +23,12 @@
 <meta property="og:image:alt" content="Mon rendement locatif — calculateur de rendement locatif">
 <meta property="og:site_name" content="Mon rendement locatif">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Rendement locatif : votre TRI net d'impôt, année par année">
-<meta name="twitter:description" content="Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleure année de revente, comparaison bourse à mise égale.">
+<meta name="twitter:title" content="Rendement locatif, acheter ou louer : le vrai calcul">
+<meta name="twitter:description" content="Investir pour louer : TRI net d'impôt et meilleure année de revente. Acheter pour y vivre : acheter ou louer et placer, année par année, PTZ compris.">
 <meta name="twitter:image" content="https://monrendementlocatif.fr/assets/og-image.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/","inLanguage":"fr-FR","description":"Calculez le vrai rendement de votre investissement locatif : TRI net d'impôt et d'inflation, meilleure année de revente, comparaison bourse à mise égale."}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Mon rendement locatif","url":"https://monrendementlocatif.fr/","inLanguage":"fr-FR","description":"Investir pour louer : TRI net d'impôt et meilleure année de revente. Acheter pour y vivre : acheter ou louer et placer, année par année, PTZ compris."}</script>
 <script>try{var t=localStorage.getItem("rentaloc.theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
-<link rel="stylesheet" href="/css/style.css?v=6a4fe278">
+<link rel="stylesheet" href="/css/style.css?v=66dec97d">
 </head>
 <body>
 <header class="topbar">
@@ -68,8 +68,18 @@
 <section class="accroche">
   <div class="accroche-in">
     <p class="eyebrow">Calculateur indépendant · France · à jour de la loi de finances 2026</p>
-    <h1>Quel est le vrai rendement de votre investissement locatif&nbsp;?</h1>
-    <p class="pitch">La plupart des simulateurs répondent par un rendement brut : les loyers divisés par le prix. Celui-ci calcule le rendement de <b>l'argent que vous sortez réellement de votre poche</b>, année après année, net d'impôt et corrigé de l'inflation — puis vous dit quelle année revendre, et ce que les mêmes versements auraient donné en bourse.</p>
+    <h1>Acheter pour louer, ou pour y vivre&nbsp;: le vrai calcul</h1>
+    <p class="pitch">Deux questions, deux calculatrices. <b>Investir</b> : ce que rapporte l'argent que vous sortez réellement de votre poche, net d'impôt et d'inflation, et l'année où revendre. <b>Y vivre</b> : ce que vous possédez en achetant, face à ce que vous posséderiez en louant et en plaçant la différence.</p>
+    <div class="choix" role="group" aria-label="Votre projet">
+      <button type="button" class="choixcarte" id="choixInvestir" aria-pressed="true" aria-controls="assistant vitrineInvestir">
+        <b>Investir pour louer</b>
+        <span>Rendement net d'impôt, meilleure année de revente, comparaison avec la bourse.</span>
+      </button>
+      <button type="button" class="choixcarte" id="choixVivre" aria-pressed="false" aria-controls="assistantRP vitrineVivre">
+        <b>Acheter pour y vivre</b>
+        <span>Acheter ou louer et placer ? Patrimoine des deux, année par année, prêt à taux zéro compris.</span>
+      </button>
+    </div>
     <section class="quiz" id="assistant" aria-labelledby="qTitre">
       <h2 id="qTitre" class="visually-hidden">Votre projet en quelques questions</h2>
       <div class="seg qsitu" role="group" aria-label="Votre situation">
@@ -191,9 +201,109 @@
       </div>
       <p class="qpasser" id="qPasser"><a id="qSauter" href="/calculatrice/">Passer les questions et ouvrir la calculatrice</a> · <a href="/guides/">Lire les guides</a></p>
     </section>
+    <section class="quiz" id="assistantRP" aria-labelledby="rTitre" hidden>
+      <h2 id="rTitre" class="visually-hidden">Acheter ou louer : votre projet en quelques questions</h2>
+      <p class="qprog">
+        <span class="qnum" id="rCompteur" aria-live="polite">Question 1 sur 7</span>
+        <span class="qbar" aria-hidden="true"><i id="rJauge"></i></span>
+      </p>
+
+      <div class="qstep" id="rEtapeBien">
+        <h3 class="qtitre" tabindex="-1">Combien coûte le logement que vous voulez acheter&nbsp;?</h3>
+        <div class="qchamp"><input id="rPrix" type="text" inputmode="numeric" autocomplete="off" aria-describedby="rPrixAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="rPrixAide">Le prix affiché, hors frais de notaire.</p>
+        <div class="qchoix" role="radiogroup" aria-label="Ancien ou neuf">
+          <label><input type="radio" name="rNeuf" value="ancien" checked><span>Ancien</span></label>
+          <label><input type="radio" name="rNeuf" value="neuf"><span>Neuf</span></label>
+        </div>
+      </div>
+
+      <div class="qstep" id="rEtapeLoyer" hidden>
+        <h3 class="qtitre" tabindex="-1">Combien coûterait-il de louer un logement équivalent&nbsp;?</h3>
+        <div class="qchamp"><input id="rLoyer" type="text" inputmode="numeric" autocomplete="off" aria-describedby="rLoyerAide"><span class="qunit">€</span></div>
+        <p class="qaide" id="rLoyerAide">Par mois, hors charges : même quartier, même surface. Regardez les annonces — c'est l'hypothèse qui décide le plus souvent de la réponse.</p>
+      </div>
+
+      <div class="qstep" id="rEtapeApport" hidden>
+        <h3 class="qtitre" tabindex="-1">Quel apport pouvez-vous engager&nbsp;?</h3>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Financement">
+          <label><input type="radio" name="rFinancement" value="credit" checked><span>Avec un crédit<small>le reste est emprunté</small></span></label>
+          <label><input type="radio" name="rFinancement" value="comptant"><span>Comptant, sans crédit<small>tout le coût de l'achat sort de votre poche</small></span></label>
+        </div>
+        <div id="rApportChamps">
+          <div class="qchamp"><input id="rApport" type="text" inputmode="numeric" autocomplete="off" aria-describedby="rApportAide"><span class="qunit">€</span></div>
+          <p class="qaide" id="rApportAide">Si vous louez, cet argent reste placé : c'est ce qu'il rapporte que l'achat doit battre.</p>
+        </div>
+      </div>
+
+      <div class="qstep" id="rEtapeDuree" hidden>
+        <h3 class="qtitre" tabindex="-1">Sur combien d'années emprunter&nbsp;?</h3>
+        <div class="qchoix" role="radiogroup" aria-label="Durée du prêt" id="rDureeChoix">
+          <label><input type="radio" name="rDuree" value="20"><span>20 ans</span></label>
+          <label><input type="radio" name="rDuree" value="25"><span>25 ans</span></label>
+        </div>
+        <p class="qaide">Les banques ne prêtent en principe pas au-delà de 25 ans pour une résidence principale.</p>
+      </div>
+
+      <div class="qstep" id="rEtapePrimo" hidden>
+        <h3 class="qtitre" tabindex="-1">Est-ce votre premier achat de résidence principale&nbsp;?</h3>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Premier achat">
+          <label><input type="radio" name="rPrimo" value="oui" checked><span>Oui<small>ou pas propriétaire de votre logement depuis deux ans : le prêt à taux zéro est possible</small></span></label>
+          <label><input type="radio" name="rPrimo" value="non"><span>Non<small>pas de prêt à taux zéro</small></span></label>
+        </div>
+        <div id="rPtzChamps">
+          <div class="qchoix" role="radiogroup" aria-label="Zone du logement" id="rZoneChoix">
+            <label><input type="radio" name="rZone" value="A"><span>Zone A</span></label>
+            <label><input type="radio" name="rZone" value="B1"><span>B1</span></label>
+            <label><input type="radio" name="rZone" value="B2"><span>B2</span></label>
+            <label><input type="radio" name="rZone" value="C"><span>C</span></label>
+            <label><input type="radio" name="rZone" value="" checked><span>Je ne sais pas</span></label>
+          </div>
+          <p class="qaide">La zone classe les communes selon la tension du marché : A pour Paris et les grandes métropoles, C pour les villes moyennes et les campagnes. La calculatrice la trouve seule d'après la commune.</p>
+          <div class="qchamp"><input id="rPersonnes" type="text" inputmode="numeric" autocomplete="off" aria-label="Personnes au foyer" aria-describedby="rPersonnesAide"><span class="qunit">pers.</span></div>
+          <p class="qaide" id="rPersonnesAide">Toutes celles qui vivront dans le logement.</p>
+        </div>
+      </div>
+
+      <div class="qstep" id="rEtapeHorizon" hidden>
+        <h3 class="qtitre" tabindex="-1">Combien de temps pensez-vous y vivre&nbsp;?</h3>
+        <div class="qchoix" role="radiogroup" aria-label="Durée d'occupation" id="rHorizonChoix">
+          <label><input type="radio" name="rHorizon" value="5"><span>5 ans</span></label>
+          <label><input type="radio" name="rHorizon" value="10"><span>10 ans</span></label>
+          <label><input type="radio" name="rHorizon" value="20"><span>20 ans</span></label>
+          <label><input type="radio" name="rHorizon" value="25"><span>25 ans</span></label>
+        </div>
+        <p class="qaide">C'est souvent elle qui décide : les frais d'achat mettent des années à s'amortir.</p>
+      </div>
+
+      <div class="qstep" id="rEtapePlacement" hidden>
+        <h3 class="qtitre" tabindex="-1">Si vous louiez, où placeriez-vous votre argent&nbsp;?</h3>
+        <div class="qchoix colonne" role="radiogroup" aria-label="Placement">
+          <label><input type="radio" name="rPlacement" value="mix" checked><span>Un peu de tout<small id="rMixAide">actions, fonds euros et Livret A</small></span></label>
+          <label><input type="radio" name="rPlacement" value="actions"><span>En actions, sur un PEA<small>le plus rentable sur longue période, mais il fluctue</small></span></label>
+          <label><input type="radio" name="rPlacement" value="fonds"><span>En assurance-vie, fonds euros<small>garanti, mais il rapporte peu</small></span></label>
+          <label><input type="radio" name="rPlacement" value="livret"><span>Sur un Livret A<small>disponible et exonéré, plafonné à 22 950 €</small></span></label>
+        </div>
+      </div>
+
+      <div class="qstep" id="rEtapeRecap" hidden>
+        <h3 class="qtitre" tabindex="-1">Votre projet, tel que nous l'avons compris</h3>
+        <dl class="qrecap" id="rRecap"></dl>
+        <p class="qapercu" id="rApercu"></p>
+        <p class="qaide" id="rHypo"></p>
+        <a class="btn primary" id="rGo" href="/acheter-ou-louer/">Voir le calcul complet</a>
+      </div>
+
+      <div class="qnav">
+        <button type="button" class="btn" id="rBack" hidden>Retour</button>
+        <button type="button" class="btn primary" id="rNext">Suivant</button>
+        <button type="button" class="btn" id="rSkip" hidden>Je ne sais pas encore</button>
+      </div>
+      <p class="qpasser" id="rPasser"><a id="rSauter" href="/acheter-ou-louer/">Passer les questions et ouvrir la calculatrice</a> · <a href="/guides/acheter-ou-louer/">Lire le guide</a></p>
+    </section>
     <ul class="trust">
       <li>Gratuit, sans inscription</li>
-      <li>Quatre régimes fiscaux, à jour des règles 2026</li>
+      <li>À jour des règles fiscales 2026, prêt à taux zéro compris</li>
       <li>À crédit, comptant, ou pour un bien déjà à vous</li>
       <li>Ni publicité, ni service tiers</li>
     </ul>
@@ -202,6 +312,7 @@
 
 <div class="page vitrine">
 
+  <div class="parcours" id="vitrineInvestir">
   <section class="apercu">
     <div class="phead">
       <div>
@@ -330,24 +441,120 @@
     </ul>
   </section>
 
+  </div>
+
+  <div class="parcours" id="vitrineVivre" hidden>
+  <section class="apercu">
+    <div class="phead">
+      <div>
+        <h2>Acheter ou louer, en une page</h2>
+        <p>Le verdict de la calculatrice sur son scénario par défaut : un logement ancien à <span id="vrPrix">300 000 €</span> acheté avec <span id="vrApport">50 000 €</span> d'apport, face à un loyer de <span id="vrLoyer">1 100 €</span> par mois, pour y vivre <span id="vrHorizon">15 ans</span>. Chacun de ces chiffres se règle dans l'outil.</p>
+      </div>
+    </div>
+    <section class="verdict">
+      <div class="vmain">
+        <p class="eyebrow">Acheter devient gagnant<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'année à partir de laquelle celui qui achète possède plus que celui qui loue et place la différence, s'ils revendent et soldent tout ce jour-là, impôt payé. Les deux ont sorti exactement les mêmes sommes de leur poche.</span></span></p>
+        <div class="hero">
+          <span class="big num" id="vrBascule">—</span>
+          <span class="pill num" id="vrPill">—</span>
+          <span class="per" id="vrPer"></span>
+        </div>
+        <dl class="facts">
+          <dt>Ratio prix / loyer</dt><dd id="vrRatio">—</dd>
+          <dt>Coût réel de la propriété</dt><dd id="vrCout">—</dd>
+          <dt>Loyer et assurance</dt><dd id="vrLoc">—</dd>
+        </dl>
+        <div class="avis" id="vrAvisBox" hidden>
+          <p id="vrAvis"></p>
+        </div>
+      </div>
+      <div class="best">
+        <p class="eyebrow" id="vrHorizonTitre">Au bout de 15 ans</p>
+        <dl id="vrHorizonListe"></dl>
+        <p id="vrHorizonTexte"></p>
+      </div>
+    </section>
+  </section>
+
+  <section class="concept">
+    <article>
+      <h2>Mêmes sorties des deux côtés</h2>
+      <p>Chaque année, le propriétaire et le locataire sortent exactement la même somme de leur poche. Celui dont le logement coûte le moins place la différence : l'apport d'abord, puis l'écart entre mensualité et loyer.</p>
+    </article>
+    <article>
+      <h2>Tout revendu, impôt payé</h2>
+      <p>À chaque date, on compare ce que chacun possède : le logement revendu, crédit et frais soldés, sans impôt sur la plus-value d'une résidence principale ; le portefeuille vidé, impôt de sortie payé selon l'enveloppe.</p>
+    </article>
+    <article>
+      <h2>Le coût réel, pas la mensualité</h2>
+      <p>Le capital remboursé reste à vous ; l'apport immobilisé, lui, cesse de rapporter. Le coût réel d'être propriétaire se lit face au loyer : intérêts, taxe foncière, charges, entretien, frais, coût d'opportunité.</p>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="phead">
+      <div>
+        <h2>Ce que possède chacun, selon l'année de départ</h2>
+        <p>Le patrimoine net de chaque ménage s'il revendait et soldait tout cette année-là, en euros d'aujourd'hui. Là où les courbes se croisent, l'achat a rattrapé ses frais.</p>
+      </div>
+    </div>
+    <div class="legend">
+      <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Acheter</span></span>
+      <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Louer et placer la différence</span></span>
+    </div>
+    <div class="plot" id="vrPlotPat"><div class="tip" id="vrTipPat"></div></div>
+    <div class="seuils">
+      <h3>Selon le placement du locataire</h3>
+      <div class="tiles" id="vrPlacements"></div>
+    </div>
+    <div class="seuils">
+      <h3>Pour que l'achat fasse jeu égal</h3>
+      <div class="tiles" id="vrSeuils"></div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="phead">
+      <div>
+        <h2>Ce que la calculatrice acheter ou louer modélise</h2>
+        <p>La méthode complète est publiée dans les <a href="/hypotheses-de-calcul/#acheter-ou-louer">hypothèses de calcul</a>, avec ce qui n'est volontairement pas modélisé.</p>
+      </div>
+    </div>
+    <ul>
+      <li><b>Prêt à taux zéro</b> — estimé selon le barème en vigueur jusqu'en 2027 : zone, taille du foyer, revenus, neuf ou ancien avec travaux, différé.</li>
+      <li><b>Tous les coûts du propriétaire</b> — intérêts, assurance emprunteur, taxe foncière, charges non récupérables, entretien, frais de notaire, de dossier et de revente.</li>
+      <li><b>Tous les coûts du locataire</b> — loyer indexé, assurance, frais d'agence, dépôt de garantie rendu au départ.</li>
+      <li><b>Trois placements, trois enveloppes</b> — actions en PEA, compte-titres ou assurance-vie, fonds euros, Livret A, avec leurs plafonds et leur fiscalité 2026.</li>
+      <li><b>L'année de bascule</b> — cherchée jusqu'à quarante ans, pour savoir combien de temps rester pour que l'achat soit gagnant.</li>
+      <li><b>Sensibilité et seuils</b> — le prix maximal, le loyer minimal, la revalorisation minimale qui font basculer la réponse.</li>
+    </ul>
+  </section>
+  </div>
+
   <section class="features">
     <div class="phead">
       <div>
         <h2>Comprendre avant de calculer</h2>
-        <p>Six guides courts et chiffrés, cohérents avec les chiffres de la calculatrice.</p>
+        <p>Des guides courts et chiffrés, cohérents avec les chiffres des deux calculatrices.</p>
       </div>
     </div>
     <div class="cards">
       <a class="gcard" href="/guides/calcul-rendement-locatif/"><b>Calculer un rendement locatif</b><p>Brut, net, net-net : les trois formules rapides, leurs angles morts, et pourquoi le TRI les remplace toutes.</p><small>8 min de lecture</small></a>
       <a class="gcard" href="/guides/lmnp-reel-ou-micro-bic/"><b>LMNP : réel ou micro-BIC ?</b><p>L'amortissement peut annuler l'impôt sur les loyers pendant vingt ans. Ce qu'il coûte à la revente depuis 2025.</p><small>10 min de lecture</small></a>
       <a class="gcard" href="/guides/quand-revendre/"><b>Quand revendre un bien locatif ?</b><p>Point mort, abattements à 6, 22 et 30 ans, fin de l'effet de levier : les trois forces qui fixent la bonne année.</p><small>9 min de lecture</small></a>
+      <a class="gcard" href="/guides/acheter-ou-louer/"><b>Acheter ou louer sa résidence principale ?</b><p>Le ratio prix-loyer, la durée d'occupation et le placement de la différence : les trois chiffres qui tranchent.</p><small>9 min de lecture</small></a>
+      <a class="gcard" href="/guides/cout-proprietaire/"><b>Le vrai coût d'être propriétaire</b><p>Ce qui part sans retour et ce qui reste à vous : la mensualité n'est pas le coût, le coût d'opportunité en est un.</p><small>7 min de lecture</small></a>
+      <a class="gcard" href="/guides/immobilier-ou-bourse/"><b>Immobilier locatif ou bourse ?</b><p>Comparer à mise de fonds égale, impôt retiré des deux côtés : ce que la pierre doit faire pour battre un fonds indiciel.</p><small>9 min de lecture</small></a>
     </div>
   </section>
 
   <section class="final">
     <h2>Votre projet, vos chiffres, en deux minutes</h2>
-    <p>Sept questions, chacune préremplie d'une valeur raisonnable, et la calculatrice s'ouvre réglée sur votre projet — ou sur le bien que vous possédez déjà. Rien n'est figé : toutes les hypothèses restent modifiables une fois dedans.</p>
-    <a class="btn primary" href="#assistant">Répondre aux questions</a>
+    <p>Sept questions, chacune préremplie d'une valeur raisonnable, et la calculatrice s'ouvre réglée sur votre projet. Rien n'est figé : toutes les hypothèses restent modifiables une fois dedans.</p>
+    <div class="accroche-actions">
+      <a class="btn primary" href="#investir">Investir pour louer</a>
+      <a class="btn primary" href="#acheter-pour-y-vivre">Acheter pour y vivre</a>
+    </div>
   </section>
 
 </div>
@@ -366,6 +573,8 @@
         <li><a href="/guides/micro-foncier-ou-reel/">Micro-foncier ou régime réel ?</a></li>
         <li><a href="/guides/quand-revendre/">Quand revendre un bien locatif ?</a></li>
         <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a></li>
+        <li><a href="/guides/acheter-ou-louer/">Acheter ou louer sa résidence principale ?</a></li>
+        <li><a href="/guides/cout-proprietaire/">Le vrai coût d'être propriétaire</a></li>
       </ul>
     </div>
     <div>
@@ -383,7 +592,7 @@
   </div>
 </footer>
 <script src="/js/site.js?v=e691784d"></script>
-<script src="/js/commun.js?v=13f8a09a"></script>
-<script src="/js/vitrine.js?v=092fbfcc"></script>
+<script src="/js/commun.js?v=751ce7ef"></script>
+<script src="/js/vitrine.js?v=9c77bd63"></script>
 </body>
 </html>

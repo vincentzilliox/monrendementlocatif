@@ -10,6 +10,9 @@ const DEFAUTS = {/* build.py : valeurs par défaut */};
 // Les choix offerts par les listes déroulantes du formulaire : l'assistant pose
 // les mêmes tranches d'imposition et les mêmes régimes que la calculatrice.
 const OPTIONS = {/* build.py : listes de choix */};
+// Les valeurs d'ouverture de la calculatrice « acheter ou louer », relues de
+// même dans acheter-ou-louer.html.
+const DEFAUTS_RP = {/* build.py : valeurs par défaut RP */};
 
 // Sans argument : le scénario d'ouverture de la calculatrice, celui que la
 // vitrine met en scène. Avec `surcharges`, celui que l'assistant construit au
@@ -83,10 +86,82 @@ function vitrine(){
   if(vs) vs.innerHTML = tuilesSeuils(seuils(p), "bourse");
 }
 
+/* ---------- acheter pour y vivre ---------- */
+// Le scénario d'ouverture de la calculatrice « acheter ou louer », ou celui que
+// son questionnaire construit : ce qui n'est pas répondu garde sa valeur
+// d'ouverture, et les prix suivent l'inflation tant que la case est cochée.
+function scenarioRP(surcharges){
+  const p = Object.assign({}, DEFAUTS_RP, surcharges || {});
+  if(p.prixSuitInflation) p.indexPrix = p.indexLoyer = p.indexCharges = p.inflation;
+  return p;
+}
+function vitrineRP(){
+  oublierTheme();
+  const g = id => document.getElementById(id);
+  const ecrire = (id, txt) => { const el = g(id); if(el) el.textContent = txt; };
+  const p = scenarioRP(), R = acheterOuLouer(p), f = R.final, b = R.bascule;
+  const an = n => n + (n > 1 ? " ans" : " an");
+  ecrire("vrPrix", eur.format(p.prix));
+  ecrire("vrApport", eur.format(p.apport));
+  ecrire("vrLoyer", eur.format(p.loyer));
+  ecrire("vrHorizon", an(p.horizon));
+  ecrire("vrBascule", b === null ? "Jamais" : "Année " + b);
+  const pill = g("vrPill");
+  if(pill){
+    pill.textContent = sEur(f.ecartReel);
+    pill.className = "pill num " + (Math.abs(f.ecartReel) < 500 ? "flat" : f.ecartReel > 0 ? "win" : "lose");
+  }
+  ecrire("vrPer", (f.ecartReel >= 0 ? "d'avance pour l'achat" : "d'avance pour la location")
+    + ` au bout de ${an(p.horizon)}, en euros d'aujourd'hui`);
+  ecrire("vrRatio", R.ratioPrixLoyer.toFixed(1).replace(".", ",") + " ans de loyer");
+  ecrire("vrCout", eur.format(R.couts1.proprio/12) + " par mois");
+  ecrire("vrLoc", eur.format(R.couts1.locataire/12) + " par mois");
+  const mot = avisRP(R), boite = g("vrAvisBox");
+  if(boite) boite.hidden = !mot;
+  ecrire("vrAvis", mot || "");
+  ecrire("vrHorizonTitre", `Au bout de ${an(p.horizon)}, en euros d'aujourd'hui`);
+  const liste = g("vrHorizonListe");
+  if(liste) liste.innerHTML =
+    `<dt>Propriétaire, tout revendu</dt><dd>${eur.format(f.liquidationReel)}</dd>` +
+    `<dt>Locataire, tout retiré</dt><dd>${eur.format(f.patrimoineLocReel)}</dd>` +
+    `<dt>Rendement net du placement</dt><dd>${pct(R.rendementPlacement)} /an</dd>`;
+  ecrire("vrHorizonTexte", "Les deux ménages ont sorti exactement les mêmes sommes de leur poche : seul l'usage qu'ils en ont fait diffère.");
+  drawChart(g("vrPlotPat"), g("vrTipPat"), cfgPatrimoineRP(R, true, {height: 280}));
+  const tuile = (nom, x, r) => `<div class="tile"><span class="k">${nom}</span><span class="v num">${x === null ? "Louer gagne" : "Année " + x}</span>`
+    + `<span class="s">${x === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · placement à ${pct(r)} /an net</span></div>`;
+  const pl = g("vrPlacements");
+  if(pl) pl.innerHTML = tuile("Répartition par défaut", b, R.rendementPlacement)
+    + comparerPlacementsRP(p).map(x => tuile(x.nom, x.bascule, x.rendement)).join("");
+  const vs = g("vrSeuils");
+  if(vs) vs.innerHTML = tuilesSeuils(seuilsRP(p), "location");
+}
+
+/* ---------- deux parcours ---------- */
+// Investir pour louer, ou acheter pour y vivre : chaque carte ouvre son
+// questionnaire et sa vitrine. La vitrine « y vivre » n'est tracée qu'une fois
+// visible : un graphique tracé dans un conteneur masqué n'a pas de largeur.
+let parcours = "investir";
+function choisirParcours(v, defiler){
+  parcours = v;
+  const vivre = v === "vivre", g = id => document.getElementById(id);
+  g("choixInvestir").setAttribute("aria-pressed", vivre ? "false" : "true");
+  g("choixVivre").setAttribute("aria-pressed", vivre ? "true" : "false");
+  g("assistant").hidden = vivre; g("assistantRP").hidden = !vivre;
+  g("vitrineInvestir").hidden = vivre; g("vitrineVivre").hidden = !vivre;
+  redessiner();
+  if(defiler) g(vivre ? "assistantRP" : "assistant").scrollIntoView({behavior:"smooth", block:"center"});
+}
+function redessiner(){ if(parcours === "vivre") vitrineRP(); else vitrine(); }
+const parcoursDuLien = () => location.hash === "#acheter-pour-y-vivre" ? "vivre" : location.hash === "#investir" ? "investir" : null;
+document.getElementById("choixInvestir").addEventListener("click", () => choisirParcours("investir"));
+document.getElementById("choixVivre").addEventListener("click", () => choisirParcours("vivre"));
+addEventListener("hashchange", () => { const v = parcoursDuLien(); if(v) choisirParcours(v, true); });
+
 brancherInfobulles();
 
 let vid;
-addEventListener("resize", () => { clearTimeout(vid); vid = setTimeout(vitrine, 140); });
-matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => setTimeout(vitrine, 30));
-document.addEventListener("theme", vitrine);
+addEventListener("resize", () => { clearTimeout(vid); vid = setTimeout(redessiner, 140); });
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => setTimeout(redessiner, 30));
+document.addEventListener("theme", redessiner);
 vitrine();
+if(parcoursDuLien() === "vivre") choisirParcours("vivre");

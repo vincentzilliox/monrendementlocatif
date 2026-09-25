@@ -529,6 +529,52 @@ setTimeout(function(){
       r.lienAncien = ancien + "|" + compta.value;
     }
   }
+  // L'accueil a deux parcours : la carte « y vivre » montre son questionnaire et
+  // sa vitrine, et cache ceux de l'investisseur ; le questionnaire se parcourt
+  // comme celui de l'investisseur, et rejoue par défaut le scénario d'ouverture.
+  var cVivre = document.getElementById("choixVivre"), cInvestir = document.getElementById("choixInvestir");
+  if(cVivre && cInvestir){
+    var cache2 = function(id){ var e = document.getElementById(id); return !e || e.hidden; };
+    cVivre.click();
+    r.parcoursVivre = (cache2("assistant") && !cache2("assistantRP") && cache2("vitrineInvestir") && !cache2("vitrineVivre") ? "1" : "0")
+      + (cVivre.getAttribute("aria-pressed") === "true" && cInvestir.getAttribute("aria-pressed") === "false" ? "1" : "0");
+    r.vrBascule = (document.getElementById("vrBascule") || {}).textContent || "";
+    r.vrGraphe = document.querySelectorAll("#vrPlotPat svg path[stroke]").length;
+    r.vrTuiles = document.querySelectorAll("#vrPlacements .tile").length + document.querySelectorAll("#vrSeuils .tile").length;
+    r.vrAvis = ((document.getElementById("vrAvis") || {}).textContent || "").slice(0, 40);
+    var qr = document.getElementById("assistantRP"), suivantRP = document.getElementById("rNext");
+    var pasRP = function(){ return Array.prototype.filter.call(qr.querySelectorAll(".qstep"), function(e){ return !e.hidden; }); };
+    var parcourir = function(){ var k = 0; while(!suivantRP.hidden && k < 12){ suivantRP.click(); k++; } return k; };
+    r.rVisibles = pasRP().length;
+    r.rEtapes = parcourir();
+    r.rFin = pasRP().length === 1 ? pasRP()[0].id : "";
+    r.rLienDefaut = document.getElementById("rGo").getAttribute("href");
+    r.rApercu = (document.getElementById("rApercu").textContent || "").slice(0, 40);
+    r.rDeborde = largeur < 500
+      ? Array.prototype.some.call(qr.querySelectorAll("*"), function(e){ var b=e.getBoundingClientRect(); return b.width > 0 && b.right > largeur + 1 && !defile(e) && !cache(e); })
+      : false;
+    var modRP = qr.querySelector('.qmod[data-etape="rEtapeBien"]');
+    if(modRP){
+      modRP.click();
+      var prixRP = document.getElementById("rPrix");
+      prixRP.value = (parseInt(prixRP.value.replace(/[^0-9]/g, ""), 10) || 0) * 2;
+      prixRP.dispatchEvent(new Event("input", {bubbles:true}));
+      parcourir();
+      r.rLienModifie = document.getElementById("rGo").getAttribute("href");
+    }
+    var compRP = qr.querySelector('input[name="rFinancement"][value="comptant"]');
+    if(compRP){
+      document.getElementById("rBack").click();
+      compRP.checked = true; compRP.dispatchEvent(new Event("change", {bubbles:true}));
+      var j = 0; while(!document.getElementById("rBack").hidden && j < 12){ document.getElementById("rBack").click(); j++; }
+      r.rComptantEtapes = parcourir();
+      r.rLienComptant = document.getElementById("rGo").getAttribute("href");
+      var credRP = qr.querySelector('input[name="rFinancement"][value="credit"]');
+      credRP.checked = true; credRP.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+    cInvestir.click();
+    r.parcoursRetour = !cache2("assistant") && cache2("assistantRP") && !cache2("vitrineInvestir") && cache2("vitrineVivre");
+  }
   // La calculatrice « acheter ou louer » : les champs suivent les choix, le
   // verdict bouge avec eux et revient, et le lien porte tout sauf le foyer.
   if(document.getElementById("rpBascule") && typeof depuisHashRP === "function"){
@@ -949,6 +995,14 @@ def main():
                            if re.search(r"(?<![\d.])%g(?![\d.])" % defauts[cle], assistant_src)})
         controle("l'assistant ne recopie aucune valeur par défaut",
                  not recopies, ", ".join(recopies))
+        assistant_rp = sans_commentaires((SRC / "assistant-rp.js").read_text(encoding="utf-8"))
+        defauts_rp0 = json.loads(build._defauts_rp(build.SOURCE_RP.read_text(encoding="utf-8"),
+                                                   (SRC / "residence-calc.js").read_text(encoding="utf-8")))
+        recopies = sorted({"%s = %g" % (cle, defauts_rp0[cle])
+                           for cle in ("prix", "loyer", "apport", "tf", "copro", "travaux", "horizon", "notairePct")
+                           if re.search(r"(?<![\d.])%g(?![\d.])" % defauts_rp0[cle], assistant_rp)})
+        controle("le questionnaire « y vivre » ne recopie aucune valeur par défaut",
+                 not recopies, ", ".join(recopies))
         # Le graphique de sensibilité déplace la tranche d'un palier : ses paliers
         # doivent être ceux de la liste du formulaire, pas une copie qui dériverait.
         tranches = json.loads(re.search(r"const TRANCHES = (\[.*?\]);", moteur_src).group(1))
@@ -975,6 +1029,14 @@ def main():
                    if cle not in defauts or abs(lu(texte) - defauts[cle]) > 1e-9]
         controle("hypothèses de calcul : chiffres affichés = valeurs par défaut",
                  bool(affiches) and not derives,
+                 ", ".join(derives)[:60] or "%d chiffres vérifiés" % len(affiches))
+        # Même règle pour le chapitre « acheter ou louer », sur les valeurs
+        # d'ouverture de sa calculatrice.
+        affiches = re.findall(r'data-defaut-rp="(\w+)"[^>]*>([^<]+)<', methode)
+        derives = ["%s %s" % (cle, texte.strip()) for cle, texte in affiches
+                   if cle not in defauts_rp or abs(lu(texte) - defauts_rp[cle]) > 1e-9]
+        controle("hypothèses de calcul : chiffres « acheter ou louer » = valeurs d'ouverture",
+                 len(affiches) >= 8 and not derives,
                  ", ".join(derives)[:60] or "%d chiffres vérifiés" % len(affiches))
 
         print("\nCONFIDENTIALITÉ ET POIDS")
@@ -1139,6 +1201,28 @@ def main():
                     controle("assistant : revenir à l'achat retrouve la saisie du visiteur",
                              bool(r.get("qLienRetour")) and r.get("qLienRetour") == r.get("qLienModifie"),
                              (r.get("qLienRetour") or "—")[-58:])
+                    # Le second parcours de l'accueil : acheter pour y vivre.
+                    controle("accueil : la carte « y vivre » montre son questionnaire et sa vitrine, et revient",
+                             r.get("parcoursVivre") == "11" and r.get("parcoursRetour") is True,
+                             "%s, retour %s" % (r.get("parcoursVivre"), r.get("parcoursRetour")))
+                    controle("accueil « y vivre » : bascule, patrimoine, placements et seuils",
+                             (r.get("vrBascule") or "").startswith(("Année", "Jamais")) and r.get("vrGraphe") == 2
+                             and r.get("vrTuiles") == 9 and len(r.get("vrAvis") or "") > 20,
+                             "%s, %s courbes, %s tuiles" % (r.get("vrBascule"), r.get("vrGraphe"), r.get("vrTuiles")))
+                    controle("questionnaire « y vivre » : une question à la fois, sept puis le récapitulatif",
+                             r.get("rVisibles") == 1 and r.get("rEtapes") == 7 and r.get("rFin") == "rEtapeRecap"
+                             and (r.get("rApercu") or "").startswith("Sur ces réponses"),
+                             "%s clics → %s" % (r.get("rEtapes"), r.get("rFin") or "—"))
+                    controle("questionnaire « y vivre » : les valeurs proposées rejouent le scénario par défaut",
+                             r.get("rLienDefaut") == "/acheter-ou-louer/#complet=1", r.get("rLienDefaut") or "—")
+                    manquants = [c for c in ("prix=", "loyer=", "apport=", "tf=", "copro=", "travaux=")
+                                 if c not in (r.get("rLienModifie") or "")]
+                    controle("questionnaire « y vivre » : le prix entraîne loyer, apport, charges et travaux",
+                             not manquants, ", ".join(manquants) or (r.get("rLienModifie") or "—")[-58:])
+                    lc = r.get("rLienComptant") or ""
+                    controle("questionnaire « y vivre » : payer comptant saute la durée du prêt",
+                             r.get("rComptantEtapes") == 6 and "comptant=1" in lc and "duree=" not in lc,
+                             "%s clics → %s" % (r.get("rComptantEtapes"), lc[-50:] or "—"))
                 if not r.get("qDeborde") is None:
                     controle("assistant %d px : le récapitulatif ne déborde pas" % largeur,
                              not r.get("qDeborde"))
@@ -1315,6 +1399,9 @@ def main():
                              r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
                     rp_page = r
+                    controle("accueil et calculatrice acheter ou louer : même année de bascule",
+                             bool(r.get("rpBascule")) and r.get("rpBascule") == vitrine.get("vrBascule"),
+                             "%s vs %s" % (vitrine.get("vrBascule", "—"), r.get("rpBascule")))
                     controle("acheter ou louer : année de bascule affichée",
                              (r.get("rpBascule") or "").startswith(("Année", "Jamais")), r.get("rpBascule") or "—")
                     controle("acheter ou louer : avis rendu", len(r.get("rpAvis") or "") > 20, r.get("rpAvis") or "absent")
@@ -1794,12 +1881,17 @@ lignes.push('PTZ : ancien hors B2 et C, primo-accession, plafond, zone inconnue|
   +(refus[0]==='ancienZone' && refus[1] && refus[2]==='primo' && refus[3]==='revenus' && refus[4]==='zone'?1:0)+'|'+refus.join(','));
 var cap=rp({ptzMode:'manuel',ptzMontant:500000,ptzDiffere:0,ptzDuree:10});
 lignes.push('PTZ : jamais plus que le pret principal|'+(proche(cap.ptz,cap.emprunt,1)?1:0)+'|PTZ '+cap.ptz.toFixed(0)+', pret '+cap.emprunt.toFixed(0));
-// L'annee de bascule : l'achat devant cette annee-la et toutes les suivantes,
-// derriere la precedente ; la meme en euros courants et d'aujourd'hui.
-var s=siteRP({}), B=s.bascule, S=s.suite;
-var okB=B!==null && S[B-1].ecart>=0 && (B===1 || S[B-2].ecart<0) && S.slice(B-1).every(function(r){ return r.ecart>=0; })
-  && S.every(function(r){ return (r.ecart>=0)===(r.ecartReel>=0); });
-lignes.push('acheter ou louer : annee de bascule coherente, euros courants ou d aujourd hui|'+(okB?1:0)+'|annee '+B);
+// L'annee de bascule : la premiere ou l'achat passe devant ; l'annee de repli,
+// la premiere d'apres ou louer repasse devant. Les memes en euros courants et
+// d'aujourd'hui. Le scenario d'ouverture n'a pas de repli ; l'achat comptant, si.
+var bascOk=function(x){ var B=x.bascule, Rp=x.repli, S=x.suite;
+  if(B===null) return S.every(function(r){ return r.ecart<0; });
+  var fin=Rp===null?S.length:Rp-1;
+  return S.slice(0,B-1).every(function(r){ return r.ecart<0; }) && S.slice(B-1,fin).every(function(r){ return r.ecart>=0; })
+    && (Rp===null || S[Rp-1].ecart<0) && S.every(function(r){ return (r.ecart>=0)===(r.ecartReel>=0); }); };
+var s=siteRP({}), B=s.bascule, cpt=siteRP({comptant:true});
+lignes.push('acheter ou louer : annees de bascule et de repli coherentes, euros courants ou d aujourd hui|'
+  +(bascOk(s) && s.repli===null && bascOk(cpt) && cpt.repli!==null?1:0)+'|bascule '+B+', comptant '+cpt.bascule+' puis '+cpt.repli);
 var ref=ecartRP(baseRP()), essai=function(o){ var p=baseRP(); for(var k in o) p[k]=o[k]; return ecartRP(p); };
 var signes=[essai({prix:330000})<ref, essai({loyer:1210})>ref, essai({indexPrix:3})>ref, essai({taux:4.4})<ref, essai({bourse:5})<ref];
 lignes.push('acheter ou louer : sensibilite dans le bon sens|'+(signes.every(Boolean)?1:0)+'|'+signes.map(Number).join(''));

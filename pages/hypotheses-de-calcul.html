@@ -1,14 +1,14 @@
 <script type="application/json" id="meta">
-{"titre": "Hypothèses de calcul de la calculatrice de rendement",
+{"titre": "Hypothèses de calcul des deux calculatrices",
  "court": "Hypothèses de calcul",
- "description": "La méthode complète : TRI sur fonds propres, fiscalité des quatre régimes, plus-value, inflation, placements comparés — et ce qui n'est pas modélisé.",
- "maj": "2026-09-23"}
+ "description": "La méthode complète : TRI sur fonds propres, fiscalité des quatre régimes, plus-value, acheter ou louer, PTZ, placements — et ce qui n'est pas modélisé.",
+ "maj": "2026-09-25"}
 </script>
 <article class="methode">
   <header class="mhead">
     <p class="eyebrow">La méthode, sans boîte noire</p>
     <h1>Hypothèses de calcul</h1>
-    <p class="chapo">Un simulateur ne vaut que par ce qu'il modélise, et par ce qu'il avoue ne pas modéliser. Voici chaque règle appliquée par la calculatrice : d'abord ce qu'il faut en retenir, puis le détail.</p>
+    <p class="chapo">Un simulateur ne vaut que par ce qu'il modélise, et par ce qu'il avoue ne pas modéliser. Voici chaque règle appliquée par les deux calculatrices — investir pour louer, acheter pour y vivre : d'abord ce qu'il faut en retenir, puis le détail.</p>
   </header>
 
   <!-- Chaque chiffre marqué data-defaut est comparé à la valeur par défaut du
@@ -31,7 +31,8 @@
         <li><a href="#loyers"><span>03</span>Fiscalité des loyers</a></li>
         <li><a href="#revente"><span>04</span>Revente et plus-value</a></li>
         <li><a href="#placements"><span>05</span>Placements comparés</a></li>
-        <li><a href="#limites"><span>06</span>Limites</a></li>
+        <li><a href="#acheter-ou-louer"><span>06</span>Acheter ou louer</a></li>
+        <li><a href="#limites"><span>07</span>Limites</a></li>
       </ol>
     </nav>
 
@@ -342,9 +343,96 @@
         </article>
       </section>
 
-      <section class="mchap" id="limites">
+      <!-- Les chiffres marqués data-defaut-rp sont comparés aux valeurs
+           d'ouverture de la calculatrice « acheter ou louer ». -->
+      <section class="mchap" id="acheter-ou-louer">
         <div class="mchap-tete">
           <span class="mnum">06</span>
+          <h2>Acheter ou louer</h2>
+          <p>La seconde calculatrice répond à une autre question : acheter le logement où l'on vit, ou le louer et placer son argent.</p>
+        </div>
+        <article class="mfiche">
+          <div>
+            <h3>Deux ménages, les mêmes sorties</h3>
+            <p class="messentiel">Chaque année, propriétaire et locataire sortent exactement la même somme de leur poche.</p>
+          </div>
+          <div class="mdetail">
+            <p>Deux ménages identiques vivent dans deux logements identiques. L'un achète, l'autre loue. Le premier jour, l'acheteur paie son apport, les frais de notaire, de dossier et de garantie, les travaux et son déménagement ; le locataire, s'il change aussi de logement, les frais d'agence, le dépôt de garantie et le même déménagement. La différence est placée par celui qui a dépensé le moins — presque toujours le locataire.</p>
+            <p>Chaque année ensuite, le plus grand des deux coûts de logement sort des deux poches : celui dont le logement coûte le moins place l'écart. Le locataire place tant que la mensualité dépasse le loyer ; une fois le crédit remboursé, c'est le propriétaire qui place la différence. Les flux sont annuels, placés en fin d'année, comme dans la calculatrice d'investissement.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Ce que paie le propriétaire</h3>
+            <p class="messentiel">Le crédit, la taxe foncière, les charges non récupérables, l'entretien et l'assurance.</p>
+          </div>
+          <div class="mdetail">
+            <p>La mensualité comprend le capital, les intérêts et l'assurance emprunteur, au mois près, plus celle du prêt à taux zéro une fois son différé écoulé. S'y ajoutent la taxe foncière — <span data-defaut-rp="tf">1 500 €</span> par an par défaut, exonérée à <span data-defaut-rp="tfExo">40 %</span> les deux premières années dans le neuf —, les charges de copropriété que le locataire ne paierait pas, <span data-defaut-rp="copro">80 €</span> par mois, et l'assurance habitation du propriétaire.</p>
+            <p>L'entretien et les gros travaux se comptent en pourcentage de la valeur du logement : <span data-defaut-rp="entretien">0,5 %</span> par an par défaut pour un appartement, 1 % pour une maison. Les charges récupérables, payées des deux côtés, s'annulent et ne figurent pas.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Ce que paie le locataire</h3>
+            <p class="messentiel">Le loyer, qui suit l'inflation, l'assurance, et une fois les frais d'entrée.</p>
+          </div>
+          <div class="mdetail">
+            <p>Le loyer d'un logement équivalent augmente chaque année au rythme retenu, l'inflation par défaut. Les frais d'agence sont plafonnés par la loi ALUR, de 8 à 12 € par m² selon la zone, plus 3 € pour l'état des lieux : <span data-defaut-rp="fraisAgenceLoc">800 €</span> par défaut. Le dépôt de garantie, un mois de loyer, est rendu au départ, sans intérêts : il entre dans le patrimoine du locataire à sa valeur nominale.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Le prêt à taux zéro</h3>
+            <p class="messentiel">Estimé selon le barème des offres émises depuis avril 2025, en vigueur jusqu'à fin 2027.</p>
+          </div>
+          <div class="mdetail">
+            <p>Il est réservé à qui n'a pas été propriétaire de sa résidence principale depuis deux ans. Il finance un logement neuf partout en France, ou un logement ancien en zones B2 et C avec des travaux d'au moins le quart du coût total. Les ressources retenues sont le revenu fiscal de référence de l'avant-dernière année, ou le coût de l'opération divisé par neuf s'il est plus élevé ; divisées par le coefficient familial (1 pour une personne, 1,5 pour deux, jusqu'à 3,3 pour huit), elles désignent l'une des quatre tranches.</p>
+            <p>Le prêt vaut une part du coût de l'opération, hors frais de notaire, lui-même plafonné selon la zone et le foyer : 50 % en tranche 1, 40 % en tranches 2 et 3, 20 % en tranche 4 pour un appartement neuf ou l'ancien ; 30, 20, 20 et 10 % pour une maison neuve. Le remboursement attend d'autant plus longtemps que les revenus sont modestes : différé de 10 ans puis 15 ans de remboursement en tranche 1, 8 puis 12 en tranche 2, 2 puis 13 en tranche 3, aucun différé et 10 ans en tranche 4. Le prêt à taux zéro ne peut dépasser le prêt principal : le calcul le borne à la moitié de ce qui reste à emprunter.</p>
+            <p>Sources : <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F10871" rel="noopener noreferrer">fiche F10871 de service-public.gouv.fr</a>, vérifiée le 15 septembre 2026, et les conditions de remboursement publiées par l'ANIL.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Placer la différence</h3>
+            <p class="messentiel">Une répartition entre actions, fonds euros et Livret A, imposée à la sortie selon l'enveloppe.</p>
+          </div>
+          <div class="mdetail">
+            <p>Par défaut, <span data-defaut-rp="partBourse">60 %</span> en actions sur un PEA, <span data-defaut-rp="partFonds">30 %</span> en fonds euros et <span data-defaut-rp="partLivret">10 %</span> sur Livret A. Les rendements sont ceux de la calculatrice d'investissement, hors inflation — <span data-defaut-rp="bourse">4 %</span> pour les actions — et un contrôle vérifie que les deux calculatrices n'en divergent jamais.</p>
+            <p>À la sortie, le PEA ne supporte après cinq ans que les prélèvements sociaux, <span data-defaut-rp="psCapital">18,6 %</span> depuis la loi de financement de la sécurité sociale pour 2026, et 31,4 % avant ; ses versements sont plafonnés à 150 000 €, l'excédent va en compte-titres, imposé à 31,4 %. L'assurance-vie supporte <span data-defaut-rp="psAV">17,2 %</span> de prélèvements sociaux, et après huit ans 7,5 % d'impôt au-delà de l'abattement de 4 600 € (9 200 € pour un couple) ; 12,8 % avant. Le Livret A est exonéré, et plafonné à 22 950 € de dépôts : l'excédent va au fonds euros. L'âge fiscal est celui du plan ou du contrat, ouvert le premier jour (<a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F2329" rel="noopener noreferrer">fiche F2329</a>).</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>La revente, sans impôt</h3>
+            <p class="messentiel">Une résidence principale se revend sans impôt sur la plus-value.</p>
+          </div>
+          <div class="mdetail">
+            <p>À chaque date, le propriétaire revend : il paie les frais d'agence, rembourse le capital restant dû des deux prêts et, si la case est cochée, les pénalités de remboursement anticipé — six mois d'intérêts, au plus 3 % du capital dû. La plus-value est exonérée (article 150 U, II, 1° du code général des impôts). Le locataire, lui, vide son portefeuille et paie l'impôt de sortie. Les deux patrimoines sont alors comparables, à l'euro près.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>L'année de bascule</h3>
+            <p class="messentiel">L'année à partir de laquelle le propriétaire possède plus que le locataire, et le reste.</p>
+          </div>
+          <div class="mdetail">
+            <p>Les frais de l'achat — notaire, dossier, agence à la revente — mettent des années à s'amortir : avant, le locataire est devant. La calculatrice cherche la première année à partir de laquelle l'achat l'emporte à chaque date, jusqu'à quarante ans, au-delà de la durée d'occupation prévue, <span data-defaut-rp="horizon">15 ans</span> par défaut. Si l'achat passe devant puis repasse derrière, elle le signale. L'année est la même en euros courants et en euros d'aujourd'hui : l'inflation change la taille de l'écart, jamais son signe.</p>
+          </div>
+        </article>
+        <article class="mfiche">
+          <div>
+            <h3>Le coût réel de la propriété</h3>
+            <p class="messentiel">Ce qui part sans retour, capital remboursé exclu, coût d'opportunité inclus.</p>
+          </div>
+          <div class="mdetail">
+            <p>La mensualité n'est pas le coût du logement : le capital remboursé reste à vous. Le coût réel de la première année additionne les intérêts et l'assurance emprunteur, la taxe foncière, les charges, l'entretien, l'assurance, les frais d'achat et de revente étalés sur la durée d'occupation, et le coût d'opportunité : ce que l'argent immobilisé aurait rapporté placé, au rendement net de la répartition. La hausse de la valeur du logement vient en déduction. Il se compare au loyer et à l'assurance du locataire.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mchap" id="limites">
+        <div class="mchap-tete">
+          <span class="mnum">07</span>
           <h2>Limites</h2>
           <p>Où s'arrête l'exercice.</p>
         </div>
@@ -373,6 +461,9 @@
             <p><b>Transmission ou résidence principale.</b> La plus-value latente disparaît au décès, et la résidence principale en est exonérée : si le bien doit être transmis ou habité, la logique de la revente ne s'applique plus.</p>
             <p><b>Changements de législation.</b> Les règles sont celles de la loi de finances pour 2026, appliquées telles quelles pendant toute la durée simulée. La revente a lieu en fin d'année, jamais en cours de mois.</p>
             <p>Les plafonds du micro-foncier (15 000 €) et du micro-BIC (77 700 €) sont signalés, mais pas imposés.</p>
+            <p><b>Acheter ou louer : un placement sans à-coups.</b> Les actions sont supposées rapporter chaque année leur rendement moyen. Une baisse des marchés l'année du départ, ou une baisse des prix de l'immobilier, déplace la réponse ; la sensibilité montre de combien.</p>
+            <p><b>Acheter ou louer : un locataire discipliné.</b> Le calcul suppose que le locataire place vraiment chaque euro d'écart, chaque année. Celui qui le dépense perd l'avantage que la calculatrice lui prête : l'achat force l'épargne, la location la laisse au bon vouloir.</p>
+            <p><b>Acheter ou louer : un départ choisi.</b> Une mutation, une séparation ou une famille qui s'agrandit avancent souvent la revente. Avant l'année de bascule, elle coûte de l'argent au propriétaire : c'est la durée d'occupation qui se vérifie en premier.</p>
           </div>
         </article>
         <article class="mfiche">
@@ -389,6 +480,8 @@
               <li>Pinel, Denormandie, Malraux</li>
               <li>Prêt in fine ou différé</li>
               <li>IFI</li>
+              <li>Prêt relais, achat avant la vente d'un logement</li>
+              <li>Aides locales et prêt Action Logement</li>
             </ul>
             <p>La location courte durée relève d'un abattement propre — 30 % sous 15 000 € de recettes pour un meublé de tourisme non classé, réglable dans le panneau — mais ni sa saisonnalité ni ses frais de conciergerie ne sont simulés.</p>
           </div>
@@ -401,8 +494,9 @@
         </div>
 
         <div class="cta">
-          <p><b>Toutes ces règles sont appliquées à votre projet</b>Chaque paramètre de cette page est un champ modifiable dans le panneau d'hypothèses de la calculatrice.</p>
-          <a class="btn primary" href="/calculatrice/">Ouvrir la calculatrice</a>
+          <p><b>Toutes ces règles sont appliquées à votre projet</b>Chaque paramètre de cette page est un champ modifiable dans le panneau d'hypothèses des calculatrices.</p>
+          <a class="btn primary" href="/calculatrice/">Investir pour louer</a>
+          <a class="btn" href="/acheter-ou-louer/">Acheter ou louer</a>
         </div>
 
         <section class="lire">
@@ -410,6 +504,7 @@
           <ul>
             <li><a href="/questions-frequentes/">Questions fréquentes<span>Quand revendre, nominal ou réel, immobilier ou bourse, quel régime choisir.</span></a></li>
             <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué<span>Pourquoi le rendement annualisé est la seule mesure comparable à un placement financier.</span></a></li>
+            <li><a href="/guides/acheter-ou-louer/">Acheter ou louer sa résidence principale<span>Le ratio prix-loyer, la durée d'occupation et le placement de la différence.</span></a></li>
           </ul>
         </section>
       </div>
