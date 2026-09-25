@@ -13,8 +13,10 @@ Il répond à deux questions que les simulateurs courants laissent de côté :
 - **Combien ce projet rapporte-t-il vraiment, chaque année ?** Un TRI calculé sur
   les fonds réellement sortis de votre poche, en euros courants et en pouvoir
   d'achat, pour chaque année de revente possible.
-- **Quand faut-il revendre ?** La fiscalité française avance par seuils, et
-  l'année optimale n'est presque jamais la dernière.
+- **Quand faut-il revendre ?** Pas au pic du rendement : tant que garder le bien
+  fait mieux que placer en bourse ce que sa vente rendrait, après impôt, on le
+  garde. La fiscalité avançant par seuils, la comparaison porte sur la richesse
+  à l'horizon, pour ne pas revendre juste avant un palier.
 
 Le tout comparé, à mise de fonds identique et net d'impôt des deux côtés, à un
 Livret A, un fonds euros et un placement boursier.

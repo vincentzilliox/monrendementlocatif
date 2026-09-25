@@ -1295,6 +1295,27 @@ lignes.push('comptabilite comptee au LMNP reel|'
 lignes.push('comptabilite neutre hors LMNP reel|'
   +(['micro-foncier','reel-foncier','lmnp-micro'].every(function(rg){
      return run({regime:rg, compta:500}).final.tri===run({regime:rg}).final.tri; })?1:0)+'|');
+// Le meilleur moment pour revendre : garder tant que le bien fait mieux que la
+// bourse, pas seulement jusqu'au pic du rendement. La date retenue laisse le plus
+// de richesse a l'horizon, le produit de la vente place au taux de la bourse.
+var richesse = function(R, n){ var rb = R.revente.taux, v = -R.cash0;
+  for(var t = 1; t <= n; t++){ var x = R.rows[t-1]; v += (x.cfNet + (t === n ? x.netVente : 0))/Math.pow(1+rb, t); }
+  return v; };
+var rvMax = [{horizon:40}, {horizon:40, bourse:3}, {horizon:40, loyer:1100, bourse:3}, {horizon:40, bourse:7}, {comptant:true}]
+  .every(function(o){ var R = run(o), y = R.revente.y, v = richesse(R, y);
+    return R.rows.every(function(x){ return richesse(R, x.y) <= v + 1e-6; }); });
+lignes.push('revente : la date retenue laisse le plus de richesse a l horizon|'+(rvMax?1:0)+'|5 scenarios');
+var rvGarde = run({horizon:40, loyer:1100, bourse:3});
+lignes.push('revente : au-dessus de la bourse apres le pic, on garde|'
+  +(rvGarde.best.y < 40 && rvGarde.revente.garder && rvGarde.revente.y === 40?1:0)
+  +'|pic '+rvGarde.best.y+', revente '+rvGarde.revente.y);
+var rvVend = run({horizon:40, bourse:3});
+lignes.push('revente : sous la bourse apres le pic, on revend|'
+  +(!rvVend.revente.garder && !rvVend.revente.battu && rvVend.revente.y < 40?1:0)
+  +'|revente '+rvVend.revente.y);
+var rvDet = run({situation:'detenu', valeur:250000, prixAchat:180000, depuis:8, crd:120000, dureeRestante:12, bourse:7});
+lignes.push('revente : bien detenu battu par la bourse, vendre aujourd hui|'
+  +(rvDet.revente.battu && rvDet.revente.y === 0?1:0)+'|');
 // La tranche entre dans la sensibilite quand elle pese, en sort quand l'impot
 // est nul, et ne bouge que d'un cote au bout du bareme.
 var mf = {regime:'micro-foncier', ps:17.2, cfe:0, abattement:30};

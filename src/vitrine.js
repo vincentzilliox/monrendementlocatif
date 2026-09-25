@@ -25,7 +25,7 @@ function scenario(surcharges){
 
 function vitrine(){
   oublierTheme();
-  const p = scenario(), R = compute(p), f = R.final, b = R.best;
+  const p = scenario(), R = compute(p), f = R.final;
   const g = id => document.getElementById(id);
   const ecrire = (id, txt) => { const el = g(id); if(el) el.textContent = txt; };
 
@@ -38,9 +38,16 @@ function vitrine(){
   const gainEl = g("vGain");
   if(gainEl) gainEl.className = f.gain >= 0 ? "up" : "down";
   ecrire("vMise", eur.format(f.mise));
-  ecrire("vBest", "Année " + b.y);
-  ecrire("vBestTri", sPct(b.tri));
-  ecrire("vBestNet", eur.format(b.netVente));
+  // Le meilleur moment pour revendre, dit comme sur la calculatrice.
+  const rv = R.revente;
+  ecrire("vBest", rv.garder ? "Ne revendez pas" : "Année " + rv.y);
+  ecrire("vBestTri", sPct(rv.row.tri));
+  ecrire("vBestNet", eur.format(rv.row.netVente));
+  ecrire("vBestText", rv.garder
+    ? `Garder le bien ${p.horizon} ans fait mieux que le revendre plus tôt pour placer l'argent en bourse, après impôt.`
+    : rv.battu
+    ? `À aucune date ce bien ne rattrape la bourse, après impôt : ${rv.y === p.horizon ? "c'est en le gardant jusqu'au bout" : "c'est en revendant cette année-là"} que l'écart reste le plus faible.`
+    : "Au-delà, garder le bien rapporte moins que placer en bourse ce que sa vente rendrait, après impôt.");
   ecrire("vPrix", eur.format(p.prix));
   ecrire("vApport", eur.format(p.apport));
   ecrire("vLoyer", eur.format(p.loyer));

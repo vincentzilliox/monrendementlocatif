@@ -385,8 +385,34 @@ function compute(p){
       gainLivret: pLivret - miseTotale});
   }
 
+  // Le pic du rendement annualisé : ce que le guide « Quand revendre » décrit.
   let best = null;
   rows.forEach(r => { if(r.tri !== null && (best===null || r.tri > best.tri)) best = r; });
+
+  // Le meilleur moment pour revendre n'est pas le pic : passé le pic, garder le
+  // bien rapporte moins que sa moyenne, mais souvent encore plus que la bourse.
+  // On garde tant que le bien fait mieux que le produit de sa vente placé en
+  // bourse, après impôt : l'année retenue est celle qui laisse le plus de
+  // richesse à l'horizon, soit la valeur actuelle la plus haute au taux de la
+  // bourse. Une comparaison année par année s'arrêterait avant un palier fiscal
+  // qui rend l'attente payante ; celle-ci voit les paliers.
+  // `garder` : conserver jusqu'à l'horizon fait mieux que toute revente.
+  // `battu` : à aucune date le bien ne rattrape la bourse — pour un bien
+  // détenu, le vendre aujourd'hui (y = 0) est alors la meilleure option.
+  const rb = rows[rows.length-1].triBourse !== null ? rows[rows.length-1].triBourse : bourse*(1 - fiscB);
+  let revente = null, actu = -cash0;
+  rows.forEach((r, i) => {
+    const d = Math.pow(1 + rb, r.y);
+    const v = actu + (r.cfNet + r.netVente)/d;
+    if(revente === null || v > revente.valeur) revente = {y:r.y, row:r, valeur:v};
+    actu += r.cfNet/d;
+  });
+  if(revente){
+    revente.taux = rb;
+    revente.battu = revente.valeur <= 0;
+    revente.garder = !revente.battu && revente.y === rows.length;
+    if(revente.battu && detenu) revente.y = 0;
+  }
 
   const r1 = rows[0];
   const loyerBrutAn = p.loyer*12;
@@ -402,7 +428,7 @@ function compute(p){
   const prixRenta = detenu ? valeur0 - p.travaux : p.prix;
   const coutRenta = detenu ? valeur0 : besoin;
   return {
-    p, rows, best, detenu, deja, comptant, gelLoyer, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
+    p, rows, best, revente, detenu, deja, comptant, gelLoyer, notaire, fraisAcq, fraisDossier, mobilier, besoin, emprunt, cash0,
     vente0, net0, mensualite:sch.mensualite, valeur0,
     coutCredit: sch.years.reduce((s,L) => s + L.int + L.ass, 0),
     brute: prixRenta > 0 ? loyerBrutAn/prixRenta : 0,
@@ -1556,20 +1582,32 @@ function render(){
   $("avisBox").hidden = mot === null;
   if(mot) $("avisText").textContent = mot;
 
-  if(best){
-    $("bestEyebrow").textContent = detenu
-      ? `Meilleur moment pour revendre, dans les ${p.horizon} ans`
-      : `Meilleur moment pour revendre, sur ${p.horizon} ans`;
-    $("bestYear").textContent = detenu ? `Dans ${best.y} ${best.y > 1 ? "ans" : "an"}` : "Année " + best.y;
-    $("bestText").textContent = best.y === p.horizon
-      ? "Le rendement progresse encore en fin de période : allongez l'horizon pour voir s'il plafonne."
-      : "Au-delà, les abattements de plus-value ne compensent plus la fin de l'effet de levier.";
-    $("bestList").innerHTML =
-      `<dt>Rendement annualisé</dt><dd>${sPct(best.tri)}</dd>` +
-      `<dt>${brut ? "Récupéré à la vente, avant impôt" : "Net récupéré à la vente"}</dt><dd>${eur.format(best.netVente)}</dd>` +
-      `<dt>${brut ? "Gain total avant impôt" : "Gain net total"}</dt><dd>${sEur(best.gain)}</dd>`;
+  // Le meilleur moment pour revendre : tant que garder fait mieux que placer le
+  // produit de la vente en bourse, on garde (voir `revente` dans le moteur).
+  const rv = R.revente;
+  $("bestEyebrow").textContent = detenu
+    ? `Meilleur moment pour revendre, dans les ${p.horizon} ans`
+    : `Meilleur moment pour revendre, sur ${p.horizon} ans`;
+  // Sans aucun rendement calculable (rien ne sort de la poche), il n'y a rien à dater.
+  if(rv && best){
+    const apres = brut ? "" : ", après impôt";
+    const r = rv.row, an = n => n + (n > 1 ? " ans" : " an");
+    $("bestYear").textContent = rv.garder ? "Ne revendez pas"
+      : rv.y === 0 ? "Aujourd'hui"
+      : detenu ? "Dans " + an(rv.y) : "Année " + rv.y;
+    $("bestText").textContent = rv.garder
+      ? `Garder le bien ${an(p.horizon)} fait mieux que le revendre plus tôt pour placer l'argent en bourse${apres}. Allongez l'horizon pour voir jusqu'où cela dure.`
+      : rv.y === 0
+      ? `À toute date, vendre maintenant et placer l'argent en bourse fait mieux que garder le bien${apres}.`
+      : rv.battu
+      ? `À aucune date le bien ne rattrape la bourse${apres} : ${rv.y === p.horizon ? "c'est en le gardant jusqu'au bout" : "c'est en revendant cette année-là"} que l'écart reste le plus faible.`
+      : `Au-delà, garder le bien rapporte moins que placer en bourse ce que sa vente rendrait${apres}.`;
+    $("bestList").innerHTML = rv.y === 0
+      ? `<dt>${brut ? "Récupéré en vendant aujourd'hui, avant impôt" : "Net récupéré en vendant aujourd'hui"}</dt><dd>${eur.format(R.net0)}</dd>`
+      : (r.tri === null ? "" : `<dt>Rendement annualisé</dt><dd>${sPct(r.tri)}</dd>`) +
+        `<dt>${brut ? "Récupéré à la vente, avant impôt" : "Net récupéré à la vente"}</dt><dd>${eur.format(r.netVente)}</dd>` +
+        `<dt>${brut ? "Gain total avant impôt" : "Gain net total"}</dt><dd>${sEur(r.gain)}</dd>`;
   } else {
-    $("bestEyebrow").textContent = "Meilleur moment pour revendre";
     $("bestYear").textContent = "—"; $("bestText").textContent = ""; $("bestList").innerHTML = "";
   }
 
@@ -1769,7 +1807,7 @@ function render(){
   const celluleImpot = v => brut ? "" : `<td>${cost(v)}</td>`;
   $("tbl").tHead.innerHTML = "<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
   $("tbl").tBodies[0].innerHTML = rows.map(r => {
-    const cls = best && r.y===best.y ? ' class="peak"' : "";
+    const cls = R.revente && r.y === R.revente.y ? ' class="peak"' : "";
     return `<tr${cls}><td>Année ${r.y}</td>`+[
       eur.format(r.loyers), cost(r.charges), cost(r.interets), cost(r.annuite)
     ].map(v=>`<td>${v}</td>`).join("") + celluleImpot(r.impot)
