@@ -172,10 +172,19 @@ réponses partent dans le fragment de `/calculatrice/`, où tout reste modifiabl
 ### Comment les sources s'assemblent
 
 ```
-src/moteur.js + src/graphiques.js           ->  site/js/commun.js   (toutes les pages outillées)
-src/calculatrice.js                         ->  site/js/app.js      (après commun.js)
-src/vitrine.js + src/assistant.js           ->  site/js/vitrine.js  (après commun.js)
+src/moteur.js + src/graphiques.js + src/residence.js  ->  site/js/commun.js            (toutes les pages outillées)
+src/calculatrice.js                                   ->  site/js/app.js               (après commun.js)
+src/residence-calc.js                                 ->  site/js/acheter-ou-louer.js  (après commun.js)
+src/vitrine.js + src/assistant.js                     ->  site/js/vitrine.js           (après commun.js)
 ```
+
+La calculatrice « acheter ou louer » (`/acheter-ou-louer/`) a son balisage dans
+`acheter-ou-louer.html`, sans en-tête ni pied : `build.py` y pose ceux de
+`index.html`. Son moteur, `src/residence.js`, reprend l'échéancier, le TRI et le
+format des liens de `src/moteur.js` ; il obéit aux mêmes règles (aucun accès au
+document), et ses hypothèses de marché — inflation, bourse, fonds euros, Livret
+A, frais de revente, taux et assurance du crédit — doivent égaler celles de la
+calculatrice d'investissement : c'est un contrôle.
 
 Chaque page appelle ses scripts avec l'empreinte de leur contenu
 (`/js/commun.js?v=…`) : les scripts partagent une seule portée globale, et un

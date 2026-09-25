@@ -465,13 +465,13 @@ setTimeout(function(){
     r.panneau = (change ? "1" : "0") + (montre() === auDepart ? "1" : "0")
       + (auDepart === (largeur >= 500) ? "1" : "0");
   }
-  // Petit ecran : le menu doit s'ouvrir sur les quatre liens, tous a l'ecran.
+  // Petit ecran : le menu doit s'ouvrir sur les cinq liens, tous a l'ecran.
   var burger = document.querySelector(".topbar .burger");
   if(burger && largeur < 500){
     burger.click();
     var dansEcran = Array.prototype.filter.call(document.querySelectorAll(".topbar .nav a"), function(a){
       var b = a.getBoundingClientRect(); return b.width > 0 && b.left >= -1 && b.right <= largeur + 1; }).length;
-    r.menu = (burger.offsetParent !== null ? "1" : "0") + (dansEcran === 4 ? "1" : "0");
+    r.menu = (burger.offsetParent !== null ? "1" : "0") + (dansEcran === 5 ? "1" : "0");
     burger.click();
   }
   // La bande des sections s'arrete avant la bascule Net | Brut : rien ne passe dessous.
@@ -528,6 +528,57 @@ setTimeout(function(){
       essai("#complet=1");
       r.lienAncien = ancien + "|" + compta.value;
     }
+  }
+  // La calculatrice « acheter ou louer » : les champs suivent les choix, le
+  // verdict bouge avec eux et revient, et le lien porte tout sauf le foyer.
+  if(document.getElementById("rpBascule") && typeof depuisHashRP === "function"){
+    var vu = function(id){ var e = document.getElementById(id); return !!(e && !e.hidden && e.offsetParent !== null); };
+    var poserRP = function(id, v){ var e = document.getElementById(id);
+      if(e.type === "checkbox") e.checked = v; else e.value = v;
+      e.dispatchEvent(new Event("change", {bubbles:true})); };
+    var texte = function(id){ return (document.getElementById(id) || {}).textContent || ""; };
+    if(bTout) bTout.click();
+    var verdict0 = texte("rpBascule") + texte("rpPill");
+    r.rpBascule = texte("rpBascule");
+    r.rpAvis = texte("rpAvis").slice(0, 40);
+    poserRP("comptant", true);
+    r.rpComptant = (!vu("fApport") && !vu("fDuree") && !vu("mPtz") ? "1" : "0")
+      + (texte("rpBascule") + texte("rpPill") !== verdict0 ? "1" : "0");
+    poserRP("comptant", false);
+    r.rpComptant += texte("rpBascule") + texte("rpPill") === verdict0 && vu("fApport") ? "1" : "0";
+    poserRP("ptzMode", "manuel");
+    r.rpPtz = vu("fPtzMontant") && !vu("fRfr") ? "1" : "0";
+    poserRP("ptzMode", "non");
+    r.rpPtz += !vu("fPtzMontant") && !vu("fPrimo") ? "1" : "0";
+    // Neuf en zone B1 : le barème accorde un prêt, et le verdict change.
+    poserRP("ptzMode", "auto"); poserRP("zone", "B1"); poserRP("etat", "neuf");
+    r.rpPtz += /tranche/.test(texte("repPtz")) && texte("dPtz") !== "—" ? "1" : "0";
+    r.rpNeuf = (document.getElementById("notairePct").value === "2.5" ? "1" : "0") + (vu("fTfExo") ? "1" : "0");
+    poserRP("etat", "ancien"); poserRP("zone", "");
+    r.rpNeuf += document.getElementById("notairePct").value === "7.5" && !vu("fTfExo") ? "1" : "0";
+    poserRP("dejaLocataire", true);
+    r.rpDeja = !vu("fFraisAgenceLoc") && !vu("fDepot") ? "1" : "0";
+    poserRP("dejaLocataire", false);
+    r.rpDeja += vu("fFraisAgenceLoc") ? "1" : "0";
+    r.rpRetour = texte("rpBascule") + texte("rpPill") === verdict0;
+    // Revenus et revenu fiscal : jamais dans un lien, gardés à l'ouverture d'un lien complet.
+    poserRP("revenus", "2000"); poserRP("rfr", "40000");
+    var lienRP = lienHypotheses(valeursRP(), null, null, true);
+    r.rpPrive = lienRP.indexOf("revenus") < 0 && lienRP.indexOf("rfr") < 0 && /35 %%/.test(texte("warnBox")) ? "1" : "0";
+    document.getElementById("taux").value = "9.99";
+    history.replaceState(null, "", location.pathname + "#complet=1&loyer=1234"); depuisHashRP();
+    r.rpPrive += document.getElementById("revenus").value === "2000" && document.getElementById("rfr").value === "40000" ? "1" : "0";
+    r.rpComplet = document.getElementById("loyer").value === "1234" && document.getElementById("taux").value === DEFAULTS_RP.taux;
+    poserRP("revenus", "0"); poserRP("rfr", "0");
+    // Le lien partagé rend exactement le formulaire de l'auteur.
+    var scenarioRP = JSON.stringify(valeursRP());
+    var partageRP = lienHypotheses(valeursRP(), null, null, true);
+    document.getElementById("apport").value = "123456";
+    document.getElementById("enveloppe").value = "cto";
+    document.getElementById("couple").checked = false;
+    history.replaceState(null, "", location.pathname + partageRP); depuisHashRP();
+    r.rpPartage = JSON.stringify(valeursRP()) === scenarioRP;
+    if(bEss) bEss.click();
   }
   document.getElementById("sonde").textContent = "SONDE::" + JSON.stringify(r);
 }, 1800);
@@ -680,7 +731,8 @@ def main():
     serveur, base = servir_en_fond()
     try:
         print("\nRESSOURCES")
-        for chemin in ("/", "/calculatrice/", "/guides/", "/questions-frequentes/",
+        for chemin in ("/", "/calculatrice/", "/acheter-ou-louer/", "/js/acheter-ou-louer.js",
+                       "/guides/", "/questions-frequentes/",
                        "/hypotheses-de-calcul/", "/mentions-legales/", "/404.html",
                        "/css/style.css", "/js/commun.js", "/js/app.js", "/js/site.js", "/js/vitrine.js",
                        "/favicon.ico", "/assets/favicon.svg", "/assets/og-image.png",
@@ -859,6 +911,29 @@ def main():
                             .group(1).replace("\n", " "))
         vus = sorted({c for c in champs if re.search(r'["\']%s["\']' % re.escape(c), graph_src)})
         controle("src/graphiques.js ignore les champs du formulaire", not vus, ", ".join(vus))
+        # La calculatrice « acheter ou louer » suit les mêmes règles : un moteur
+        # sans document, un balisage sans code, des graphiques sans ses champs.
+        residence_src = sans_commentaires((SRC / "residence.js").read_text(encoding="utf-8"))
+        fuites = [m for m in ("document", "getElementById", "getComputedStyle", "window.", "$(")
+                  if re.search(r"(?<![\w.])" + re.escape(m), residence_src)]
+        controle("src/residence.js ne touche jamais au document", not fuites, ", ".join(fuites))
+        rp_src = (SRC / "residence-calc.js").read_text(encoding="utf-8")
+        balisage_rp = build.SOURCE_RP.read_text(encoding="utf-8")
+        champs_rp = json.loads(re.search(r"const FIELDS_RP = (\[.*?\]);", rp_src, re.S)
+                               .group(1).replace("\n", " "))
+        vus = sorted({c for c in champs_rp if re.search(r'["\']%s["\']' % re.escape(c), graph_src)})
+        controle("src/graphiques.js ignore les champs de la calculatrice acheter ou louer", not vus, ", ".join(vus))
+        controle("acheter-ou-louer.html ne porte que le balisage",
+                 "<style>" not in balisage_rp and "<script" not in balisage_rp)
+        defauts_rp = json.loads(build._defauts_rp(balisage_rp, rp_src))
+        # Les hypothèses de marché sont les mêmes pour qui investit et pour qui
+        # achète sa résidence : deux calculatrices qui divergeraient sur la
+        # bourse ou l'inflation donneraient deux réponses au même visiteur.
+        defauts_inv = json.loads(build._defauts(SOURCE.read_text(encoding="utf-8"), calc_src))
+        communes_aux_deux = ("inflation", "bourse", "fondsEuros", "livretA", "fraisVente", "taux", "assur")
+        ecarts = ["%s %s/%s" % (k, defauts_rp.get(k), defauts_inv.get(k)) for k in communes_aux_deux
+                  if defauts_rp.get(k) != defauts_inv.get(k)]
+        controle("hypothèses de marché identiques dans les deux calculatrices", not ecarts, ", ".join(ecarts))
         # Personne ne doit remettre du code dans index.html : il ne porte que le
         # balisage, et build.py ne saurait pas quoi en faire.
         balisage = SOURCE.read_text(encoding="utf-8")
@@ -925,7 +1000,11 @@ def main():
         # repères de marché), dont 18 Ko d'une image de partage rendue sous Linux.
         hors_donnees = [f for f in SITE.rglob("*") if f.is_file() and "donnees" not in f.relative_to(SITE).parts]
         poids = sum(f.stat().st_size for f in hors_donnees)
-        controle("poids du site, hors données de marché, sous 650 Ko", poids < 650_000, "%d Ko" % (poids // 1024))
+        # Le 2026-09-25, la seconde calculatrice (acheter ou louer), son
+        # questionnaire, deux guides et la méthode qui l'accompagnent le portent à
+        # 800 000 octets — le moteur et les graphiques, eux, ne sont plus servis
+        # qu'une fois (commun.js).
+        controle("poids du site, hors données de marché, sous 800 000 octets", poids < 800_000, "%d Ko" % (poids // 1024))
 
         print("\nDONNÉES DE MARCHÉ")
         dossier = SITE / "donnees"
@@ -994,7 +1073,7 @@ def main():
             print("\nNAVIGATEUR : Chrome introuvable, contrôles ignorés")
         else:
             print("\nNAVIGATEUR")
-            vitrine = {}
+            vitrine, rp_page = {}, {}
             for largeur in (1360, 390):
                 r = sonde_navigateur(chrome, base, SITE / "index.html", largeur)
                 if r is None:
@@ -1007,8 +1086,8 @@ def main():
                          ", ".join(r["suspects"])[:40])
                 controle("accueil %d px : aucun débordement" % largeur, not r["deborde"])
                 if largeur < 500:
-                    # « bouton menu visible », « quatre liens à l'écran une fois ouvert »
-                    controle("accueil %d px : le menu montre les quatre liens" % largeur,
+                    # « bouton menu visible », « cinq liens à l'écran une fois ouvert »
+                    controle("accueil %d px : le menu montre les cinq liens" % largeur,
                              r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
                     controle("accueil : trois graphiques tracés", r["graphes"] == 3, str(r["graphes"]))
@@ -1083,7 +1162,7 @@ def main():
                 controle("calculatrice %d px : le bouton Hypothèses montre et cache le panneau" % largeur,
                          r.get("panneau") == "111", r.get("panneau") or "sonde muette")
                 if largeur < 500:
-                    controle("calculatrice %d px : le menu montre les quatre liens" % largeur,
+                    controle("calculatrice %d px : le menu montre les cinq liens" % largeur,
                              r.get("menu") == "11", r.get("menu") or "sonde muette")
                 if largeur == 1360:
                     # La vitrine rejoue le scénario par défaut : le moindre écart
@@ -1217,6 +1296,63 @@ def main():
                              "%s → %s" % (r.get("cascHorizon"), r.get("cascAn1")))
                     controle("tableau annuel rempli", r["lignes"] >= 10, "%d lignes" % r["lignes"])
                     controle("rendement calculé", "%" in r["tri"], r["tri"])
+            # La calculatrice « acheter ou louer ».
+            for largeur in (1360, 390):
+                r = sonde_navigateur(chrome, base, fichier_pour("/acheter-ou-louer/"), largeur)
+                if r is None:
+                    controle("acheter ou louer %d px chargée" % largeur, False, "aucune réponse de la sonde")
+                    continue
+                controle("acheter ou louer %d px : aucune erreur JavaScript" % largeur, not r["erreurs"],
+                         "; ".join(r["erreurs"])[:60])
+                controle("acheter ou louer %d px : aucun NaN affiché" % largeur, not r["suspects"],
+                         ", ".join(r["suspects"])[:40])
+                controle("acheter ou louer %d px : aucun débordement, panneau complet" % largeur,
+                         not r["deborde"] and not r.get("debordeTout"))
+                controle("acheter ou louer %d px : le bouton Hypothèses montre et cache le panneau" % largeur,
+                         r.get("panneau") == "111", r.get("panneau") or "sonde muette")
+                if largeur < 500:
+                    controle("acheter ou louer %d px : le menu montre les cinq liens" % largeur,
+                             r.get("menu") == "11", r.get("menu") or "sonde muette")
+                if largeur == 1360:
+                    rp_page = r
+                    controle("acheter ou louer : année de bascule affichée",
+                             (r.get("rpBascule") or "").startswith(("Année", "Jamais")), r.get("rpBascule") or "—")
+                    controle("acheter ou louer : avis rendu", len(r.get("rpAvis") or "") > 20, r.get("rpAvis") or "absent")
+                    controle("acheter ou louer : six indicateurs, six graphiques, chacun avec son tableau et au clavier",
+                             r["tuiles"] == 6 and r["graphes"] == 6 and r.get("equiv") == 6 and r.get("focalisables") == 6,
+                             "%s tuiles, %s graphiques, %s tableaux, %s au clavier"
+                             % (r["tuiles"], r["graphes"], r.get("equiv"), r.get("focalisables")))
+                    controle("acheter ou louer : sensibilité tracée", r["sens"] >= 6, "%d barres" % r["sens"])
+                    controle("acheter ou louer : chaque infobulle porte une explication",
+                             r.get("bulles", 0) >= 25 and not r.get("bullesVides") and r.get("bulleClavier") == "111",
+                             "%s bouton(s), %s sans texte" % (r.get("bulles"), r.get("bullesVides")))
+                    controle("acheter ou louer : descriptions courtes, analyse et tableau repliés",
+                             not r.get("tropLong") and r.get("replie") == "analyse,detail",
+                             (r.get("tropLong") or r.get("replie") or "")[:60])
+                    controle("acheter ou louer : mode Essentiel resserré",
+                             10 <= (r.get("champsEssentiel") or 0) <= 15 and (r.get("champsTout") or 0) > 30,
+                             "%s champs, %s en mode complet" % (r.get("champsEssentiel"), r.get("champsTout")))
+                    controle("acheter ou louer : taux du marché sous le taux et l'inflation",
+                             r.get("tauxMarche") is True, str(r.get("tauxMarche")))
+                    # « champs du crédit masqués », « verdict changé », « décocher rend le verdict »
+                    controle("acheter ou louer : payer comptant retire le crédit et change le verdict",
+                             r.get("rpComptant") == "111", r.get("rpComptant") or "sonde muette")
+                    # « saisi : montant », « aucun : rien », « neuf en B1 : prêt estimé »
+                    controle("acheter ou louer : le prêt à taux zéro suit son mode et le barème",
+                             r.get("rpPtz") == "111", r.get("rpPtz") or "sonde muette")
+                    controle("acheter ou louer : le neuf recale les frais de notaire et l'exonération",
+                             r.get("rpNeuf") == "111", r.get("rpNeuf") or "sonde muette")
+                    controle("acheter ou louer : rester locataire efface frais d'agence et dépôt",
+                             r.get("rpDeja") == "11" and r.get("rpRetour") is True,
+                             "%s, retour %s" % (r.get("rpDeja"), r.get("rpRetour")))
+                    controle("acheter ou louer : revenus hors des liens, conservés à l'ouverture d'un lien",
+                             r.get("rpPrive") == "11", r.get("rpPrive") or "sonde muette")
+                    controle("acheter ou louer : un lien complet repart des valeurs d'ouverture",
+                             r.get("rpComplet") is True, str(r.get("rpComplet")))
+                    controle("acheter ou louer : le lien partagé rend le formulaire de l'auteur",
+                             r.get("rpPartage") is True, str(r.get("rpPartage")))
+                    controle("acheter ou louer : tableau annuel sur quarante ans", r["lignes"] == 40, "%d lignes" % r["lignes"])
+                    controle("acheter ou louer : renvois vers la méthode et les guides", r["liens"] >= 3, "%d liens" % r["liens"])
             # Les six guides, pas un seul : l'erreur de contenu trouvée à l'audit
             # vivait précisément dans celui qui n'était jamais chargé.
             fiches = sorted(f.parent.name for f in (SITE / "guides").glob("*/index.html"))
@@ -1246,7 +1382,9 @@ def main():
         # vérifient sur les vraies valeurs d'ouverture, relues dans index.html ;
         # base() ci-dessous est un scénario de test figé, qui ne les suit pas.
         essai.write_text('if(typeof print==="undefined"){ var print = console.log; }\n' + moteur
+                         + "\n" + (SRC / "residence.js").read_text(encoding="utf-8")
                          + "\nvar DEFAUTS_SITE = %s;\n" % json.dumps(defauts)
+                         + "var DEFAUTS_RP_SITE = %s;\n" % json.dumps(defauts_rp)
                          + "var INITIALES = %s;\n" % json.dumps(initiales_delicates())
                          + (RACINE / "outils" / "chiffres.js").read_text(encoding="utf-8") + """
 function base(){ return {prix:200000,notairePct:8,fraisAcq:0,mobilier:8000,apport:35000,
@@ -1605,6 +1743,90 @@ lignes.push('bien detenu : 0 an restant mais capital du, la dette est remboursee
 var cmp = comparerRegimes(base(), run({}));
 lignes.push('comparatif des regimes : une courbe par regime|'
   +(cmp.length===4 && cmp.every(function(c){ return c.tris.length===25 && c.tris[24]===c.tri; })?1:0)+'|');
+// ---------- acheter ou louer ----------
+// Un scenario de test fige, sur trente ans : le pret de 25 ans s'acheve avant,
+// et le proprietaire place alors a son tour la difference.
+function baseRP(){ return {prix:300000,etat:'ancien',typeBien:'appartement',zone:'',notairePct:7.5,travaux:10000,
+ demenagement:1500,comptant:false,apport:50000,duree:25,taux:3.4,assur:0.34,fraisDossier:3000,ira:true,
+ ptzMode:'non',ptzMontant:0,ptzDiffere:0,ptzDuree:0,primo:true,personnes:2,couple:true,rfr:0,
+ tf:1500,tfExo:40,copro:80,entretien:0.5,assurProprio:250,loyer:1100,assurLocataire:150,fraisAgenceLoc:800,
+ depotMois:1,dejaLocataire:false,partBourse:60,partFonds:30,partLivret:10,enveloppe:'pea',bourse:4,
+ fondsEuros:0,livretA:-0.8,psCapital:18.6,psAV:17.2,horizon:30,inflation:2,indexPrix:2,indexLoyer:2,
+ indexCharges:2,fraisVente:5}; }
+function rp(o){ var p=baseRP(); for(var k in o) p[k]=o[k]; return acheterOuLouer(p); }
+function siteRP(o){ var p=Object.assign({}, DEFAUTS_RP_SITE);
+ if(p.prixSuitInflation){ p.indexPrix=p.indexLoyer=p.indexCharges=p.inflation; }
+ for(var k in o) p[k]=o[k]; return acheterOuLouer(p); }
+var proche=function(a,b,t){ return Math.abs(a-b) <= (t||0.01); };
+// Sans rendement, sans inflation et sans impot, chaque portefeuille vaut ce qu'on
+// y a verse : le locataire la mise du premier jour et chaque ecart, le
+// proprietaire les ecarts une fois son pret rembourse.
+var z=rp({bourse:0,fondsEuros:0,livretA:0,inflation:0,indexPrix:0,indexLoyer:0,indexCharges:0});
+var vl=Math.max(0,z.mise0), vp=Math.max(0,-z.mise0), okV=true, deuxSens=false;
+z.rows.forEach(function(r){ vl+=r.versLoc; vp+=r.versProp; if(r.versProp>0) deuxSens=true;
+  if(!proche(r.portLoc,vl,0.5)||!proche(r.portProp,vp,0.5)) okV=false; });
+lignes.push('acheter ou louer : chaque portefeuille vaut ce qui y a ete verse|'+(okV&&deuxSens?1:0)+'|'+(deuxSens?'les deux menages placent':'le proprietaire ne place jamais'));
+// Memes sorties : le premier jour et chaque annee, la meme somme quitte les deux poches.
+var b=rp({}), okS=proche(b.cash0Achat+Math.max(0,-b.mise0), b.cash0Loc+Math.max(0,b.mise0));
+b.rows.forEach(function(r){ if(!proche(r.coutProprio+r.versProp, r.coutLoc+r.versLoc)) okS=false; });
+lignes.push('acheter ou louer : memes sorties des deux cotes, chaque annee|'+(okS?1:0)+'|');
+// Une residence principale se revend sans impot sur la plus-value.
+var pv=rp({indexPrix:8}), okPV=pv.rows.every(function(r){
+  return proche(r.liquidation, r.valeur-r.fraisVente-r.crd-r.crdPTZ-r.ira+r.portProp, 0.5); });
+lignes.push('acheter ou louer : aucune imposition de la plus-value|'+(okPV?1:0)+'|revalorisation 8 %/an');
+lignes.push('acheter ou louer : depot de garantie rendu au locataire|'
+  +(b.rows.every(function(r){ return proche(r.patrimoineLoc-r.portLoc, 1100, 0.01); })?1:0)+'|');
+// Le PTZ : aucun interet, rien pendant le differe, puis un amortissement lineaire.
+var e=echeancierPTZ(60000, 8, 12);
+var okE=e.years.every(function(y){ return y.int===0; }) && proche(e.years[7].crd,60000) && proche(e.years[8].pri,5000)
+  && proche(e.years[19].crd,0) && proche(e.years[20].pri,0);
+lignes.push('PTZ : sans interet, differe puis remboursement lineaire|'+(okE?1:0)+'|');
+var ptz=function(o){ var p=baseRP(); p.etat='neuf'; p.zone='B1'; p.travaux=0; for(var k in o) p[k]=o[k]; return estimerPTZ(p); };
+var n1=ptz({}), n2=ptz({typeBien:'maison'});
+lignes.push('PTZ : neuf en B1, couple, tranche 2 a 40 % du cout plafonne|'
+  +(n1.tranche===2 && n1.montant===81000 && n1.differe===8 && n2.montant===40500?1:0)+'|'+n1.montant+' EUR, maison '+n2.montant+' EUR');
+lignes.push('PTZ : plafonds de ressources du bareme officiel|'
+  +(ptz({}).tranche && proche(PTZ_TRANCHES.B1[3]*PTZ_COEF[1],51750) && proche(PTZ_TRANCHES.A[3]*PTZ_COEF[2],88200)
+    && proche(PTZ_TRANCHES.C[3]*PTZ_COEF[7],94050) && proche(PTZ_COUT.B2*PTZ_COEF[3],231000)?1:0)+'|');
+var refus=[ptz({etat:'ancien'}).raison, ptz({etat:'ancien',zone:'C',travaux:100000}).raison==='revenus'||ptz({etat:'ancien',zone:'C',travaux:100000}).montant>0,
+  ptz({primo:false}).raison, ptz({rfr:200000}).raison, ptz({zone:''}).raison];
+lignes.push('PTZ : ancien hors B2 et C, primo-accession, plafond, zone inconnue|'
+  +(refus[0]==='ancienZone' && refus[1] && refus[2]==='primo' && refus[3]==='revenus' && refus[4]==='zone'?1:0)+'|'+refus.join(','));
+var cap=rp({ptzMode:'manuel',ptzMontant:500000,ptzDiffere:0,ptzDuree:10});
+lignes.push('PTZ : jamais plus que le pret principal|'+(proche(cap.ptz,cap.emprunt,1)?1:0)+'|PTZ '+cap.ptz.toFixed(0)+', pret '+cap.emprunt.toFixed(0));
+// L'annee de bascule : l'achat devant cette annee-la et toutes les suivantes,
+// derriere la precedente ; la meme en euros courants et d'aujourd'hui.
+var s=siteRP({}), B=s.bascule, S=s.suite;
+var okB=B!==null && S[B-1].ecart>=0 && (B===1 || S[B-2].ecart<0) && S.slice(B-1).every(function(r){ return r.ecart>=0; })
+  && S.every(function(r){ return (r.ecart>=0)===(r.ecartReel>=0); });
+lignes.push('acheter ou louer : annee de bascule coherente, euros courants ou d aujourd hui|'+(okB?1:0)+'|annee '+B);
+var ref=ecartRP(baseRP()), essai=function(o){ var p=baseRP(); for(var k in o) p[k]=o[k]; return ecartRP(p); };
+var signes=[essai({prix:330000})<ref, essai({loyer:1210})>ref, essai({indexPrix:3})>ref, essai({taux:4.4})<ref, essai({bourse:5})<ref];
+lignes.push('acheter ou louer : sensibilite dans le bon sens|'+(signes.every(Boolean)?1:0)+'|'+signes.map(Number).join(''));
+var seu=seuilsRP(Object.assign(baseRP(),{horizon:15})), okT=seu.filter(function(x){ return x.valeur!==null; }).every(function(x){
+  var p=Object.assign(baseRP(),{horizon:15}); p[x.k]=x.valeur; return Math.abs(ecartRP(p))<400; });
+lignes.push('acheter ou louer : chaque seuil annule l ecart|'+(okT && seu.length===5?1:0)+'|'+seu.length+' seuils');
+// Les deux bornes : six mois d'interets a 3,4 %, 3 % du capital du a 8 %.
+var ira=function(t){ var i=rp({horizon:5,taux:t}).final, n=rp({horizon:5,taux:t,ira:false}).final;
+  return proche(n.liquidation-i.liquidation, Math.min(0.03*i.crd, i.crd*t/100/2), 0.5) && i.ira > 0; };
+lignes.push('acheter ou louer : penalites de remboursement anticipe, les deux plafonds|'+(ira(3.4) && ira(8)?1:0)+'|');
+// La fiscalite des enveloppes, a la sortie.
+var pf=portefeuilleRP(), q=baseRP(); pf.pea={cap:200,verse:100};
+var avant=netRP(pf,4,q), apres=netRP(pf,5,q);
+var av=portefeuilleRP(); av.avFonds={cap:20000,verse:10000};
+var avNet=netRP(av,8,q), liv=portefeuilleRP(); liv.livret={cap:150,verse:100};
+lignes.push('placements : PEA avant et apres 5 ans, assurance-vie apres 8 ans, Livret A exonere|'
+  +(proche(avant,168.6) && proche(apres,181.4) && proche(avNet,20000-1720-60) && proche(netRP(liv,1,q),150)?1:0)
+  +'|'+avant.toFixed(1)+' / '+apres.toFixed(1)+' / '+avNet.toFixed(0));
+var pl=portefeuilleRP(); verserRP(pl, 200000, Object.assign(baseRP(),{partBourse:100,partFonds:0,partLivret:0}));
+var ll=portefeuilleRP(); verserRP(ll, 50000, Object.assign(baseRP(),{partBourse:0,partFonds:0,partLivret:100}));
+lignes.push('placements : plafonds du PEA et du Livret A|'
+  +(pl.pea.verse===150000 && pl.cto.verse===50000 && ll.livret.verse===22950 && ll.avFonds.verse===27050?1:0)+'|');
+var c=rp({comptant:true,ptzMode:'manuel',ptzMontant:50000});
+lignes.push('acheter ou louer : comptant, ni pret ni PTZ|'+(c.emprunt===0 && c.ptz===0 && c.coutCredit===0 && c.rows[0].credit===0?1:0)+'|');
+var nu=rp({horizon:10,partBourse:100,partFonds:0,partLivret:0,psCapital:0});
+lignes.push('placement net : sans impot, le taux nominal lui-meme|'+(proche(nu.rendementPlacement,1.04*1.02-1,1e-9)?1:0)+'|');
+lignes.push('acheter ou louer : scenario d ouverture calculable|'+(s.rows.length===DEFAUTS_RP_SITE.horizon && B!==null?1:0)+'|bascule annee '+B);
 print(lignes.join('\\n'));
 // Les chiffres que publient les guides, pour la comparaison faite côté Python.
 print('CHIFFRES::' + JSON.stringify(chiffresGuides()));

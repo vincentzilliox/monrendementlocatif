@@ -23,6 +23,7 @@ import hashlib
 
 RACINE = pathlib.Path(__file__).parent
 SOURCE = RACINE / "index.html"
+SOURCE_RP = RACINE / "acheter-ou-louer.html"
 SRC = RACINE / "src"
 GUIDES = RACINE / "guides"
 PAGES = RACINE / "pages"
@@ -32,6 +33,12 @@ DONNEES = RACINE / "donnees"
 DOMAINE = "https://monrendementlocatif.fr"
 NOM = "Mon rendement locatif"
 CALCULATRICE = "/calculatrice/"
+ACHETER_LOUER = "/acheter-ou-louer/"
+TITRE_RP = "Acheter ou louer sa résidence principale : le calcul"
+DESCRIPTION_RP = (
+    "Acheter ou louer et placer la différence ? Patrimoine des deux ménages année "
+    "par année, année de bascule, PTZ estimé, PEA, assurance-vie ou Livret A."
+)
 # Titre sous 60 caractères, description sous 160 : au-delà, Google tronque.
 TITRE = "Rendement locatif : votre TRI net d'impôt, année par année"
 DESCRIPTION = (
@@ -121,29 +128,40 @@ def _sans_marqueurs(texte):
     return re.sub(r"[ \t]*<!-- \w+:(?:début|fin) -->\n?", "", texte)
 
 
-def _defauts(src, script):
+def _defauts(src, script, champs="FIELDS", listes="SELECTS", cases=("ira", "comptant"),
+             nombres=("tmi",), chemin="index.html"):
     """Les valeurs par défaut du formulaire, relues dans le HTML.
 
     La vitrine doit afficher exactement ce que la calculatrice affiche à
     l'ouverture : on récupère donc les mêmes valeurs à la source plutôt que de
-    les recopier dans un second fichier, où elles dériveraient.
+    les recopier dans un second fichier, où elles dériveraient. `champs` et
+    `listes` nomment les constantes du pilote qui énumèrent les champs ; une
+    chaîne vide pour `cases` les relit dans la constante BOOLS_RP.
     """
-    champs = json.loads(re.search(r"const FIELDS = (\[.*?\]);", script, re.S)
-                        .group(1).replace("\n", " "))
-    selects = json.loads(re.search(r"const SELECTS = (\[.*?\]);", script, re.S).group(1))
+    liste = lambda nom: json.loads(re.search(r"const %s = (\[.*?\]);" % nom, script, re.S)
+                                   .group(1).replace("\n", " "))
     valeurs = {}
-    for cle in champs:
+    for cle in liste(champs):
         balise = re.search(r'<input id="%s"[^>]*>' % cle, src)
         if not balise:
-            raise SystemExit("index.html : champ « %s » introuvable" % cle)
+            raise SystemExit("%s : champ « %s » introuvable" % (chemin, cle))
         valeurs[cle] = float(re.search(r'value="([^"]*)"', balise.group(0)).group(1))
-    for cle in selects:
-        bloc = re.search(r'<select id="%s">(.*?)</select>' % cle, src, re.S).group(1)
-        choisi = re.search(r'<option value="([^"]*)"[^>]*selected', bloc).group(1)
-        valeurs[cle] = float(choisi) if cle == "tmi" else choisi
-    for case in ("ira", "comptant"):
+    for cle in liste(listes):
+        bloc = re.search(r'<select id="%s">(.*?)</select>' % cle, src, re.S)
+        if not bloc:
+            raise SystemExit("%s : liste « %s » introuvable" % (chemin, cle))
+        choisi = re.search(r'<option value="([^"]*)"[^>]*selected', bloc.group(1)).group(1)
+        valeurs[cle] = float(choisi) if cle in nombres else choisi
+    for case in (cases if cases else liste("BOOLS_RP")):
+        if 'id="%s" type="checkbox"' % case not in src:
+            raise SystemExit("%s : case « %s » introuvable" % (chemin, case))
         valeurs[case] = 'id="%s" type="checkbox" checked' % case in src
     return json.dumps(valeurs, ensure_ascii=False, indent=2)
+
+
+def _defauts_rp(src, script):
+    """Les valeurs d'ouverture de la calculatrice « acheter ou louer »."""
+    return _defauts(src, script, "FIELDS_RP", "SELECTS_RP", "", (), SOURCE_RP.name)
 
 
 def _options(src):
@@ -474,6 +492,8 @@ def main():
     moteur, graphiques = lire("moteur.js"), lire("graphiques.js")
     calculatrice, vitrine = lire("calculatrice.js"), lire("vitrine.js")
     assistant = lire("assistant.js")
+    residence, residence_calc = lire("residence.js"), lire("residence-calc.js")
+    src_rp = SOURCE_RP.read_text(encoding="utf-8")
 
     # L'en-tête et le pied du calculateur servent à toutes les pages : une seule
     # source pour la navigation, aucun risque de dérive entre les pages. On les
@@ -490,7 +510,7 @@ def main():
     # Ce qui ne se régénère pas ne doit pas traîner : pages supprimées, anciens
     # fichiers. La liste se déduit de pages/, pour qu'ajouter ou retirer une page
     # n'oblige pas à penser au nettoyage.
-    anciens = ["guides", "calculatrice"] + [f.stem for f in PAGES.glob("*.html")]
+    anciens = ["guides", "calculatrice", "acheter-ou-louer"] + [f.stem for f in PAGES.glob("*.html")]
     for ancien in anciens:
         chemin = SITE / ancien
         if chemin.exists():
@@ -507,7 +527,7 @@ def main():
     # balisage, jamais recopiées. Le navigateur ne télécharge le moteur qu'une
     # fois pour tout le site.
     prelude = '"use strict";\n'
-    _ecrire_statique("/js/commun.js", prelude + "\n".join((moteur, graphiques)) + "\n")
+    _ecrire_statique("/js/commun.js", prelude + "\n".join((moteur, graphiques, residence)) + "\n")
     # Les taux du marché, relevés par outils/donnees.py, entrent dans le script :
     # la page les affiche sans rien charger. Sans eux, les repères se taisent.
     marqueur = "const TAUX_MARCHE = {/* build.py : taux du marché */};"
@@ -516,9 +536,15 @@ def main():
     taux = DONNEES / "taux.json"
     # Valeurs et dates seulement : les adresses des sources restent dans donnees/.
     releves = json.loads(taux.read_text(encoding="utf-8")) if taux.exists() else {}
-    calculatrice = calculatrice.replace(marqueur, "const TAUX_MARCHE = %s;" % json.dumps(
-        {k: {c: v[c] for c in ("valeur", "periode", "depuis") if c in v} for k, v in releves.items()}))
+    taux_js = "const TAUX_MARCHE = %s;" % json.dumps(
+        {k: {c: v[c] for c in ("valeur", "periode", "depuis") if c in v} for k, v in releves.items()})
+    calculatrice = calculatrice.replace(marqueur, taux_js)
     _ecrire_statique("/js/app.js", prelude + "\n".join((calculatrice, MENU_JS)) + "\n")
+    # La calculatrice « acheter ou louer » : même moteur commun, son propre pilote.
+    # Elle charge site.js, qui tient déjà le thème, le menu et l'adresse de contact.
+    if residence_calc.count(marqueur) != 1:
+        raise SystemExit("src/residence-calc.js : ligne TAUX_MARCHE introuvable")
+    _ecrire_statique("/js/acheter-ou-louer.js", prelude + residence_calc.replace(marqueur, taux_js) + "\n")
     marqueur = "const DEFAUTS = {/* build.py : valeurs par défaut */};"
     if marqueur not in vitrine:
         raise SystemExit("src/vitrine.js : ligne DEFAUTS introuvable")
@@ -552,6 +578,30 @@ def main():
         _page(_tete(TITRE, DESCRIPTION, CALCULATRICE, jsonld_calc), corps, ["/js/commun.js", "/js/app.js"]),
         encoding="utf-8")
 
+    # La calculatrice « acheter ou louer » : son balisage n'a ni en-tête ni pied,
+    # elle reçoit ceux de index.html comme toutes les pages.
+    contenu_rp = re.sub(r"^\s*<!--.*?-->\s*", "", src_rp, count=1, flags=re.S).strip()
+    fil_rp, fil_rp_ld = _fil([("Accueil", "/"), ("Acheter ou louer", None)])
+    outil_rp = {
+        "@context": "https://schema.org", "@type": "WebApplication",
+        "name": "Acheter ou louer — " + NOM, "url": DOMAINE + ACHETER_LOUER,
+        "description": DESCRIPTION_RP, "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Tout navigateur web", "inLanguage": "fr-FR", "isAccessibleForFree": True,
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+        "featureList": ["Patrimoine du propriétaire et du locataire, année par année",
+                        "Année à partir de laquelle l'achat devient gagnant",
+                        "Prêt à taux zéro estimé selon le barème officiel",
+                        "Placement de la différence en PEA, compte-titres, assurance-vie ou Livret A",
+                        "Coût réel de la propriété face au loyer",
+                        "Sensibilité et seuils de bascule"]}
+    (SITE / "acheter-ou-louer").mkdir(parents=True, exist_ok=True)
+    (SITE / "acheter-ou-louer" / "index.html").write_text(
+        _page(_tete(TITRE_RP, DESCRIPTION_RP, ACHETER_LOUER,
+                    json.dumps([outil_rp, fil_rp_ld], ensure_ascii=False, separators=(",", ":"))),
+              _entete_pour(entete, ACHETER_LOUER) + "\n" + contenu_rp + "\n" + pied,
+              ["/js/site.js", "/js/commun.js", "/js/acheter-ou-louer.js"]),
+        encoding="utf-8")
+
     fiches = construire_guides(entete, pied)
     pages = construire_pages(entete, pied)
 
@@ -571,6 +621,7 @@ def main():
 
     aujourdhui = date.today().isoformat()
     urls = [(CALCULATRICE, aujourdhui, "weekly", "0.9"),
+            (ACHETER_LOUER, aujourdhui, "weekly", "0.9"),
             ("/guides/", aujourdhui, "monthly", "0.7")]
     urls += [(f["chemin"], f["maj"], "monthly", "0.8") for f in fiches]
     urls += [(c, m, "monthly", pr) for c, m, pr in pages]

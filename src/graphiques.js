@@ -668,10 +668,13 @@ const FORMAT_SEUIL = {
   loyer:     {v: x => eur.format(Math.round(x)) + " /mois", ecart: (x, a) => sPct(x/a - 1)},
   taux:      {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
   indexPrix: {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)},
-  vacance:   {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)}
+  vacance:   {v: x => pct(x/100), ecart: (x, a) => pts((x - a)/100)},
+  bourse:    {v: x => pct(x/100) + " /an", ecart: (x, a) => pts((x - a)/100)}
 };
+// `cible` : la bourse ou l'inflation pour un investissement ; « location » pour
+// la résidence principale, où l'achat se mesure à la location.
 function tuilesSeuils(liste, cible){
-  const rival = cible === "pouvoir" ? `l'inflation` : "la bourse";
+  const rival = cible === "pouvoir" ? `l'inflation` : cible === "location" ? "la location" : "la bourse";
   return liste.map(s => {
     const F = FORMAT_SEUIL[s.k];
     const valeur = s.valeur === null ? "—" : F.v(s.valeur);
@@ -688,4 +691,61 @@ function planifier(fn){
   sensTimer = window.requestIdleCallback
     ? requestIdleCallback(() => { sensTimer = null; fn(); }, {timeout:400})
     : setTimeout(() => { sensTimer = null; fn(); }, 60);
+}
+
+/* ---------- acheter ou louer ---------- */
+// Le patrimoine des deux ménages, année par année : la calculatrice « acheter ou
+// louer » et la page d'accueil tracent le même graphique. `reel` : en euros
+// d'aujourd'hui, inflation retirée ; sinon en euros courants.
+function cfgPatrimoineRP(R, reel, opts){
+  const rows = R.rows, i0 = R.bascule !== null && R.bascule <= rows.length ? R.bascule - 1 : -1;
+  const v = (r, cle) => reel ? r[cle + "Reel"] : r[cle];
+  return Object.assign({
+    x: rows.map(r => String(r.y)),
+    height: 270, padLeft: 78, zero: true,
+    label: "Patrimoine net du propriétaire et du locataire selon l'année de départ",
+    fmtAxis: kEur, fmtVal: v => eur.format(v),
+    mark: i0 > 0 ? {i:i0, text:`l'achat passe devant · année ${rows[i0].y}`} : null,
+    series: [
+      {color:"--d1", nom:"Acheter", values: rows.map(r => v(r, "liquidation")), width:2.4},
+      {color:"--d2", nom:"Louer et placer", values: rows.map(r => v(r, "patrimoineLoc")), dash:true}
+    ],
+    tip: i => {
+      const r = rows[i], e = reel ? r.ecartReel : r.ecart;
+      return `<div class="th">Départ fin d'année ${r.y}${reel ? ", en euros d'aujourd'hui" : ""}</div>` +
+        tipRow(css("--d1"), "Acheter", eur.format(v(r, "liquidation"))) +
+        tipRow(css("--d2"), "Louer et placer", eur.format(v(r, "patrimoineLoc"))) +
+        `<div class="tr" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">` +
+        `<span class="tl">${e >= 0 ? "Avance de l'achat" : "Avance de la location"}</span>` +
+        `<span class="tv">${eur.format(Math.abs(e))}</span></div>`;
+    }
+  }, opts || {});
+}
+// Sensibilité de la réponse : même tornade que pour l'investissement, lue en
+// euros d'aujourd'hui — l'avance de l'achat au bout de la durée d'occupation.
+function cfgSensibiliteRP(sens, ref){
+  const bouge = c => Math.abs(c.d) > 0.5;
+  return {
+    label: "Sensibilité de l'avance de l'achat",
+    ref, refText: "Ce projet : " + sEur(ref),
+    fmtAxis: v => kEur(v, 10000),
+    rows: sens.map(s => ({label:s.nom,
+      ecart: bouge(s.fav) && bouge(s.def) ? "± " + s.txt : (bouge(s.fav) ? s.fav.s : s.def.s) + " " + s.txt,
+      lo:ref + s.lo, hi:ref + s.hi, loText:kEur(s.def.tri, 10000), hiText:kEur(s.fav.tri, 10000)})),
+    tip: i => {
+      const s = sens[i];
+      const ligne = (c, col) => tipRow(col, `${s.nom} ${c.s}${s.txt}`, `${sEur(c.tri)} <span style="color:var(--text-muted)">(${sEur(c.d)})</span>`);
+      return `<div class="th">${s.nom}</div>` +
+        (bouge(s.fav) ? ligne(s.fav, css("--up")) : "") +
+        (bouge(s.def) ? ligne(s.def, css("--down")) : "") +
+        tipRow(css("--text"), "Ce projet", sEur(ref));
+    }
+  };
+}
+function phraseSensibiliteRP(sens, horizon){
+  if(!sens.length) return "";
+  const s = sens[0];
+  const e = Math.max(Math.abs(s.fav.d), Math.abs(s.def.d));
+  return (`À ${horizon} ans, c'est « ${s.nom} » qui pèse le plus : un écart de ${s.txt} déplace l'avance de l'achat de ${eur.format(e)}, en euros d'aujourd'hui.`)
+    .replace(/ (%|»|€)/g, "\u00a0$1").replace(/« /g, "«\u00a0");
 }

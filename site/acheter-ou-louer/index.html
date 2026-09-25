@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acheter ou louer sa résidence principale : le calcul</title>
+<meta name="description" content="Acheter ou louer et placer la différence ? Patrimoine des deux ménages année par année, année de bascule, PTZ estimé, PEA, assurance-vie ou Livret A.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://monrendementlocatif.fr/acheter-ou-louer/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://monrendementlocatif.fr/acheter-ou-louer/">
+<meta property="og:title" content="Acheter ou louer sa résidence principale : le calcul">
+<meta property="og:description" content="Acheter ou louer et placer la différence ? Patrimoine des deux ménages année par année, année de bascule, PTZ estimé, PEA, assurance-vie ou Livret A.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mon rendement locatif — calculateur de rendement locatif">
+<meta property="og:site_name" content="Mon rendement locatif">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Acheter ou louer sa résidence principale : le calcul">
+<meta name="twitter:description" content="Acheter ou louer et placer la différence ? Patrimoine des deux ménages année par année, année de bascule, PTZ estimé, PEA, assurance-vie ou Livret A.">
+<meta name="twitter:image" content="https://monrendementlocatif.fr/assets/og-image.png">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"WebApplication","name":"Acheter ou louer — Mon rendement locatif","url":"https://monrendementlocatif.fr/acheter-ou-louer/","description":"Acheter ou louer et placer la différence ? Patrimoine des deux ménages année par année, année de bascule, PTZ estimé, PEA, assurance-vie ou Livret A.","applicationCategory":"FinanceApplication","operatingSystem":"Tout navigateur web","inLanguage":"fr-FR","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"featureList":["Patrimoine du propriétaire et du locataire, année par année","Année à partir de laquelle l'achat devient gagnant","Prêt à taux zéro estimé selon le barème officiel","Placement de la différence en PEA, compte-titres, assurance-vie ou Livret A","Coût réel de la propriété face au loyer","Sensibilité et seuils de bascule"]},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"https://monrendementlocatif.fr/"},{"@type":"ListItem","position":2,"name":"Acheter ou louer"}]}]</script>
+<script>try{var t=localStorage.getItem("rentaloc.theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="/css/style.css?v=6a4fe278">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Mon rendement locatif — accueil">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M 8.6 13.0 L 14.4 18.8 L 13.0 18.8 L 13.0 26.6 L 4.2 26.6 L 4.2 18.8 L 2.8 18.8 Z M 6 20 H 8 V 22 H 6 Z M 9 20 H 11 V 22 H 9 Z M 6 23 H 8 V 25 H 6 Z M 9 23 H 11 V 25 H 9 Z"/>
+      <rect x="15.6" y="19.4" width="3.4" height="7.2" fill="currentColor"/>
+      <rect x="20.2" y="13.6" width="3.4" height="13" fill="currentColor"/>
+      <path d="M 1.6 16.4 L 8.6 9.2 L 15 15.8 L 23.6 6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path fill="currentColor" d="M 27.11 2.56 L 26.04 8.63 L 21.16 4.17 Z"/>
+    </svg>
+    <span>Mon rendement locatif</span>
+  </a>
+  <nav class="nav" id="menu" aria-label="Navigation principale">
+    <a href="/calculatrice/">Investir</a>
+    <a href="/acheter-ou-louer/" aria-current="page">Acheter ou louer</a>
+    <a href="/guides/">Guides</a>
+    <a href="/hypotheses-de-calcul/">Hypothèses</a>
+    <a href="/questions-frequentes/">Questions fréquentes</a>
+  </nav>
+  <span class="spacer"></span>
+  <button class="burger" type="button" aria-controls="menu" aria-expanded="false" aria-label="Ouvrir le menu" hidden>
+    <svg class="traits" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+    <svg class="croix" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+  </button>
+  <button class="tsw" id="theme" type="button" role="switch" aria-checked="false" aria-label="Mode nuit" title="Basculer entre le mode jour et le mode nuit">
+    <span class="knob"></span>
+    <svg class="ico sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2"></circle>
+      <path d="M12 1.8v2.2M12 20v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M1.8 12h2.2M20 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"></path>
+    </svg>
+    <svg class="ico moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.6 8.6 0 1 0 11.3 11.3z"></path>
+    </svg>
+  </button>
+</header>
+<div class="pagehead">
+  <h1>Acheter ou louer sa résidence principale</h1>
+  <p>Deux ménages, deux logements identiques : l'un achète, l'autre loue et place la différence. Qui possède le plus, et à partir de quand ?</p>
+</div>
+
+<div class="shell" id="shell">
+  <aside class="rail" id="rail" aria-label="Hypothèses de calcul">
+  <div class="railbox essentiel" id="railbox">
+    <div class="railtete">
+      <b>Vos hypothèses</b>
+      <span class="railtri num" id="railTri"></span>
+      <button type="button" class="railfermer" id="railFermer" aria-label="Replier le panneau d'hypothèses" title="Replier le panneau">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+      </button>
+    </div>
+
+    <div class="railmode">
+      <div class="seg" role="group" aria-label="Niveau de détail du panneau">
+        <button type="button" id="railEssentiel" aria-pressed="true">Essentiel</button>
+        <button type="button" id="railTout" aria-pressed="false">Tous les réglages</button>
+      </div>
+      <span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>« Essentiel » ne montre que les réglages qui décident le plus souvent de la réponse. Les autres gardent leur valeur et continuent d'entrer dans le calcul : « Tous les réglages » les rend modifiables.</span></span>
+    </div>
+
+    <details class="group" open>
+      <summary>Le logement</summary>
+      <div class="fields">
+        <div class="f stack key" id="fCommune"><div class="fl"><label for="commune">Commune</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Facultative. Elle situe votre prix face aux ventes de la commune (DVF) et le loyer face à ses annonces (Carte des loyers de l'ANIL), et fixe la zone A, B ou C dont dépend le prêt à taux zéro. Les données sont servies par ce site : aucun service tiers n'est interrogé.</span></span></div>
+          <input id="commune" type="text" list="communesListe" autocomplete="off" spellcheck="false" placeholder="Tapez le nom de la commune">
+          <datalist id="communesListe"></datalist>
+        </div>
+        <div class="f key" id="fSurface"><div class="fl"><label for="surface">Surface habitable</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Facultative. Elle ramène le prix et le loyer au m², pour les comparer au marché de la commune.</span></span></div><div class="wrap uw"><input id="surface" type="number" step="1" min="0" value="0"><span class="unit">m²</span></div></div>
+        <div class="f stack" id="fTypeBien"><div class="fl"><label for="typeBien">Type de logement</label></div>
+          <select id="typeBien">
+            <option value="appartement" selected>Appartement</option>
+            <option value="maison">Maison</option>
+          </select>
+        </div>
+        <div class="f stack key" id="fEtat"><div class="fl"><label for="etat">Ancien ou neuf</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le neuf coûte 2 à 3 % de frais de notaire au lieu de 7 à 8 %, ouvre le prêt à taux zéro partout en France, et exonère de taxe foncière deux ans, à hauteur de 40 % au moins. Changer ce choix recale les frais de notaire.</span></span></div>
+          <select id="etat">
+            <option value="ancien" selected>Ancien</option>
+            <option value="neuf">Neuf</option>
+          </select>
+        </div>
+        <div class="f key" id="fPrix"><div class="fl"><label for="prix">Prix d'achat</label></div><div class="wrap"><input id="prix" type="number" step="1000" min="0" value="300000"><span class="unit">€</span></div></div>
+        <p class="repere" id="repPrix" hidden></p>
+        <div class="f" id="fNotaire"><div class="fl"><label for="notairePct">Frais de notaire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>7,5 % environ dans l'ancien pour un premier achat : les primo-accédants échappent à la hausse de 0,5 point des droits de mutation votée par certains départements jusqu'en 2028. Comptez 8 % sinon, 2 à 3 % dans le neuf.</span></span></div><div class="wrap"><input id="notairePct" type="number" step="0.1" min="0" value="7.5"><span class="unit">%</span></div></div>
+        <div class="f" id="fTravaux"><div class="fl"><label for="travaux">Travaux à l'achat</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ils s'ajoutent à la valeur du logement, puis la perdent de 5 % par an pendant vingt ans. Dans l'ancien, des travaux d'au moins le quart du coût total ouvrent le prêt à taux zéro en zones B2 et C.</span></span></div><div class="wrap"><input id="travaux" type="number" step="1000" min="0" value="10000"><span class="unit">€</span></div></div>
+        <div class="f" id="fDemenagement"><div class="fl"><label for="demenagement">Déménagement</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Payé par l'acheteur, et par le locataire s'il change lui aussi de logement : il ne pèse alors d'aucun côté. Il ne compte que si, en louant, vous restiez où vous êtes.</span></span></div><div class="wrap"><input id="demenagement" type="number" step="100" min="0" value="1500"><span class="unit">€</span></div></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Le financement</summary>
+      <div class="fields">
+        <label class="check" id="fComptant"><input id="comptant" type="checkbox"> Achat comptant, sans crédit</label>
+        <div class="f key" id="fApport"><div class="fl"><label for="apport">Apport personnel</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que vous mettez de votre poche le premier jour. Si vous louez, cet argent n'est pas bloqué : il est placé, et c'est ce qu'il rapporte que l'achat doit battre.</span></span></div><div class="wrap"><input id="apport" type="number" step="1000" min="0" value="50000"><span class="unit">€</span></div></div>
+        <dl class="derived" id="dFinancement">
+          <dt>Coût total de l'opération</dt><dd id="dCout">—</dd>
+          <dt>Votre apport</dt><dd id="dApport">—</dd>
+          <dt>Prêt à taux zéro</dt><dd id="dPtz">—</dd>
+          <dt class="tot">Prêt principal<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCap" hidden>Le coût total, moins l'apport et le prêt à taux zéro.</span></span></dt><dd class="tot" id="dEmprunt">—</dd>
+        </dl>
+        <div class="f key" id="fDuree"><div class="fl"><label for="duree">Durée du prêt</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les banques ne prêtent en principe pas au-delà de 25 ans, 27 ans pour un logement neuf dont la livraison diffère le remboursement (Haut Conseil de stabilité financière).</span></span></div><div class="wrap uw"><input id="duree" type="number" step="1" min="1" max="30" value="25"><span class="unit">ans</span></div></div>
+        <div class="f key" id="fTaux"><div class="fl"><label for="taux">Taux d'intérêt</label></div><div class="wrap"><input id="taux" type="number" step="0.05" min="0" value="3.4"><span class="unit">%</span></div></div>
+        <p class="repere" id="repTaux" hidden></p>
+        <div class="f" id="fAssur"><div class="fl"><label for="assur">Assurance emprunteur</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>En pourcentage du capital emprunté, par an.</span></span></div><div class="wrap"><input id="assur" type="number" step="0.01" min="0" value="0.34"><span class="unit">%</span></div></div>
+        <dl class="derived" id="dCredit">
+          <dt>Mensualité, assurance incluse</dt><dd id="dMens">—</dd>
+          <dt>Coût total du crédit<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCap2" hidden>Intérêts et assurance sur toute la durée du prêt principal.</span></span></dt><dd id="dCout2">—</dd>
+        </dl>
+        <details class="more" id="mPtz">
+          <summary>Prêt à taux zéro</summary>
+          <div class="fields">
+            <div class="f stack" id="fPtzMode"><div class="fl"><label for="ptzMode">Prêt à taux zéro</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Un prêt sans intérêt, réservé à qui n'a pas été propriétaire de sa résidence principale depuis deux ans, jusqu'au 31 décembre 2027. « Estimé » applique le barème officiel à votre zone, votre foyer et vos revenus ; « saisi » reprend le montant de votre offre de prêt.</span></span></div>
+              <select id="ptzMode">
+                <option value="auto" selected>Estimé selon le barème</option>
+                <option value="manuel">Saisi à la main</option>
+                <option value="non">Aucun</option>
+              </select>
+            </div>
+            <label class="check" id="fPrimo"><input id="primo" type="checkbox" checked> Premier achat de résidence principale</label>
+            <div class="f stack" id="fZone"><div class="fl"><label for="zone">Zone du logement</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le zonage A, B, C classe les communes selon la tension du marché. Choisir une commune la renseigne d'elle-même ; A bis se traite comme A.</span></span></div>
+              <select id="zone">
+                <option value="" selected>Inconnue</option>
+                <option value="A">A ou A bis</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="C">C</option>
+              </select>
+            </div>
+            <div class="f" id="fPersonnes"><div class="fl"><label for="personnes">Personnes au foyer</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Toutes celles qui occuperont le logement. Elles fixent le plafond de ressources et le coût de l'opération que le prêt à taux zéro retient.</span></span></div><div class="wrap uw"><input id="personnes" type="number" step="1" min="1" max="8" value="2"><span class="unit">pers.</span></div></div>
+            <div class="f" id="fRfr"><div class="fl"><label for="rfr">Revenu fiscal de référence</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Celui de l'avant-dernière année, sur votre avis d'imposition, pour tout le foyer. Laissé à zéro, le barème retient le coût de l'opération divisé par neuf, le plancher réglementaire : l'estimation est alors la plus favorable. Il ne voyage jamais dans un lien partagé.</span></span></div><div class="wrap uw"><input id="rfr" type="number" step="1000" min="0" value="0"><span class="unit">€/an</span></div></div>
+            <div class="f" id="fPtzMontant"><div class="fl"><label for="ptzMontant">Montant du PTZ</label></div><div class="wrap"><input id="ptzMontant" type="number" step="1000" min="0" value="0"><span class="unit">€</span></div></div>
+            <div class="f" id="fPtzDiffere"><div class="fl"><label for="ptzDiffere">Différé</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les années pendant lesquelles vous ne remboursez rien : de 10 ans pour les revenus les plus modestes à aucun pour la tranche la plus haute.</span></span></div><div class="wrap uw"><input id="ptzDiffere" type="number" step="1" min="0" max="25" value="0"><span class="unit">ans</span></div></div>
+            <div class="f" id="fPtzDuree"><div class="fl"><label for="ptzDuree">Remboursement, après le différé</label></div><div class="wrap uw"><input id="ptzDuree" type="number" step="1" min="0" max="25" value="15"><span class="unit">ans</span></div></div>
+            <p class="repere" id="repPtz"></p>
+          </div>
+        </details>
+        <details class="more" id="mCredit">
+          <summary>Frais de dossier et remboursement anticipé</summary>
+          <div class="fields">
+            <div class="f" id="fFraisDossier"><div class="fl"><label for="fraisDossier">Frais de dossier + garantie</label></div><div class="wrap"><input id="fraisDossier" type="number" step="100" min="0" value="3000"><span class="unit">€</span></div></div>
+            <label class="check" id="fIra"><input id="ira" type="checkbox" checked> Pénalités de remboursement anticipé à la revente</label>
+          </div>
+        </details>
+        <details class="more" id="mCapacite">
+          <summary>Votre capacité d'emprunt</summary>
+          <div class="fields">
+            <div class="f"><div class="fl"><label for="revenus">Revenus nets du foyer</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Avant impôt sur le revenu, par mois. Ils servent au seul taux d'endettement, et ne voyagent jamais dans un lien partagé.</span></span></div><div class="wrap uw"><input id="revenus" type="number" step="100" min="0" value="0"><span class="unit">€/m</span></div></div>
+            <div class="f"><div class="fl"><label for="credits">Crédits en cours</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Les mensualités que vous remboursez déjà : voiture, prêt étudiant, bien locatif.</span></span></div><div class="wrap uw"><input id="credits" type="number" step="50" min="0" value="0"><span class="unit">€/m</span></div></div>
+            <dl class="derived" id="dCapacite">
+              <dt>Taux d'endettement</dt><dd id="dEndet">—</dd>
+              <dt class="tot">Mensualité maximale<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="dCapCap" hidden>Renseignez vos revenus pour connaître le taux d'endettement que la banque calculera.</span></span></dt><dd class="tot" id="dMensMax">—</dd>
+            </dl>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Être propriétaire<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que le logement coûte chaque année en plus du crédit, et que le locataire ne paie pas. Les charges de copropriété récupérables, payées des deux côtés, s'annulent : seule compte la part non récupérable.</span></span></summary>
+      <div class="fields">
+        <div class="f key"><div class="fl"><label for="tf">Taxe foncière</label></div><div class="wrap uw"><input id="tf" type="number" step="50" min="0" value="1500"><span class="unit">€/an</span></div></div>
+        <div class="f" id="fTfExo" hidden><div class="fl"><label for="tfExo">Exonération les deux premières années</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Un logement neuf est exonéré de taxe foncière deux ans, à hauteur de ce que la commune a voté : de 40 à 90 %, 40 % au minimum.</span></span></div><div class="wrap"><input id="tfExo" type="number" step="10" min="0" max="100" value="40"><span class="unit">%</span></div></div>
+        <div class="f key"><div class="fl"><label for="copro">Charges de copro non récupérables</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La part des charges qu'un propriétaire bailleur ne pourrait pas refacturer : honoraires du syndic, gros entretien, fonds de travaux. Le reste, le locataire le paie aussi.</span></span></div><div class="wrap uw"><input id="copro" type="number" step="10" min="0" value="80"><span class="unit">€/m</span></div></div>
+        <div class="f"><div class="fl"><label for="entretien">Entretien et gros travaux</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>En pourcentage de la valeur du logement, par an : chaudière, toiture, peinture, ravalement. Comptez 0,5 % pour un appartement dont la copropriété entretient les parties communes, 1 % pour une maison.</span></span></div><div class="wrap uw"><input id="entretien" type="number" step="0.05" min="0" value="0.5"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="assurProprio">Assurance habitation</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Multirisque habitation d'un propriétaire occupant : elle couvre aussi les murs, d'où un coût supérieur à celle du locataire.</span></span></div><div class="wrap uw"><input id="assurProprio" type="number" step="10" min="0" value="250"><span class="unit">€/an</span></div></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Être locataire</summary>
+      <div class="fields">
+        <div class="f key"><div class="fl"><label for="loyer">Loyer d'un logement équivalent</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Hors charges, par mois, pour un logement comparable à celui que vous achèteriez : même quartier, même surface, même état. C'est l'hypothèse qui décide le plus souvent de la réponse.</span></span></div><div class="wrap"><input id="loyer" type="number" step="10" min="0" value="1100"><span class="unit">€</span></div></div>
+        <p class="repere" id="repLoyer" hidden></p>
+        <label class="check" id="fDejaLocataire"><input id="dejaLocataire" type="checkbox"> En louant, je reste dans mon logement actuel</label>
+        <div class="f" id="fFraisAgenceLoc"><div class="fl"><label for="fraisAgenceLoc">Frais d'agence du locataire</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Plafonnés par la loi ALUR : 8 à 12 € par m² selon la zone pour la visite, le dossier et le bail, plus 3 € par m² pour l'état des lieux.</span></span></div><div class="wrap"><input id="fraisAgenceLoc" type="number" step="50" min="0" value="800"><span class="unit">€</span></div></div>
+        <div class="f" id="fDepot"><div class="fl"><label for="depotMois">Dépôt de garantie</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Un mois de loyer hors charges pour un logement vide, deux pour un meublé. Il vous est rendu au départ, sans intérêts.</span></span></div><div class="wrap uw"><input id="depotMois" type="number" step="1" min="0" max="2" value="1"><span class="unit">mois</span></div></div>
+        <div class="f"><div class="fl"><label for="assurLocataire">Assurance habitation</label></div><div class="wrap uw"><input id="assurLocataire" type="number" step="10" min="0" value="150"><span class="unit">€/an</span></div></div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Placer la différence<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Celui qui dépense le moins pour se loger place la différence, chaque année, selon cette répartition : le locataire l'apport et l'écart avec la mensualité, le propriétaire l'écart inverse une fois le crédit remboursé. Les taux sont saisis <b>hors inflation</b> et <b>avant impôt</b> ; l'impôt est retiré à la sortie, selon l'enveloppe.</span></span></summary>
+      <div class="fields">
+        <div class="f key"><div class="fl"><label for="partBourse">Part en actions</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Un fonds indiciel mondial, par exemple. Les trois parts sont ramenées à 100 % si leur somme en diffère.</span></span></div><div class="wrap"><input id="partBourse" type="number" step="5" min="0" max="100" value="60"><span class="unit">%</span></div></div>
+        <div class="f"><div class="fl"><label for="partFonds">Part en fonds euros</label></div><div class="wrap"><input id="partFonds" type="number" step="5" min="0" max="100" value="30"><span class="unit">%</span></div></div>
+        <div class="f"><div class="fl"><label for="partLivret">Part sur Livret A</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Plafonné à 22 950 € de dépôts : au-delà, la part du Livret A va au fonds euros.</span></span></div><div class="wrap"><input id="partLivret" type="number" step="5" min="0" max="100" value="10"><span class="unit">%</span></div></div>
+        <div class="f stack key"><div class="fl"><label for="enveloppe">Enveloppe des actions</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>PEA : après cinq ans, seuls les prélèvements sociaux, 18,6 %, frappent les gains ; versements plafonnés à 150 000 €, l'excédent va en compte-titres. Compte-titres : 31,4 %. Assurance-vie en unités de compte : 17,2 % de prélèvements sociaux, et après huit ans 7,5 % d'impôt au-delà de l'abattement annuel.</span></span></div>
+          <select id="enveloppe">
+            <option value="pea" selected>PEA</option>
+            <option value="av">Assurance-vie, unités de compte</option>
+            <option value="cto">Compte-titres</option>
+          </select>
+        </div>
+        <label class="check" id="fCouple"><input id="couple" type="checkbox" checked> Couple marié ou pacsé</label>
+        <div class="f"><div class="fl"><label for="bourse">Actions</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="hBourse" hidden>Rendement hors inflation, avant impôt.</span></span></div><div class="wrap uw"><input id="bourse" type="number" step="0.25" value="4"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="fondsEuros">Fonds euros</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="hFonds" hidden>Rendement hors inflation, avant impôt.</span></span></div><div class="wrap uw"><input id="fondsEuros" type="number" step="0.05" value="0"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="livretA">Livret A</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" id="hLivret" hidden>Rendement hors inflation, exonéré d'impôt.</span></span></div><div class="wrap uw"><input id="livretA" type="number" step="0.1" value="-0.8"><span class="unit">%/an</span></div></div>
+        <details class="more">
+          <summary>Prélèvements sociaux</summary>
+          <div class="fields">
+            <div class="f"><div class="fl"><label for="psCapital">PS sur le PEA et le compte-titres</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>18,6 % depuis le 1ᵉʳ janvier 2026 : la loi de financement de la sécurité sociale a relevé la CSG sur les revenus du capital de 1,4 point.</span></span></div><div class="wrap"><input id="psCapital" type="number" step="0.1" min="0" value="18.6"><span class="unit">%</span></div></div>
+            <div class="f"><div class="fl"><label for="psAV">PS sur l'assurance-vie</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'assurance-vie échappe à la hausse de CSG : 17,2 %.</span></span></div><div class="wrap"><input id="psAV" type="number" step="0.1" min="0" value="17.2"><span class="unit">%</span></div></div>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>Durée et marché</summary>
+      <div class="fields">
+        <div class="f key"><div class="fl"><label for="horizon">Durée d'occupation prévue</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Combien de temps vous comptez vivre dans ce logement avant de le revendre. Le verdict compare les deux patrimoines à cette date ; l'année où l'achat prend l'avantage est cherchée jusqu'à quarante ans.</span></span></div><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+        <div class="f"><div class="fl"><label for="inflation">Inflation <small>taux directeur BCE</small></label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Par défaut, le taux directeur de la BCE : celui de la facilité de dépôt, porté à 2,50 % le 16 septembre 2026, comme dans la calculatrice d'investissement. Les résultats s'affichent en euros d'aujourd'hui, inflation retirée.</span></span></div><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
+        <p class="repere" id="repInflation" hidden></p>
+        <label class="souscheck"><input id="prixSuitInflation" type="checkbox" checked> Prix, loyers et charges suivent l'inflation</label>
+        <div class="f" id="fIndexPrix"><div class="fl"><label for="indexPrix">Revalorisation du logement</label></div><div class="wrap uw"><input id="indexPrix" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
+        <div class="f" id="fIndexLoyer"><div class="fl"><label for="indexLoyer">Hausse des loyers</label></div><div class="wrap uw"><input id="indexLoyer" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
+        <div class="f" id="fIndexCharges"><div class="fl"><label for="indexCharges">Inflation des charges</label></div><div class="wrap uw"><input id="indexCharges" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
+        <div class="f"><div class="fl"><label for="fraisVente">Frais d'agence à la revente</label></div><div class="wrap"><input id="fraisVente" type="number" step="0.5" min="0" value="5"><span class="unit">%</span></div></div>
+      </div>
+    </details>
+
+    <div class="railfoot">
+      <button type="button" class="btn sm" id="reset">Réinitialiser</button>
+      <button type="button" class="btn sm" id="share">Copier le lien</button>
+    </div>
+  </div>
+  </aside>
+  <div class="voile" id="voile" hidden></div>
+
+  <main class="canvas">
+    <nav class="subnav" aria-label="Sections de la page">
+      <button type="button" class="railbtn" id="railToggle" aria-controls="rail" aria-expanded="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg>
+        <span>Hypothèses</span>
+      </button>
+      <div class="subliens">
+        <a href="#verdict">Verdict</a>
+        <a href="#patrimoine">Patrimoine</a>
+        <a href="#couts">Coût annuel</a>
+        <a href="#placements">Placements</a>
+        <a href="#analyse">Analyse détaillée</a>
+        <a href="#detail">Tableau annuel</a>
+        <a href="#suite">Pour aller plus loin</a>
+      </div>
+      <span class="navtri" id="navTri" aria-hidden="true"></span>
+      <div class="seg fisc" role="group" aria-label="Montants en euros d'aujourd'hui ou en euros courants">
+        <button type="button" id="echReel" aria-pressed="true">Aujourd'hui</button>
+        <button type="button" id="echCourant" aria-pressed="false">Courants</button>
+      </div>
+    </nav>
+
+    <section class="verdict" id="verdict">
+      <div class="vmain">
+        <p class="eyebrow">Acheter devient gagnant<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>L'année à partir de laquelle celui qui achète possède plus que celui qui loue et place la différence, s'ils revendent et soldent tout ce jour-là, impôt payé. Avant, les frais de notaire, d'agence et de crédit ne sont pas encore amortis.</span></span></p>
+        <div class="hero">
+          <span class="big num" id="rpBascule">—</span>
+          <span class="pill num" id="rpPill">—</span>
+          <span class="per" id="rpPer"></span>
+        </div>
+        <p class="reel"><b class="num" id="rpEcartCourant">—</b> <span id="rpEcartTxt">en euros courants</span><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le même écart sans retirer l'inflation : les euros de la date de revente, ceux qui figureront sur les relevés.</span></span></p>
+        <dl class="facts">
+          <dt>Ratio prix / loyer<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Le prix d'achat divisé par un an de loyer. Plus il est élevé, plus louer est avantageux : au-delà de 25 ans environ, l'achat ne se rattrape qu'en restant longtemps.</span></span></dt><dd id="rpRatio">—</dd>
+          <dt>Mise de départ</dt><dd id="rpMise">—</dd>
+          <dt>Rendement de l'achat<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce que rapporte, chaque année en moyenne, l'argent que l'achat coûte en plus de la location — la mise de départ puis les écarts annuels —, récupéré à la revente. À comparer au rendement net du placement.</span></span></dt><dd id="rpTri">—</dd>
+        </dl>
+        <div class="avis" id="rpAvisBox" hidden>
+          <p id="rpAvis"></p>
+        </div>
+      </div>
+      <div class="best">
+        <p class="eyebrow" id="rpHorizonTitre">Au bout de 15 ans</p>
+        <dl id="rpHorizonListe"></dl>
+        <p id="rpHorizonTexte"></p>
+      </div>
+    </section>
+
+    <section class="tiles" id="indicateurs" aria-label="Indicateurs clés"></section>
+
+    <section class="marche" id="marcheResume" hidden aria-labelledby="marcheTitre">
+      <h2 id="marcheTitre">Face au marché</h2>
+      <div class="tiles" id="marcheTuiles"></div>
+    </section>
+
+    <div id="warnBox"></div>
+
+    <section class="panel" id="patrimoine">
+      <div class="phead">
+        <div>
+          <h2>Ce que possède chacun, selon l'année de départ<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Pour chaque année : côté propriétaire, le logement revendu, frais d'agence, capital restant dû et pénalités payés, plus ce qu'il a placé ; côté locataire, son portefeuille vidé, impôt payé, plus le dépôt de garantie rendu. Les deux ménages ont sorti exactement les mêmes sommes de leur poche.</span></span></h2>
+          <p>Le patrimoine net de chaque ménage s'il revend et solde tout à cette date.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Acheter</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Louer et placer</span></span>
+      </div>
+      <div class="plot" id="plotPat"><div class="tip" id="tipPat"></div></div>
+      <p class="axisnote" id="patNote"></p>
+    </section>
+
+    <section class="panel" id="couts">
+      <div class="phead">
+        <div>
+          <h2>Le vrai coût d'être propriétaire, la première année<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Ce qui part sans retour. Le capital remboursé n'en fait pas partie : il reste à vous, dans le logement. Le coût d'opportunité, lui, en fait partie : l'apport immobilisé ne rapporte plus ce que rapporterait le placement. Les frais d'achat et de revente sont étalés sur la durée d'occupation ; la hausse de la valeur vient en déduction.</span></span></h2>
+          <p>Ce que vous coûte réellement le logement, capital remboursé exclu, face au loyer.</p>
+        </div>
+      </div>
+      <div class="plotwrap"><div class="plot large" id="plotCouts"><div class="tip" id="tipCouts"></div></div></div>
+      <p class="axisnote" id="coutsNote"></p>
+    </section>
+
+    <section class="panel" id="placements">
+      <div class="phead">
+        <div>
+          <h2>Et si le locataire plaçait autrement<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La même comparaison, le locataire plaçant tout sur un seul support. Le fonds euros et le Livret A rapportent peu : ils rendent l'achat plus vite gagnant. La bourse rapporte davantage, mais fluctue : son rendement est ici supposé régulier.</span></span></h2>
+          <p>Le patrimoine du locataire selon le placement choisi, face à celui du propriétaire.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span style="color:var(--text)"><i class="swatch"></i><span style="color:var(--text-muted)">Acheter</span></span>
+        <span style="color:var(--d1)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Votre répartition</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Tout en actions</span></span>
+        <span style="color:var(--d3)"><i class="swatch mixte"></i><span style="color:var(--text-muted)">Tout en fonds euros</span></span>
+        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Tout sur Livret A</span></span>
+      </div>
+      <div class="plot" id="plotPlac"><div class="tip" id="tipPlac"></div></div>
+      <div class="tiles" id="rpPlacTuiles"></div>
+      <div class="seuils">
+        <div class="seuilstete">
+          <h3>Pour que l'achat fasse jeu égal<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque valeur est celle à laquelle acheter et louer se valent exactement au bout de la durée d'occupation, les autres hypothèses restant fixes. Au-dessus du prix maximal, sous le loyer minimal ou sous la revalorisation minimale, louer l'emporte.</span></span></h3>
+        </div>
+        <div class="tiles" id="rpSeuils"></div>
+      </div>
+    </section>
+
+    <details class="panel fold" id="analyse">
+      <summary><span class="foldtitle">Analyse détaillée</span><span class="foldhint">écart année par année, dépenses, sensibilité</span></summary>
+      <div class="folded">
+
+        <section class="sub" id="ecart">
+          <div class="phead">
+            <div>
+              <h2>L'avance de l'achat, année par année<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>La différence entre les deux patrimoines du graphique principal. En vert, acheter l'emporte ; en rouge, louer. La simulation court jusqu'à quarante ans, au-delà de la durée d'occupation prévue, pour situer l'année de bascule.</span></span></h2>
+              <p>Patrimoine du propriétaire moins celui du locataire, jusqu'à quarante ans.</p>
+            </div>
+          </div>
+          <div class="plot" id="plotEcart"><div class="tip" id="tipEcart"></div></div>
+        </section>
+
+        <section class="sub" id="depenses">
+          <div class="phead">
+            <div>
+              <h2>Ce que chacun dépense pour se loger<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Propriétaire : mensualités des deux prêts, taxe foncière, charges non récupérables, entretien, assurance. Locataire : loyer et assurance. L'écart entre les deux courbes est ce que l'un des deux place chaque année ; le crédit remboursé, la courbe du propriétaire plonge.</span></span></h2>
+              <p>Dépense annuelle de logement de chaque ménage, en euros courants.</p>
+            </div>
+          </div>
+          <div class="legend">
+            <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Propriétaire</span></span>
+            <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Locataire</span></span>
+          </div>
+          <div class="plot" id="plotFlux"><div class="tip" id="tipFlux"></div></div>
+        </section>
+
+        <section class="sub" id="sensibilite">
+          <div class="phead">
+            <div>
+              <h2>Ce qui fait basculer la réponse<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Chaque ligne refait le calcul en changeant un seul paramètre de l'écart indiqué sous son nom. La ligne verticale est l'avance de l'achat au bout de la durée d'occupation, en euros d'aujourd'hui ; la barre rouge montre où elle tomberait si l'hypothèse se révélait moins favorable à l'achat, la verte où elle monterait.</span></span></h2>
+              <p>L'avance de l'achat si une seule hypothèse change. Les barres longues sont à vérifier en premier.</p>
+            </div>
+          </div>
+          <div class="legend">
+            <span style="color:var(--down)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Moins favorable à l'achat</span></span>
+            <span style="color:var(--up)"><i class="swatch sq"></i><span style="color:var(--text-muted)">Plus favorable à l'achat</span></span>
+          </div>
+          <div class="plot" id="plotSens"><div class="tip" id="tipSens"></div></div>
+          <p class="axisnote" id="sensNote"></p>
+        </section>
+
+      </div>
+    </details>
+
+    <details class="panel fold" id="detail">
+      <summary><span class="foldtitle">Tableau annuel</span><span class="foldhint">année par année, exportable en CSV</span></summary>
+      <div class="folded">
+        <div class="phead">
+          <div>
+            <p>En euros courants. L'année surlignée est la fin de la durée d'occupation prévue.</p>
+          </div>
+          <div class="tools">
+            <button type="button" class="btn sm" id="copy">Copier</button>
+            <button type="button" class="btn sm" id="csv">Télécharger le CSV</button>
+          </div>
+        </div>
+        <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </details>
+
+    <section class="panel" id="suite">
+      <div class="phead">
+        <div>
+          <h2>Pour aller plus loin</h2>
+        </div>
+      </div>
+      <ul class="liens">
+        <li><a href="/hypotheses-de-calcul/#acheter-ou-louer">Hypothèses de calcul</a> — la méthode : mêmes sorties des deux côtés, coût d'être propriétaire, PTZ, fiscalité des placements.</li>
+        <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a> — la même comparaison à mise égale, pour un bien acheté pour être loué.</li>
+        <li><a href="/calculatrice/">Calculatrice d'investissement locatif</a> — si vous achetez pour louer, pas pour y vivre.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer class="footer">
+  <div class="footer-in">
+    <div>
+      <b>Mon rendement locatif</b>
+      <p>Calculateur indépendant et gratuit</p>
+    </div>
+    <div>
+      <b>Guides</b>
+      <ul>
+        <li><a href="/guides/calcul-rendement-locatif/">Calculer un rendement locatif : brut, net, net-net, TRI</a></li>
+        <li><a href="/guides/tri-immobilier/">Le TRI immobilier, expliqué</a></li>
+        <li><a href="/guides/lmnp-reel-ou-micro-bic/">LMNP : réel ou micro-BIC ?</a></li>
+        <li><a href="/guides/micro-foncier-ou-reel/">Micro-foncier ou régime réel ?</a></li>
+        <li><a href="/guides/quand-revendre/">Quand revendre un bien locatif ?</a></li>
+        <li><a href="/guides/immobilier-ou-bourse/">Immobilier locatif ou bourse ?</a></li>
+      </ul>
+    </div>
+    <div>
+      <b>À propos</b>
+      <ul>
+        <li><a href="/calculatrice/">Calculatrice d'investissement locatif</a></li>
+        <li><a href="/acheter-ou-louer/">Calculatrice acheter ou louer</a></li>
+        <li><a href="/hypotheses-de-calcul/">Hypothèses de calcul</a></li>
+        <li><a href="/questions-frequentes/">Questions fréquentes</a></li>
+        <li><a href="/mentions-legales/">Mentions légales</a></li>
+        <li><a href="#" class="mail" data-u="contact" data-d="monrendementlocatif.fr">Nous écrire</a></li>
+      </ul>
+    </div>
+    <p class="fin">Outil d'aide à la décision : les projections reposent sur vos hypothèses et ne remplacent pas l'avis d'un conseiller fiscal.</p>
+  </div>
+</footer>
+<script src="/js/site.js?v=e691784d"></script>
+<script src="/js/commun.js?v=13f8a09a"></script>
+<script src="/js/acheter-ou-louer.js?v=cc754153"></script>
+</body>
+</html>
