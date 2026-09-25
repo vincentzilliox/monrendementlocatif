@@ -14,6 +14,7 @@ Sortie : une ligne par contrôle, et un code de sortie non nul si l'un échoue.
 """
 
 import gzip
+import hashlib
 import html
 import json
 import pathlib
@@ -681,7 +682,7 @@ def main():
         print("\nRESSOURCES")
         for chemin in ("/", "/calculatrice/", "/guides/", "/questions-frequentes/",
                        "/hypotheses-de-calcul/", "/mentions-legales/", "/404.html",
-                       "/css/style.css", "/js/app.js", "/js/site.js", "/js/vitrine.js",
+                       "/css/style.css", "/js/commun.js", "/js/app.js", "/js/site.js", "/js/vitrine.js",
                        "/favicon.ico", "/assets/favicon.svg", "/assets/og-image.png",
                        "/assets/apple-touch-icon.png", "/robots.txt", "/sitemap.xml",
                        "/.well-known/security.txt"):
@@ -756,6 +757,34 @@ def main():
                 if fichier_pour(href) is None:
                     casses.add(f"{chemin} → {href}")
         controle("liens internes : tous résolus", not casses, "; ".join(sorted(casses))[:80])
+        # Les scripts d'une page partagent une seule portée globale : une constante
+        # déclarée deux fois, dans deux fichiers, lève une erreur au chargement du
+        # second, et tout ce qu'il pilote reste vide. On relève les déclarations
+        # de premier niveau (en début de ligne) de chaque script d'une page.
+        doublons = set()
+        for chemin, fichier in pages:
+            vus = {}
+            for src in re.findall(r'<script src="(/[^"?]+)', fichier.read_text(encoding="utf-8")):
+                cible = fichier_pour(src)
+                if cible is None:
+                    continue
+                for nom in re.findall(r"^(?:const|let|var|function|class)\s+(\w+)",
+                                      cible.read_text(encoding="utf-8"), re.M):
+                    if vus.setdefault(nom, src) != src:
+                        doublons.add("%s : %s (%s, %s)" % (chemin, nom, vus[nom], src))
+        controle("scripts d'une même page : aucune déclaration globale en double",
+                 not doublons, "; ".join(sorted(doublons))[:80])
+        # Chaque script et la feuille de style portent l'empreinte de leur contenu :
+        # une page publiée n'appelle jamais une version restée en cache.
+        sans_empreinte = set()
+        for chemin, fichier in pages:
+            for src in re.findall(r'(?:src|href)="(/(?:js|css)/[^"]*)"', fichier.read_text(encoding="utf-8")):
+                cible = fichier_pour(src)
+                attendu = hashlib.sha1(cible.read_bytes()).hexdigest()[:8] if cible else None
+                if not src.endswith("?v=%s" % attendu):
+                    sans_empreinte.add("%s → %s" % (chemin, src))
+        controle("scripts et style : empreinte du contenu dans chaque appel",
+                 not sans_empreinte, "; ".join(sorted(sans_empreinte))[:80])
 
         print("\nCHARTE GRAPHIQUE")
         css = (SITE / "css" / "style.css").read_text(encoding="utf-8")
@@ -804,7 +833,7 @@ def main():
 
         # Une couleur se lit au runtime par son nom : une variable inexistante ne
         # plante pas, elle rend une chaîne vide. C'est ainsi que --ink-3 a survécu.
-        app = (SITE / "js" / "app.js").read_text(encoding="utf-8")
+        app = "".join(f.read_text(encoding="utf-8") for f in sorted((SITE / "js").glob("*.js")))
         declares = set(re.findall(r"(--[a-z0-9-]+)\s*:", css))
         appeles = set(re.findall(r'css\(\s*"(--[a-z0-9-]+)"', app))
         appeles |= set(re.findall(r'(?:color|textColor)\s*:\s*"(--[a-z0-9-]+)"', app))
@@ -875,7 +904,7 @@ def main():
 
         print("\nCONFIDENTIALITÉ ET POIDS")
         textes = css + "".join(f.read_text(encoding="utf-8") for _, f in pages)
-        textes += (SITE / "js" / "app.js").read_text(encoding="utf-8")
+        textes += "".join(f.read_text(encoding="utf-8") for f in sorted((SITE / "js").glob("*.js")))
         # Un lien qu'on clique n'est pas un appel : il ne part qu'au geste du
         # visiteur. Ils sont mis de côté, puis réservés aux sources officielles.
         ancre = r'<a\b[^>]*\bhref="https?://([a-z0-9.-]+)[^"]*"'

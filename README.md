@@ -172,9 +172,16 @@ réponses partent dans le fragment de `/calculatrice/`, où tout reste modifiabl
 ### Comment les sources s'assemblent
 
 ```
-src/moteur.js + src/graphiques.js + src/calculatrice.js                     ->  site/js/app.js
-src/moteur.js + src/graphiques.js + src/vitrine.js + src/assistant.js       ->  site/js/vitrine.js
+src/moteur.js + src/graphiques.js           ->  site/js/commun.js   (toutes les pages outillées)
+src/calculatrice.js                         ->  site/js/app.js      (après commun.js)
+src/vitrine.js + src/assistant.js           ->  site/js/vitrine.js  (après commun.js)
 ```
+
+Chaque page appelle ses scripts avec l'empreinte de leur contenu
+(`/js/commun.js?v=…`) : les scripts partagent une seule portée globale, et un
+ancien fichier resté en cache redéclarerait des constantes à côté du nouveau.
+Deux contrôles le gardent : aucune déclaration globale en double entre les
+scripts d'une page, une empreinte juste dans chaque appel.
 
 Un seul moteur, un seul jeu de graphiques, deux pilotes : la page d'accueil
 rejoue le scénario par défaut avec le code exact de la calculatrice, sans

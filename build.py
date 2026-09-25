@@ -19,6 +19,7 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent / "outils"))
 import favicon
+import hashlib
 
 RACINE = pathlib.Path(__file__).parent
 SOURCE = RACINE / "index.html"
@@ -205,14 +206,34 @@ def _tete(titre, description, chemin, jsonld, noindex=False, type_og="website"):
 <meta name="twitter:image" content="{DOMAINE}/assets/og-image.png">
 <script type="application/ld+json">{jsonld}</script>
 <script>try{{var t=localStorage.getItem("rentaloc.theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
-<link rel="stylesheet" href="/css/style.css">"""
+<link rel="stylesheet" href="{_versionne('/css/style.css')}">"""
+
+
+# L'empreinte de chaque script et de la feuille de style, posée dans l'adresse
+# qui les appelle. Les scripts partagent une seule portée globale : un ancien
+# app.js resté en cache, qui embarquait encore le moteur, redéclarerait ses
+# constantes à côté du nouveau commun.js, et la page entière tomberait. Avec
+# l'empreinte, une page nouvelle n'appelle que des fichiers nouveaux.
+VERSIONS = {}
+
+
+def _ecrire_statique(chemin, texte):
+    """Écrit un script ou une feuille de style de site/, et retient son empreinte."""
+    (SITE / chemin.lstrip("/")).write_text(texte, encoding="utf-8")
+    VERSIONS[chemin] = hashlib.sha1(texte.encode("utf-8")).hexdigest()[:8]
+
+
+def _versionne(chemin):
+    if chemin not in VERSIONS:
+        raise SystemExit(f"{chemin} : appelé par une page avant d'avoir été écrit")
+    return f"{chemin}?v={VERSIONS[chemin]}"
 
 
 def _page(tete, corps, scripts):
     """`scripts` : un chemin, ou plusieurs, chargés dans l'ordre donné."""
     if isinstance(scripts, str):
         scripts = [scripts]
-    balises = "\n".join(f'<script src="{s}"></script>' for s in scripts)
+    balises = "\n".join(f'<script src="{_versionne(s)}"></script>' for s in scripts)
     return f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -385,6 +406,13 @@ def construire_guides(entete, pied):
     return fiches
 
 
+def _scripts(script):
+    """Le ou les scripts propres à une page, que son bloc meta nomme."""
+    if not script:
+        return []
+    return [script] if isinstance(script, str) else list(script)
+
+
 def construire_pages(entete, pied):
     """pages/<nom>.html : accueil, questions fréquentes, hypothèses, mentions, 404.
 
@@ -424,7 +452,7 @@ def construire_pages(entete, pied):
         page = _page(_tete(meta["titre"], meta["description"], chemin, jsonld,
                            noindex=meta.get("noindex", False)),
                      _entete_pour(entete, "" if racine else chemin) + "\n" + corps_page + "\n" + pied,
-                     ["/js/site.js"] + ([meta["script"]] if meta.get("script") else []))
+                     ["/js/site.js"] + _scripts(meta.get("script")))
         cible.parent.mkdir(parents=True, exist_ok=True)
         cible.write_text(page, encoding="utf-8")
         if not meta.get("noindex", False):
@@ -470,13 +498,16 @@ def main():
                 f.unlink() if f.is_file() else f.rmdir()
             chemin.rmdir()
 
-    (SITE / "css" / "style.css").write_text(style + "\n", encoding="utf-8")
-    (SITE / "js" / "site.js").write_text(SITE_JS + MENU_JS, encoding="utf-8")
-    # Un seul moteur, un seul jeu de graphiques, deux pilotes. La calculatrice et
-    # la vitrine ne peuvent donc pas afficher deux chiffres différents des mêmes
+    _ecrire_statique("/css/style.css", style + "\n")
+    _ecrire_statique("/js/site.js", SITE_JS + MENU_JS)
+    # Un seul moteur, un seul jeu de graphiques, dans un script que toutes les
+    # pages outillées chargent avant leur pilote. La calculatrice et la vitrine
+    # ne peuvent donc pas afficher deux chiffres différents des mêmes
     # hypothèses — et la vitrine reçoit les valeurs par défaut relues dans le
-    # balisage, jamais recopiées.
+    # balisage, jamais recopiées. Le navigateur ne télécharge le moteur qu'une
+    # fois pour tout le site.
     prelude = '"use strict";\n'
+    _ecrire_statique("/js/commun.js", prelude + "\n".join((moteur, graphiques)) + "\n")
     # Les taux du marché, relevés par outils/donnees.py, entrent dans le script :
     # la page les affiche sans rien charger. Sans eux, les repères se taisent.
     marqueur = "const TAUX_MARCHE = {/* build.py : taux du marché */};"
@@ -487,8 +518,7 @@ def main():
     releves = json.loads(taux.read_text(encoding="utf-8")) if taux.exists() else {}
     calculatrice = calculatrice.replace(marqueur, "const TAUX_MARCHE = %s;" % json.dumps(
         {k: {c: v[c] for c in ("valeur", "periode", "depuis") if c in v} for k, v in releves.items()}))
-    (SITE / "js" / "app.js").write_text(
-        prelude + "\n".join((moteur, graphiques, calculatrice, MENU_JS)) + "\n", encoding="utf-8")
+    _ecrire_statique("/js/app.js", prelude + "\n".join((calculatrice, MENU_JS)) + "\n")
     marqueur = "const DEFAUTS = {/* build.py : valeurs par défaut */};"
     if marqueur not in vitrine:
         raise SystemExit("src/vitrine.js : ligne DEFAUTS introuvable")
@@ -499,8 +529,7 @@ def main():
     vitrine = vitrine.replace(marqueur, "const OPTIONS = %s;" % _options(src))
     # L'assistant de l'accroche ferme la marche : il s'appuie sur le moteur pour
     # départager les régimes, et sur scenario() pour compléter les hypothèses.
-    (SITE / "js" / "vitrine.js").write_text(
-        prelude + "\n".join((moteur, graphiques, vitrine, assistant)) + "\n", encoding="utf-8")
+    _ecrire_statique("/js/vitrine.js", prelude + "\n".join((vitrine, assistant)) + "\n")
     (SITE / "assets" / "favicon.svg").write_text(favicon.svg(), encoding="utf-8")
     # Image de partage : produite par outils/og_image.py, versionnée à la racine
     # puis recopiée. Sans cette copie, un `rm -rf site` la perdrait.
@@ -520,7 +549,7 @@ def main():
                              ensure_ascii=False, separators=(",", ":"))
     (SITE / "calculatrice").mkdir(parents=True, exist_ok=True)
     (SITE / "calculatrice" / "index.html").write_text(
-        _page(_tete(TITRE, DESCRIPTION, CALCULATRICE, jsonld_calc), corps, "/js/app.js"),
+        _page(_tete(TITRE, DESCRIPTION, CALCULATRICE, jsonld_calc), corps, ["/js/commun.js", "/js/app.js"]),
         encoding="utf-8")
 
     fiches = construire_guides(entete, pied)
