@@ -588,6 +588,10 @@ td.pos{color:var(--up-ink)} td.neg{color:var(--down-ink)}
 }
 .qchamp input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
 .qunit{position:absolute; right:12px; font-size:13px; color:var(--text-muted); pointer-events:none}
+/* Une unité plus longue que « € » ou « ans » : la saisie, calée à droite, lui
+   laisse la place au lieu de passer dessous. */
+.qchamp.unite-longue input{padding-right:58px}
+.qsous{display:block; margin:16px 0 8px; font-size:13.5px; font-weight:500; color:var(--text)}
 .qchoix{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
 .qchoix.colonne{flex-direction:column; margin-top:0}
 .qchoix label{

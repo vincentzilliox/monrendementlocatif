@@ -182,7 +182,7 @@
     <details class="group" open>
       <summary>Durée et marché</summary>
       <div class="fields">
-        <div class="f key"><div class="fl"><label for="horizon">Durée d'occupation prévue</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Combien de temps vous comptez vivre dans ce logement avant de le revendre. Le verdict compare les deux patrimoines à cette date ; l'année où l'achat prend l'avantage est cherchée jusqu'à quarante ans.</span></span></div><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
+        <div class="f key"><div class="fl"><label for="horizon">Durée d'occupation prévue</label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Combien de temps vous comptez vivre dans ce logement avant de le revendre. Le verdict compare les deux patrimoines à cette date ; l'année où l'achat prend l'avantage est cherchée jusqu'à quarante ans. Pour toujours : 40 ans, la plus longue durée simulée.</span></span></div><div class="wrap uw"><input id="horizon" type="number" step="1" min="1" max="40" value="15"><span class="unit">ans</span></div></div>
         <div class="f"><div class="fl"><label for="inflation">Inflation <small>taux directeur BCE</small></label><span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Par défaut, le taux directeur de la BCE : celui de la facilité de dépôt, porté à 2,50 % le 16 septembre 2026, comme dans la calculatrice d'investissement. Les résultats s'affichent en euros d'aujourd'hui, inflation retirée.</span></span></div><div class="wrap uw"><input id="inflation" type="number" step="0.1" value="2.5"><span class="unit">%/an</span></div></div>
         <p class="repere" id="repInflation" hidden></p>
         <label class="souscheck"><input id="prixSuitInflation" type="checkbox" checked> Prix, loyers et charges suivent l'inflation</label>
@@ -291,11 +291,11 @@
         </div>
       </div>
       <div class="legend">
-        <span style="color:var(--text)"><i class="swatch"></i><span style="color:var(--text-muted)">Acheter</span></span>
-        <span style="color:var(--d1)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Votre répartition</span></span>
-        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Tout en actions</span></span>
-        <span style="color:var(--d3)"><i class="swatch mixte"></i><span style="color:var(--text-muted)">Tout en fonds euros</span></span>
-        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Tout sur Livret A</span></span>
+        <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Acheter</span></span>
+        <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Votre répartition</span></span>
+        <span style="color:var(--d3)"><i class="swatch mixte"></i><span style="color:var(--text-muted)">Tout en actions</span></span>
+        <span style="color:var(--d4)"><i class="swatch points"></i><span style="color:var(--text-muted)">Tout en fonds euros</span></span>
+        <span style="color:var(--text-muted)"><i class="swatch points"></i><span style="color:var(--text-muted)">Tout sur Livret A</span></span>
       </div>
       <div class="plot" id="plotPlac"><div class="tip" id="tipPlac"></div></div>
       <div class="tiles" id="rpPlacTuiles"></div>
@@ -308,7 +308,7 @@
     </section>
 
     <details class="panel fold" id="analyse">
-      <summary><span class="foldtitle">Analyse détaillée</span><span class="foldhint">écart année par année, dépenses, sensibilité</span></summary>
+      <summary><span class="foldtitle">Analyse détaillée</span><span class="foldhint">écart année par année, sensibilité</span></summary>
       <div class="folded">
 
         <section class="sub" id="ecart">
@@ -319,20 +319,6 @@
             </div>
           </div>
           <div class="plot" id="plotEcart"><div class="tip" id="tipEcart"></div></div>
-        </section>
-
-        <section class="sub" id="depenses">
-          <div class="phead">
-            <div>
-              <h2>Ce que chacun dépense pour se loger<span class="ihint"><button type="button" class="i" aria-label="Explication" aria-expanded="false">i</button><span class="ibody" hidden>Propriétaire : mensualités des deux prêts, taxe foncière, charges non récupérables, entretien, assurance. Locataire : loyer et assurance. L'écart entre les deux courbes est ce que l'un des deux place chaque année ; le crédit remboursé, la courbe du propriétaire plonge.</span></span></h2>
-              <p>Dépense annuelle de logement de chaque ménage, en euros courants.</p>
-            </div>
-          </div>
-          <div class="legend">
-            <span style="color:var(--d1)"><i class="swatch"></i><span style="color:var(--text-muted)">Propriétaire</span></span>
-            <span style="color:var(--d2)"><i class="swatch dash"></i><span style="color:var(--text-muted)">Locataire</span></span>
-          </div>
-          <div class="plot" id="plotFlux"><div class="tip" id="tipFlux"></div></div>
         </section>
 
         <section class="sub" id="sensibilite">

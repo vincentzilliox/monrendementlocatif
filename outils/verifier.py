@@ -533,6 +533,26 @@ setTimeout(function(){
   // sa vitrine, et cache ceux de l'investisseur ; le questionnaire se parcourt
   // comme celui de l'investisseur, et rejoue par défaut le scénario d'ouverture.
   var cVivre = document.getElementById("choixVivre"), cInvestir = document.getElementById("choixInvestir");
+  // Dans les deux questionnaires, l'unité posée dans le champ (€, ans, pers.) ne
+  // doit jamais passer sous la saisie, calée à droite : chaque étape est montrée
+  // le temps d'une mesure.
+  var recouvre = [];
+  ["assistant", "assistantRP"].forEach(function(id){
+    var qz = document.getElementById(id); if(!qz) return;
+    var h0 = qz.hidden; qz.hidden = false;
+    Array.prototype.forEach.call(qz.querySelectorAll(".qstep"), function(st){
+      var s0 = st.hidden; st.hidden = false;
+      Array.prototype.forEach.call(st.querySelectorAll(".qchamp"), function(c){
+        var i = c.querySelector("input"), u = c.querySelector(".qunit");
+        if(!i || !u || i.offsetParent === null) return;
+        var ib = i.getBoundingClientRect(), ub = u.getBoundingClientRect();
+        if(ub.width > 0 && ib.right - ub.left > parseFloat(getComputedStyle(i).paddingRight) + 0.5) recouvre.push(i.id);
+      });
+      st.hidden = s0;
+    });
+    qz.hidden = h0;
+  });
+  r.unitesRecouvrent = recouvre.join(",");
   if(cVivre && cInvestir){
     var cache2 = function(id){ var e = document.getElementById(id); return !e || e.hidden; };
     cVivre.click();
@@ -571,6 +591,16 @@ setTimeout(function(){
       r.rLienComptant = document.getElementById("rGo").getAttribute("href");
       var credRP = qr.querySelector('input[name="rFinancement"][value="credit"]');
       credRP.checked = true; credRP.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+    // « Pour toujours » : la plus longue durée simulée, dite comme telle.
+    var modH = qr.querySelector('.qmod[data-etape="rEtapeHorizon"]');
+    var toujours = qr.querySelector('input[name="rHorizon"][value="40"]');
+    if(modH && toujours){
+      modH.click();
+      toujours.checked = true; toujours.dispatchEvent(new Event("change", {bubbles:true}));
+      parcourir();
+      r.rLienToujours = document.getElementById("rGo").getAttribute("href");
+      r.rRecapToujours = /pour toujours/.test(document.getElementById("rRecap").textContent);
     }
     cInvestir.click();
     r.parcoursRetour = !cache2("assistant") && cache2("assistantRP") && !cache2("vitrineInvestir") && cache2("vitrineVivre");
@@ -1219,6 +1249,11 @@ def main():
                                  if c not in (r.get("rLienModifie") or "")]
                     controle("questionnaire « y vivre » : le prix entraîne loyer, apport, charges et travaux",
                              not manquants, ", ".join(manquants) or (r.get("rLienModifie") or "—")[-58:])
+                    controle("questionnaires : aucune unité ne recouvre la saisie",
+                             r.get("unitesRecouvrent") == "", r.get("unitesRecouvrent") or "")
+                    controle("questionnaire « y vivre » : « pour toujours » se calcule sur la plus longue durée",
+                             "horizon=40" in (r.get("rLienToujours") or "") and r.get("rRecapToujours") is True,
+                             (r.get("rLienToujours") or "—")[-58:])
                     lc = r.get("rLienComptant") or ""
                     controle("questionnaire « y vivre » : payer comptant saute la durée du prêt",
                              r.get("rComptantEtapes") == 6 and "comptant=1" in lc and "duree=" not in lc,
@@ -1405,8 +1440,8 @@ def main():
                     controle("acheter ou louer : année de bascule affichée",
                              (r.get("rpBascule") or "").startswith(("Année", "Jamais")), r.get("rpBascule") or "—")
                     controle("acheter ou louer : avis rendu", len(r.get("rpAvis") or "") > 20, r.get("rpAvis") or "absent")
-                    controle("acheter ou louer : six indicateurs, six graphiques, chacun avec son tableau et au clavier",
-                             r["tuiles"] == 6 and r["graphes"] == 6 and r.get("equiv") == 6 and r.get("focalisables") == 6,
+                    controle("acheter ou louer : six indicateurs, cinq graphiques, chacun avec son tableau et au clavier",
+                             r["tuiles"] == 6 and r["graphes"] == 5 and r.get("equiv") == 5 and r.get("focalisables") == 5,
                              "%s tuiles, %s graphiques, %s tableaux, %s au clavier"
                              % (r["tuiles"], r["graphes"], r.get("equiv"), r.get("focalisables")))
                     controle("acheter ou louer : sensibilité tracée", r["sens"] >= 6, "%d barres" % r["sens"])
@@ -1918,6 +1953,14 @@ var c=rp({comptant:true,ptzMode:'manuel',ptzMontant:50000});
 lignes.push('acheter ou louer : comptant, ni pret ni PTZ|'+(c.emprunt===0 && c.ptz===0 && c.coutCredit===0 && c.rows[0].credit===0?1:0)+'|');
 var nu=rp({horizon:10,partBourse:100,partFonds:0,partLivret:0,psCapital:0});
 lignes.push('placement net : sans impot, le taux nominal lui-meme|'+(proche(nu.rendementPlacement,1.04*1.02-1,1e-9)?1:0)+'|');
+// Rien a emprunter, ni comptant ni credit : le taux ne joue plus, ni dans les
+// seuils ni dans la sensibilite. Et l'avis accorde « an » au singulier.
+var plein=Object.assign(baseRP(),{apport:400000,horizon:15});
+var sansTaux=seuilsRP(plein).every(function(x){ return x.k!=='taux'; })
+  && sensibiliteRP(plein, ecartRP(plein)).every(function(x){ return x.k!=='taux'; }) && seuilsRP(baseRP()).some(function(x){ return x.k==='taux'; });
+lignes.push('acheter ou louer : sans emprunt, ni seuil ni sensibilite au taux|'+(sansTaux?1:0)+'|');
+var un=avisRP(rp({horizon:1}));
+lignes.push('acheter ou louer : avis au singulier pour un an|'+(un.indexOf('Pour 1 an,')===0 && un.indexOf('1 ans')<0?1:0)+'|'+un.slice(0,40));
 lignes.push('acheter ou louer : scenario d ouverture calculable|'+(s.rows.length===DEFAUTS_RP_SITE.horizon && B!==null?1:0)+'|bascule annee '+B);
 print(lignes.join('\\n'));
 // Les chiffres que publient les guides, pour la comparaison faite côté Python.

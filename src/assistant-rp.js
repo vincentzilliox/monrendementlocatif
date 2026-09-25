@@ -111,7 +111,8 @@ function dessinerRecap(r){
     r.comptant ? null : ["Prêt", ans(r.duree), "", "rEtapeDuree"],
     ["Premier achat", r.primo ? "oui" + (r.zone ? ", zone " + r.zone : "") : "non",
       r.primo && !r.zone ? "sans la zone, le prêt à taux zéro ne peut pas être estimé" : "", "rEtapePrimo"],
-    ["Vous y vivez", ans(r.horizon), "", "rEtapeHorizon"],
+    ["Vous y vivez", r.horizon >= HORIZON_MAX_RP ? "pour toujours" : ans(r.horizon),
+      r.horizon >= HORIZON_MAX_RP ? "calculé sur " + ans(HORIZON_MAX_RP) + ", logement revendu au bout" : "", "rEtapeHorizon"],
     ["En louant, vous placez", NOMS_PLACEMENT[coche("rPlacement")] || NOMS_PLACEMENT.mix, "", "rEtapePlacement"]
   ].filter(Boolean);
   el("rRecap").innerHTML = lignes.map(([terme, valeur, note, id]) =>

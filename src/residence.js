@@ -316,8 +316,11 @@ const SENS_RP = [
   {k:"horizon",    nom:"Durée d'occupation",       pas:() => 5,     txt:"5 ans"}
 ];
 const ecartRP = q => acheterOuLouer(Object.assign({}, q, {horizonSeul:true})).final.ecartReel;
+// Sans crédit — comptant, ou un apport qui couvre tout —, le taux ne joue pas.
+const sansCreditRP = p => p.comptant || acheterOuLouer(Object.assign({}, p, {horizonSeul:true})).emprunt <= 0;
 function sensibiliteRP(p, ref){
-  return SENS_RP.filter(s => !(s.credit && p.comptant)).map(s => {
+  const sansCredit = sansCreditRP(p);
+  return SENS_RP.filter(s => !(s.credit && sansCredit)).map(s => {
     const essai = signe => {
       const q = Object.assign({}, p);
       const v = p[s.k] + signe*s.pas(p[s.k]);
@@ -345,8 +348,8 @@ const SEUILS_RP = [
   {k:"bourse",    nom:"Rendement boursier maximal", borne:() => [-5, 15],   precision:0.005}
 ];
 function seuilsRP(p){
-  const devant = ecartRP(p) >= 0;
-  return SEUILS_RP.filter(s => !(s.credit && p.comptant)).map(s => {
+  const devant = ecartRP(p) >= 0, sansCredit = sansCreditRP(p);
+  return SEUILS_RP.filter(s => !(s.credit && sansCredit)).map(s => {
     const essai = v => ecartRP(Object.assign({}, p, {[s.k]: v}));
     const actuel = p[s.k];
     let [a, b] = s.borne(actuel), fa = essai(a), fb = essai(b);
@@ -378,16 +381,17 @@ function endettementRP(p, R){
 function avisRP(R){
   const h = R.p.horizon, b = R.bascule, r = R.repli, e = R.final.ecartReel;
   const somme = eur.format(Math.abs(e)), eme = n => n === 1 ? "1re" : n + "e";
+  const ans = n => n + (n > 1 ? " ans" : " an");
   if(b === null)
-    return `Sur vos hypothèses, louer et placer la différence reste plus avantageux à toute date, jusqu'à ${HORIZON_MAX_RP} ans : acheter vous laisserait ${somme} de moins dans ${h} ans, en euros d'aujourd'hui.`;
+    return `Sur vos hypothèses, louer et placer la différence reste plus avantageux à toute date, jusqu'à ${HORIZON_MAX_RP} ans : acheter vous laisserait ${somme} de moins dans ${ans(h)}, en euros d'aujourd'hui.`;
   if(e < 0)
     return b > h
-      ? `Pour ${h} ans, louer l'emporte de ${somme} en euros d'aujourd'hui. Acheter ne devient gagnant qu'à partir de la ${eme(b)} année : c'est la durée d'occupation qui décide.`
-      : `Acheter passe devant la ${eme(b)} année, mais louer et placer repasse devant la ${eme(r)} : au bout de ${h} ans, louer l'emporte de ${somme}, en euros d'aujourd'hui.`;
+      ? `Pour ${ans(h)}, louer l'emporte de ${somme} en euros d'aujourd'hui. Acheter ne devient gagnant qu'à partir de la ${eme(b)} année : c'est la durée d'occupation qui décide.`
+      : `Acheter passe devant la ${eme(b)} année, mais louer et placer repasse devant la ${eme(r)} : au bout de ${ans(h)}, louer l'emporte de ${somme}, en euros d'aujourd'hui.`;
   const fragile = h - b <= 2 ? " La marge est mince : un départ un peu plus tôt que prévu inverserait la réponse." : "";
-  const retour = r ? ` Au-delà de ${r - 1} ans, louer et placer repasserait devant.` : "";
+  const retour = r ? ` Au-delà de ${ans(r - 1)}, louer et placer repasserait devant.` : "";
   return (b <= 3
-    ? `Acheter l'emporte presque d'emblée, dès la ${eme(b)} année. Dans ${h} ans, vous posséderiez ${somme} de plus qu'en louant, en euros d'aujourd'hui.`
-    : `Acheter devient gagnant à partir de la ${eme(b)} année. Dans ${h} ans, vous posséderiez ${somme} de plus qu'en louant et plaçant la différence, en euros d'aujourd'hui.`)
+    ? `Acheter l'emporte presque d'emblée, dès la ${eme(b)} année. Dans ${ans(h)}, vous posséderiez ${somme} de plus qu'en louant, en euros d'aujourd'hui.`
+    : `Acheter devient gagnant à partir de la ${eme(b)} année. Dans ${ans(h)}, vous posséderiez ${somme} de plus qu'en louant et plaçant la différence, en euros d'aujourd'hui.`)
     + fragile + retour;
 }

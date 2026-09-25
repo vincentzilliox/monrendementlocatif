@@ -128,7 +128,7 @@ function vitrineRP(){
   ecrire("vrHorizonTexte", "Les deux ménages ont sorti exactement les mêmes sommes de leur poche : seul l'usage qu'ils en ont fait diffère.");
   drawChart(g("vrPlotPat"), g("vrTipPat"), cfgPatrimoineRP(R, true, {height: 280}));
   const tuile = (nom, x, r) => `<div class="tile"><span class="k">${nom}</span><span class="v num">${x === null ? "Louer gagne" : "Année " + x}</span>`
-    + `<span class="s">${x === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · placement à ${pct(r)} /an net</span></div>`;
+    + `<span class="s">${x === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · ${pct(r).replace(" ", "\u00a0")}\u00a0/an net</span></div>`;
   const pl = g("vrPlacements");
   if(pl) pl.innerHTML = tuile("Répartition par défaut", b, R.rendementPlacement)
     + comparerPlacementsRP(p).map(x => tuile(x.nom, x.bascule, x.rendement)).join("");

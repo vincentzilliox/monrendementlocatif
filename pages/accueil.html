@@ -57,7 +57,7 @@
 
       <div class="qstep" id="qEtapeDepuis" hidden>
         <h3 class="qtitre" tabindex="-1">Depuis combien d'années le possédez-vous&nbsp;?</h3>
-        <div class="qchamp"><input id="qDepuis" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qDepuisAide"><span class="qunit">ans</span></div>
+        <div class="qchamp unite-longue"><input id="qDepuis" type="text" inputmode="numeric" autocomplete="off" aria-describedby="qDepuisAide"><span class="qunit">ans</span></div>
         <p class="qaide" id="qDepuisAide">Les années déjà écoulées comptent pour les abattements de plus-value : exonération d'impôt à 22 ans, de prélèvements sociaux à 30.</p>
       </div>
 
@@ -117,7 +117,7 @@
         <div id="qCreditChamps">
           <div class="qchamp"><input id="qCrd" type="text" inputmode="numeric" autocomplete="off" aria-label="Capital restant dû" aria-describedby="qCrdAide"><span class="qunit">€</span></div>
           <p class="qaide" id="qCrdAide">Le capital restant dû aujourd'hui, sur votre dernier tableau d'amortissement.</p>
-          <div class="qchamp"><input id="qDureeRestante" type="text" inputmode="numeric" autocomplete="off" aria-label="Années de remboursement restantes" aria-describedby="qDureeRestanteAide"><span class="qunit">ans</span></div>
+          <div class="qchamp unite-longue"><input id="qDureeRestante" type="text" inputmode="numeric" autocomplete="off" aria-label="Années de remboursement restantes" aria-describedby="qDureeRestanteAide"><span class="qunit">ans</span></div>
           <p class="qaide" id="qDureeRestanteAide">Les années de remboursement qu'il reste.</p>
         </div>
       </div>
@@ -201,8 +201,9 @@
             <label><input type="radio" name="rZone" value="" checked><span>Je ne sais pas</span></label>
           </div>
           <p class="qaide">La zone classe les communes selon la tension du marché : A pour Paris et les grandes métropoles, C pour les villes moyennes et les campagnes. La calculatrice la trouve seule d'après la commune.</p>
-          <div class="qchamp"><input id="rPersonnes" type="text" inputmode="numeric" autocomplete="off" aria-label="Personnes au foyer" aria-describedby="rPersonnesAide"><span class="qunit">pers.</span></div>
-          <p class="qaide" id="rPersonnesAide">Toutes celles qui vivront dans le logement.</p>
+          <label class="qsous" for="rPersonnes">Combien de personnes vivront dans le logement&nbsp;?</label>
+          <div class="qchamp unite-longue"><input id="rPersonnes" type="text" inputmode="numeric" autocomplete="off" aria-describedby="rPersonnesAide"><span class="qunit">pers.</span></div>
+          <p class="qaide" id="rPersonnesAide">Vous compris : elles fixent le plafond de ressources du prêt à taux zéro.</p>
         </div>
       </div>
 
@@ -213,8 +214,9 @@
           <label><input type="radio" name="rHorizon" value="10"><span>10 ans</span></label>
           <label><input type="radio" name="rHorizon" value="20"><span>20 ans</span></label>
           <label><input type="radio" name="rHorizon" value="25"><span>25 ans</span></label>
+          <label><input type="radio" name="rHorizon" value="40"><span>Pour toujours</span></label>
         </div>
-        <p class="qaide">C'est souvent elle qui décide : les frais d'achat mettent des années à s'amortir.</p>
+        <p class="qaide">C'est souvent elle qui décide : les frais d'achat mettent des années à s'amortir. « Pour toujours » se calcule sur quarante ans, la plus longue durée simulée.</p>
       </div>
 
       <div class="qstep" id="rEtapePlacement" hidden>

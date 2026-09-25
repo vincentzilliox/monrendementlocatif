@@ -680,7 +680,7 @@ function tuilesSeuils(liste, cible){
     const valeur = s.valeur === null ? "—" : F.v(s.valeur);
     const sous = s.valeur === null
       ? (s.toujours ? `devant ${rival} sur toute la plage` : `hors de portée : ${rival} reste devant`)
-      : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel)}</b>`;
+      : `vous : ${F.v(s.actuel)} · <b class="${s.devant ? "pos" : "neg"}">${F.ecart(s.valeur, s.actuel).replace(/ /g, "\u00a0")}</b>`;
     return `<div class="tile"><span class="k">${s.nom}</span><span class="v num">${valeur}</span><span class="s">${sous}</span></div>`;
   }).join("");
 }

@@ -147,8 +147,8 @@ function render(){
     ["Coût réel de la propriété", eur.format(C.proprio/12) + " /mois",
       `Ce qui part sans retour la première année, capital remboursé exclu, coût d'opportunité de l'apport compris, hausse de la valeur déduite. Le locataire, lui, perd ${eur.format(C.locataire/12)} par mois.`,
       C.proprio <= C.locataire ? "pos" : "neg"],
-    ["Coût du crédit", R.comptant ? "Aucun crédit" : eur.format(R.coutCredit),
-      R.comptant ? "Achat comptant : ni intérêts, ni assurance emprunteur." : `Intérêts et assurance sur les ${an(p.duree)} du prêt principal, soit ${pct(R.coutCredit/Math.max(1, R.emprunt))} du capital emprunté.`, ""],
+    ["Coût du crédit", R.emprunt <= 0 ? "Aucun crédit" : eur.format(R.coutCredit),
+      R.emprunt <= 0 ? (R.comptant ? "Achat comptant : ni intérêts, ni assurance emprunteur." : "Votre apport couvre tout le coût de l'achat : rien à emprunter.") : `Intérêts et assurance sur les ${an(p.duree)} du prêt principal, soit ${pct(R.coutCredit/Math.max(1, R.emprunt))} du capital emprunté.`, ""],
     ["Prêt à taux zéro", R.ptz > 0 ? eur.format(R.ptz) : "Aucun",
       R.ptz > 0 ? `Sans intérêt : ${R.differe > 0 ? `rien à rembourser pendant ${an(R.differe)}, puis ` : ""}${eur.format(R.mensualitePTZ)} par mois pendant ${an(R.remboursement)}.` : "Aucun prêt à taux zéro dans ce scénario : le détail est dans le panneau, sous le financement.", ""],
     ["Placement, net d'impôt", pct(R.rendementPlacement) + " /an",
@@ -190,11 +190,12 @@ function render(){
     }
   });
   const capital = (r1.principal + r1.principalPTZ)/12;
-  $("coutsNote").textContent = `La première année, le logement vous coûte réellement ${eur.format(C.proprio/12)} par mois, contre ${eur.format(C.locataire/12)} en louant. Le capital remboursé, ${eur.format(capital)} par mois, reste à vous.`;
+  $("coutsNote").textContent = `La première année, le logement vous coûte réellement ${eur.format(C.proprio/12)} par mois, contre ${eur.format(C.locataire/12)} en louant.`
+    + (capital >= 1 ? ` Le capital remboursé, ${eur.format(capital)} par mois, reste à vous.` : "");
 
   renderPlacements(p, reel);
 
-  // Écart et dépenses, jusqu'à quarante ans.
+  // L'écart, jusqu'à quarante ans.
   const S = R.suite, xs = S.map(r => String(r.y));
   drawChart($("plotEcart"), $("tipEcart"), {
     x: xs, height: 210, padLeft: 78, band:true, zero:true,
@@ -206,24 +207,6 @@ function render(){
       tipRow((reel ? S[i].ecartReel : S[i].ecart) >= 0 ? css("--up") : css("--down"),
         (reel ? S[i].ecartReel : S[i].ecart) >= 0 ? "Avance de l'achat" : "Avance de la location",
         eur.format(Math.abs(reel ? S[i].ecartReel : S[i].ecart)))
-  });
-  drawChart($("plotFlux"), $("tipFlux"), {
-    x: xs, height: 210, padLeft: 78, zero:true,
-    label: "Dépense annuelle de logement du propriétaire et du locataire",
-    fmtAxis: kEur, fmtVal: v => eur.format(v),
-    milestones: [{i: p.horizon - 1, text:"départ prévu"}],
-    series: [
-      {color:"--d1", nom:"Propriétaire", values: S.map(r => r.coutProprio)},
-      {color:"--d2", nom:"Locataire", values: S.map(r => r.coutLoc), dash:true}
-    ],
-    tip: i => {
-      const r = S[i];
-      return `<div class="th">Année ${r.y}</div>` +
-        tipRow(css("--d1"), "Propriétaire", eur.format(r.coutProprio)) +
-        tipRow("transparent", "dont crédit", eur.format(r.credit)) +
-        tipRow(css("--d2"), "Locataire", eur.format(r.coutLoc)) +
-        tipRow("transparent", r.versLoc > 0 ? "placé par le locataire" : "placé par le propriétaire", eur.format(r.versLoc + r.versProp));
-    }
   });
 
   // Tableau annuel, jusqu'à quarante ans, en euros courants.
@@ -239,12 +222,12 @@ function render(){
   const warns = [];
   if(E && E.taux > PLAFOND_ENDETTEMENT)
     warns.push(`Avec ce crédit, vos mensualités atteindraient ${pct(E.taux)} de vos revenus : au-delà de 35 %, les banques refusent en général, sauf pour une part de leurs dossiers, d'abord la résidence principale.`);
-  if(!R.comptant && p.duree > (R.neuf ? 27 : 25))
+  if(R.emprunt > 0 && p.duree > (R.neuf ? 27 : 25))
     warns.push(`Un prêt de ${an(p.duree)} dépasse la durée que le Haut Conseil de stabilité financière autorise en principe : 25 ans, 27 dans le neuf quand la livraison diffère le remboursement.`);
   const est = R.estimation;
   if(est && est.montant > R.ptz + 1 && !R.comptant)
     warns.push(`Le barème accorderait ${eur.format(est.montant)} de prêt à taux zéro, mais celui-ci ne peut dépasser le prêt principal : le calcul en retient ${eur.format(R.ptz)}.`);
-  if(p.ptzMode !== "non" && R.comptant)
+  if(R.comptant && (p.ptzMode === "manuel" ? p.ptzMontant > 0 : p.ptzMode === "auto" && est && est.montant > 0))
     warns.push("Achat comptant : le prêt à taux zéro complète un autre prêt, il ne s'obtient pas seul.");
   const parts = p.partBourse + p.partFonds + p.partLivret;
   if(Math.abs(parts - 100) > 0.5)
@@ -275,23 +258,35 @@ function render(){
 // Le locataire place autrement : même comparaison, un seul support.
 function renderPlacements(p, reel){
   const rows = R.rows, variantes = comparerPlacementsRP(p);
-  const couleurs = {bourse:["--d2", true], fonds:["--d3", "9 3 2 3"], livret:["--d4", "2 3"]};
-  const serie = r => reel ? r.liquidationReel : r.liquidation;
+  // Mêmes codes que le graphique du patrimoine : l'achat en trait plein, votre
+  // répartition en tirets. Les trois supports pris seuls, en traits fins, ne
+  // sont que des repères.
+  const couleurs = {bourse:["--d3", "9 3 2 3"], fonds:["--d4", "2 3"], livret:["--text-muted", "1 4"]};
+  const achat = r => reel ? r.liquidationReel : r.liquidation;
+  const loc = r => reel ? r.patrimoineLocReel : r.patrimoineLoc;
   drawChart($("plotPlac"), $("tipPlac"), {
     x: rows.map(r => String(r.y)), height: 260, padLeft: 78, zero: true,
     label: "Patrimoine du propriétaire comparé au locataire selon son placement",
     fmtAxis: kEur, fmtVal: v => eur.format(v),
-    series: [{color:"--text", nom:"Acheter", values: rows.map(serie), width:2.4},
-             {color:"--d1", nom:"Votre répartition", values: rows.map(r => reel ? r.patrimoineLocReel : r.patrimoineLoc), dash:"6 3"}]
-      .concat(variantes.map(x => ({color:couleurs[x.k][0], nom:x.nom, values: reel ? x.rowsReel : x.rows, dash:couleurs[x.k][1]}))),
-    tip: i => `<div class="th">Départ fin d'année ${rows[i].y}</div>` +
-      tipRow(css("--text"), "Acheter", eur.format(serie(rows[i]))) +
-      tipRow(css("--d1"), "Votre répartition", eur.format(reel ? rows[i].patrimoineLocReel : rows[i].patrimoineLoc)) +
-      variantes.map(x => tipRow(css(couleurs[x.k][0]), x.nom, eur.format((reel ? x.rowsReel : x.rows)[i]))).join("")
+    series: [{color:"--d1", nom:"Acheter", values: rows.map(achat), width:2.4},
+             {color:"--d2", nom:"Votre répartition", values: rows.map(loc), dash:true, width:2}]
+      .concat(variantes.map(x => ({color:couleurs[x.k][0], nom:x.nom, values: reel ? x.rowsReel : x.rows,
+        dash:couleurs[x.k][1], width:1.5}))),
+    tip: i => {
+      const e = achat(rows[i]) - loc(rows[i]);
+      return `<div class="th">Départ fin d'année ${rows[i].y}</div>` +
+        tipRow(css("--d1"), "Acheter", eur.format(achat(rows[i]))) +
+        tipRow(css("--d2"), "Votre répartition", eur.format(loc(rows[i]))) +
+        variantes.map(x => tipRow(css(couleurs[x.k][0]), x.nom, eur.format((reel ? x.rowsReel : x.rows)[i]))).join("") +
+        `<div class="tr" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">` +
+        `<span class="tl">${e >= 0 ? "Avance de l'achat" : "Avance de votre répartition"}</span><span class="tv">${eur.format(Math.abs(e))}</span></div>`;
+    }
   });
+  // « 4,5 % /an » ne se coupe pas en fin de ligne.
+  const taux = r => pct(r).replace(" ", "\u00a0") + "\u00a0/an net";
   const tuile = (nom, bascule, rendement) =>
     `<div class="tile"><span class="k">${nom}</span><span class="v num">${bascule === null ? "Louer gagne" : "Année " + bascule}</span>`
-    + `<span class="s">${bascule === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · placement à ${pct(rendement)} /an net</span></div>`;
+    + `<span class="s">${bascule === null ? "l'achat ne passe jamais devant" : "l'achat passe devant"} · ${taux(rendement)}</span></div>`;
   $("rpPlacTuiles").innerHTML = tuile("Votre répartition", R.bascule, R.rendementPlacement)
     + variantes.map(x => tuile(x.nom, x.bascule, x.rendement)).join("");
 }
